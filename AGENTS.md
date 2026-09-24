@@ -11,3 +11,7 @@ Use the default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-
 ### Domain docs
 
 Use the single-context layout. See `docs/agents/domain.md`.
+
+### Packages
+
+Packages are deep modules: see [packages/README.md](./packages/README.md) before adding or importing one.
