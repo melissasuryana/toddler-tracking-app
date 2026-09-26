@@ -1,0 +1,1 @@
+node .husky/jev-hook.mjs pre-push
