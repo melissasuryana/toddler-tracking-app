@@ -13,6 +13,10 @@
   per-food status markers, and gentle heads-ups. Variant C gains a Foods browser
   screen (all foods with per-child status, filterable by category and allergen).
 
+  v3: the timeline gains a date-selection header — ‹ › week navigation, a Today
+  jump, and a Mon–Sun week strip with dots on days that have entries. Entries are
+  seeded across the week so the dots and day filtering are visible.
+
   All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
 -->
 <html lang="en">
@@ -517,6 +521,86 @@
         font-size: 13px;
       }
 
+      /* ---- Timeline date header ---- */
+      .week-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 14px 2px;
+      }
+      .week-nav .title {
+        font-size: 17px;
+        font-weight: 700;
+        flex: 1;
+        text-align: center;
+      }
+      .week-nav .nav-btn {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 999px;
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .week-nav .nav-btn:disabled {
+        opacity: 0.35;
+      }
+      .week-nav .today-btn {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--accent);
+      }
+      .week-strip {
+        display: flex;
+        gap: 4px;
+        padding: 8px 14px 4px;
+      }
+      .day-cell {
+        flex: 1;
+        border: 1px solid transparent;
+        background: var(--card);
+        border-radius: 14px;
+        padding: 8px 0 6px;
+        text-align: center;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .day-cell .dow {
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .day-cell.sel .dow {
+        color: #ffe3d9;
+      }
+      .day-cell .dnum {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .day-cell .dot {
+        font-size: 8px;
+        color: var(--accent);
+        line-height: 1;
+        min-height: 8px;
+      }
+      .day-cell.sel {
+        background: var(--accent);
+        color: #fff;
+      }
+      .day-cell.sel .dot {
+        color: #ffe3d9;
+      }
+      .day-cell.today {
+        border-color: var(--accent);
+      }
+
       /* ---- floating variant switcher (not part of the designs) ---- */
       .switcher {
         position: fixed;
@@ -619,6 +703,85 @@
             diaperType: "both",
             archived: false,
           },
+          // earlier this week, so the timeline date header has dots to show
+          {
+            id: 8,
+            kind: "sleep",
+            at: now - 26 * 60 * min,
+            end: now - 24.5 * 60 * min,
+            quality: "great",
+            archived: false,
+          },
+          {
+            id: 9,
+            kind: "feed",
+            at: now - 25 * 60 * min,
+            side: "right",
+            archived: false,
+          },
+          {
+            id: 10,
+            kind: "meal",
+            at: now - 28 * 60 * min,
+            foods: ["peanut butter"],
+            catFlags: [],
+            amount: "a few bites",
+            archived: false,
+          },
+          {
+            id: 11,
+            kind: "diaper",
+            at: now - 30 * 60 * min,
+            diaperType: "wet",
+            archived: false,
+          },
+          {
+            id: 12,
+            kind: "feed",
+            at: now - 50 * 60 * min,
+            side: "left",
+            archived: false,
+          },
+          {
+            id: 13,
+            kind: "meal",
+            at: now - 52 * 60 * min,
+            foods: ["salmon", "rice"],
+            catFlags: [],
+            amount: "about half",
+            archived: false,
+          },
+          {
+            id: 14,
+            kind: "sleep",
+            at: now - 76 * 60 * min,
+            end: now - 74 * 60 * min,
+            quality: "poor",
+            archived: false,
+          },
+          {
+            id: 15,
+            kind: "feed",
+            at: now - 75 * 60 * min,
+            side: "right",
+            archived: false,
+          },
+          {
+            id: 16,
+            kind: "meal",
+            at: now - 148 * 60 * min,
+            foods: ["yogurt", "blueberries"],
+            catFlags: [],
+            amount: "all of it",
+            archived: false,
+          },
+          {
+            id: 17,
+            kind: "diaper",
+            at: now - 150 * 60 * min,
+            diaperType: "dirty",
+            archived: false,
+          },
           // an archived entry so Recently Deleted isn't empty
           {
             id: 7,
@@ -630,6 +793,7 @@
         ],
         sleepStart: null,
         diaperOpen: false,
+        selectedDate: startOfDay(Date.now()).getTime(),
       };
 
       // ---------- food data (stands in for the ~300-food seed database) ----------
@@ -912,6 +1076,95 @@
           shown.map(entryRowHTML).join("")
         );
       }
+
+      // ---------- timeline date header (week strip, like the reference shot) ----------
+      function startOfDay(t) {
+        const d = new Date(t);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+      function mondayOf(t) {
+        const d = startOfDay(t);
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        return d;
+      }
+      function entriesOn(dayT) {
+        const t = startOfDay(dayT).getTime();
+        return state.entries
+          .filter((e) => !e.archived && startOfDay(e.at).getTime() === t)
+          .sort((a, b) => b.at - a.at);
+      }
+      function pickDay(t) {
+        state.selectedDate = startOfDay(t).getTime();
+        render();
+      }
+      function shiftWeek(n) {
+        state.selectedDate =
+          startOfDay(state.selectedDate).getTime() + n * 7 * 24 * 60 * min;
+        render();
+      }
+      function goToday() {
+        state.selectedDate = startOfDay(Date.now()).getTime();
+        render();
+      }
+      function weekLabel() {
+        const m = mondayOf(state.selectedDate).getTime();
+        const thisM = mondayOf(Date.now()).getTime();
+        if (m === thisM) return "This Week";
+        if (m === thisM - 7 * 24 * 60 * min) return "Last Week";
+        const f = (t) =>
+          new Date(t).toLocaleDateString([], {
+            month: "short",
+            day: "numeric",
+          });
+        return f(m) + " – " + f(m + 6 * 24 * 60 * min);
+      }
+      function dayLabel() {
+        const sel = startOfDay(state.selectedDate).getTime();
+        const today = startOfDay(Date.now()).getTime();
+        if (sel === today) return "Today";
+        if (sel === today - 24 * 60 * min) return "Yesterday";
+        return new Date(sel).toLocaleDateString([], {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
+      }
+      function dateHeaderHTML() {
+        const mon = mondayOf(state.selectedDate);
+        const todayT = startOfDay(Date.now()).getTime();
+        const onCurrentWeek =
+          mondayOf(state.selectedDate).getTime() ===
+          mondayOf(Date.now()).getTime();
+        const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const cells = DOW.map((dow, i) => {
+          const t = mon.getTime() + i * 24 * 60 * min;
+          const sel = startOfDay(state.selectedDate).getTime() === t;
+          const has = entriesOn(t).length > 0;
+          return `<button class="day-cell ${sel ? "sel" : ""} ${t === todayT && !sel ? "today" : ""}" onclick="pickDay(${t})">
+            <div class="dow">${dow}</div><div class="dnum">${new Date(t).getDate()}</div><div class="dot">${has ? "●" : ""}</div>
+          </button>`;
+        }).join("");
+        return `<div class="week-nav">
+          <button class="nav-btn" onclick="shiftWeek(-1)">‹</button>
+          <span class="title">${weekLabel()}</span>
+          <button class="nav-btn" ${onCurrentWeek ? "disabled" : ""} onclick="shiftWeek(1)">›</button>
+          <button class="today-btn" onclick="goToday()">Today</button>
+        </div>
+        <div class="week-strip">${cells}</div>`;
+      }
+      function dayTimelineHTML() {
+        const list = entriesOn(state.selectedDate);
+        return (
+          dateHeaderHTML() +
+          '<div class="section-label">' +
+          dayLabel() +
+          "</div>" +
+          (list.length
+            ? list.map(entryRowHTML).join("")
+            : '<div class="empty-note">Nothing logged this day.</div>')
+        );
+      }
       function deletedHTML() {
         const list = state.entries
           .filter((e) => e.archived)
@@ -1152,7 +1405,7 @@
         const screen = document.getElementById("screen");
         const chrome = document.getElementById("chrome");
         if (state.tab === "timeline") {
-          screen.innerHTML = headerHTML() + timelineHTML();
+          screen.innerHTML = headerHTML() + dayTimelineHTML();
         } else if (state.tab === "deleted") {
           screen.innerHTML = headerHTML() + deletedHTML();
         } else {
@@ -1198,7 +1451,7 @@
           screen.innerHTML =
             headerHTML(
               '<button class="icon-btn" title="Recently Deleted" onclick="state.tab=\'deleted\';render()">🗑</button>'
-            ) + timelineHTML();
+            ) + dayTimelineHTML();
         }
         chrome.innerHTML =
           sheetHTML() +
@@ -1217,7 +1470,7 @@
         const screen = document.getElementById("screen");
         const chrome = document.getElementById("chrome");
         if (state.tab === "timeline") {
-          screen.innerHTML = headerHTML() + timelineHTML();
+          screen.innerHTML = headerHTML() + dayTimelineHTML();
         } else if (state.tab === "deleted") {
           screen.innerHTML = headerHTML() + deletedHTML();
         } else if (state.tab === "foods") {
