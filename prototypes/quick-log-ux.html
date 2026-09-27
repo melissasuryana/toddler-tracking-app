@@ -7,6 +7,12 @@
   Three radically different variants of the home screen + quick-log flow,
   switchable via ?variant=A|B|C or the floating bar at the bottom (arrow keys work too).
 
+  v2 (after first reaction): C is the leading direction. Meal logging is now a real
+  2-step flow (foods → amount + optional texture/feeding style) with a deep food
+  picker: search, recent foods, big-9 allergen filter chips, Food Category flags,
+  per-food status markers, and gentle heads-ups. Variant C gains a Foods browser
+  screen (all foods with per-child status, filterable by category and allergen).
+
   All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
 -->
 <html lang="en">
@@ -24,6 +30,8 @@
         --accent-soft: #fbe9e2;
         --line: #e4dfd2;
         --danger: #c0492f;
+        --ok: #2f7c4f;
+        --warn: #b8860b;
       }
       * {
         box-sizing: border-box;
@@ -147,7 +155,7 @@
         margin-left: 4px;
       }
       .row-actions .restore {
-        color: #2f7c4f;
+        color: var(--ok);
         border-color: #bcd9c6;
       }
       .row-actions .wipe {
@@ -182,9 +190,16 @@
         width: 100%;
         border-radius: 20px 20px 0 0;
         padding: 16px 16px 22px;
+        max-height: 88%;
+        overflow-y: auto;
       }
       .sheet h3 {
         font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .sheet .step-note {
+        font-size: 12px;
+        color: var(--muted);
         margin-bottom: 10px;
       }
       .chip-row {
@@ -206,6 +221,17 @@
         border-color: var(--accent);
         font-weight: 600;
       }
+      .chip .dot {
+        font-size: 9px;
+        vertical-align: 2px;
+      }
+      .chip .alg {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .chip.sel .alg {
+        color: var(--accent);
+      }
       .big-save {
         width: 100%;
         border: 0;
@@ -217,10 +243,64 @@
         border-radius: 14px;
         cursor: pointer;
       }
+      .big-save:disabled {
+        opacity: 0.4;
+      }
       .sheet .hint {
         font-size: 12px;
         color: var(--muted);
         margin-top: 8px;
+      }
+      .sheet .back-link {
+        background: none;
+        border: 0;
+        color: var(--muted);
+        font-size: 13px;
+        cursor: pointer;
+        padding: 0 0 8px;
+      }
+      .search-input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 15px;
+        background: var(--bg);
+        margin: 6px 0 4px;
+      }
+      .heads-up {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        background: #fdf6e3;
+        border: 1px solid #e5c98a;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 12.5px;
+        margin: 4px 0 10px;
+      }
+      .heads-up button {
+        background: none;
+        border: 0;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0;
+      }
+      .sel-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 6px 0;
+      }
+      .sel-summary .chip {
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+      .opt-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 2px;
       }
 
       /* toast */
@@ -347,6 +427,12 @@
         color: var(--muted);
         margin-top: 2px;
       }
+      .c-card .link {
+        font-size: 12px;
+        color: var(--accent);
+        margin-top: 4px;
+        cursor: pointer;
+      }
       .c-action {
         border: 0;
         background: var(--accent);
@@ -372,6 +458,63 @@
       .c-card.watch {
         border-color: #e5c98a;
         background: #fdf6e3;
+      }
+
+      /* ---- Foods browser ---- */
+      .food-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin: 6px 14px;
+        font-size: 14px;
+      }
+      .food-row .body {
+        flex: 1;
+      }
+      .food-row .cat {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      .status-pill.safe {
+        background: #e3f2e8;
+        color: var(--ok);
+      }
+      .status-pill.trying {
+        background: #fdf6e3;
+        color: var(--warn);
+      }
+      .status-pill.untried {
+        background: var(--bg);
+        color: var(--muted);
+      }
+      .status-pill.avoid {
+        background: #fbe9e2;
+        color: var(--danger);
+      }
+      .food-summary {
+        display: flex;
+        gap: 12px;
+        padding: 4px 18px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .filter-block {
+        padding: 0 14px;
+      }
+      .filter-block .chip {
+        padding: 6px 12px;
+        font-size: 13px;
       }
 
       /* ---- floating variant switcher (not part of the designs) ---- */
@@ -429,7 +572,7 @@
       const min = 60 * 1000;
       let nextId = 100;
       const state = {
-        tab: "home", // per-variant meaning; 'home' | 'timeline' | 'deleted'
+        tab: "home", // 'home' | 'timeline' | 'deleted' | 'foods' (foods: variant C only)
         entries: [
           {
             id: 1,
@@ -458,6 +601,7 @@
             kind: "meal",
             at: now - 4 * 60 * min,
             foods: ["oatmeal", "banana"],
+            catFlags: [],
             amount: "most of it",
             archived: false,
           },
@@ -484,9 +628,141 @@
             archived: true,
           },
         ],
-        sleepStart: null, // timestamp when a sleep timer is running
-        watch: { food: "peanut butter", day: 2 }, // static, just to render the heads-up
+        sleepStart: null,
+        diaperOpen: false,
       };
+
+      // ---------- food data (stands in for the ~300-food seed database) ----------
+      const CATEGORIES = [
+        "fruit",
+        "vegetables",
+        "grains & cereals",
+        "proteins",
+        "dairy",
+        "nuts & seeds",
+        "fish & shellfish",
+        "compound",
+      ];
+      const BIG9 = [
+        "milk",
+        "egg",
+        "peanut",
+        "tree nuts",
+        "soy",
+        "wheat",
+        "fish",
+        "shellfish",
+        "sesame",
+      ];
+      const FOODS = [
+        {
+          name: "oatmeal",
+          cat: "grains & cereals",
+          allergens: [],
+          status: "safe",
+        },
+        { name: "banana", cat: "fruit", allergens: [], status: "safe" },
+        {
+          name: "sweet potato",
+          cat: "vegetables",
+          allergens: [],
+          status: "safe",
+        },
+        {
+          name: "peanut butter",
+          cat: "nuts & seeds",
+          allergens: ["peanut"],
+          status: "trying",
+          watchDay: 2,
+        },
+        {
+          name: "scrambled egg",
+          cat: "proteins",
+          allergens: ["egg"],
+          status: "safe",
+        },
+        { name: "yogurt", cat: "dairy", allergens: ["milk"], status: "safe" },
+        { name: "avocado", cat: "fruit", allergens: [], status: "safe" },
+        { name: "blueberries", cat: "fruit", allergens: [], status: "safe" },
+        { name: "chicken", cat: "proteins", allergens: [], status: "safe" },
+        { name: "broccoli", cat: "vegetables", allergens: [], status: "safe" },
+        {
+          name: "pasta",
+          cat: "grains & cereals",
+          allergens: ["wheat"],
+          status: "safe",
+        },
+        {
+          name: "salmon",
+          cat: "fish & shellfish",
+          allergens: ["fish"],
+          status: "safe",
+        },
+        {
+          name: "rice",
+          cat: "grains & cereals",
+          allergens: [],
+          status: "safe",
+        },
+        {
+          name: "shrimp",
+          cat: "fish & shellfish",
+          allergens: ["shellfish"],
+          status: "avoid",
+        },
+        { name: "strawberry", cat: "fruit", allergens: [], status: "untried" },
+        {
+          name: "whole wheat toast",
+          cat: "grains & cereals",
+          allergens: ["wheat"],
+          status: "untried",
+        },
+        {
+          name: "tofu",
+          cat: "proteins",
+          allergens: ["soy"],
+          status: "untried",
+        },
+        {
+          name: "cheddar",
+          cat: "dairy",
+          allergens: ["milk"],
+          status: "untried",
+        },
+        {
+          name: "hummus",
+          cat: "proteins",
+          allergens: ["sesame"],
+          status: "untried",
+        },
+        {
+          name: "almond butter",
+          cat: "nuts & seeds",
+          allergens: ["tree nuts"],
+          status: "untried",
+        },
+      ];
+      const RECENT = ["oatmeal", "banana", "sweet potato", "yogurt", "chicken"];
+      const STATUS_DOT = {
+        safe: "🟢",
+        trying: "🟡",
+        untried: "⚪",
+        avoid: "🔴",
+      };
+      const AMOUNTS = [
+        "none",
+        "a few bites",
+        "about half",
+        "most of it",
+        "all of it",
+      ];
+      const TEXTURES = [
+        "purée",
+        "mashed",
+        "soft finger food",
+        "firm finger food",
+      ];
+      const STYLES = ["spoon-fed", "self-fed: hands", "self-fed: utensils"];
 
       const KIND = {
         feed: { emoji: "🤱", name: "Feed" },
@@ -497,6 +773,9 @@
         growth: { emoji: "📏", name: "Growth" },
       };
 
+      function foodByName(n) {
+        return FOODS.find((f) => f.name === n);
+      }
       function rel(at) {
         const m = Math.round((Date.now() - at) / min);
         if (m < 1) return "just now";
@@ -521,12 +800,16 @@
                   "m" +
                   (e.quality ? " · " + e.quality : "")
               : "Sleeping…";
-          case "meal":
+          case "meal": {
+            const parts = (e.foods || []).concat(
+              (e.catFlags || []).map((c) => "any " + c)
+            );
             return (
               "Meal · " +
-              (e.foods || []).join(", ") +
+              (parts.join(", ") || "(nothing picked)") +
               (e.amount ? " · " + e.amount : "")
             );
+          }
           case "medical":
             return (
               "Medical · " +
@@ -660,25 +943,195 @@
         </div>`;
       }
 
-      // quick sheets (shared): meal, medical, growth — deliberately thin
-      let sheet = null; // {kind}
+      // ---------- Foods browser (variant C) ----------
+      const foodsFilter = { cats: new Set(), allergens: new Set() };
+      function ffToggleCat(c) {
+        foodsFilter.cats.has(c)
+          ? foodsFilter.cats.delete(c)
+          : foodsFilter.cats.add(c);
+        render();
+      }
+      function ffToggleAllergen(a) {
+        foodsFilter.allergens.has(a)
+          ? foodsFilter.allergens.delete(a)
+          : foodsFilter.allergens.add(a);
+        render();
+      }
+      function foodsHTML() {
+        const counts = { safe: 0, trying: 0, untried: 0, avoid: 0 };
+        FOODS.forEach((f) => counts[f.status]++);
+        const list = FOODS.filter((f) => {
+          if (foodsFilter.cats.size && !foodsFilter.cats.has(f.cat))
+            return false;
+          if (
+            foodsFilter.allergens.size &&
+            !f.allergens.some((a) => foodsFilter.allergens.has(a))
+          )
+            return false;
+          return true;
+        });
+        return (
+          `<div class="food-summary"><span>🟢 ${counts.safe} safe</span><span>🟡 ${counts.trying} trying</span><span>⚪ ${counts.untried} untried</span><span>🔴 ${counts.avoid} avoid</span></div>
+          <div class="section-label">Filter by category</div>
+          <div class="filter-block"><div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${foodsFilter.cats.has(c) ? "sel" : ""}" onclick="ffToggleCat('${c}')">${c}</button>`).join("")}</div></div>
+          <div class="section-label">Filter by allergen</div>
+          <div class="filter-block"><div class="chip-row">${BIG9.map((a) => `<button class="chip ${foodsFilter.allergens.has(a) ? "sel" : ""}" onclick="ffToggleAllergen('${a}')">${a}</button>`).join("")}</div></div>
+          <div class="section-label">${list.length} foods</div>` +
+          (list.length
+            ? list
+                .map(
+                  (f) => `
+            <div class="food-row">
+              <span class="body">${f.name}<div class="cat">${f.cat}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</div></span>
+              <span class="status-pill ${f.status}">${f.status === "trying" ? "trying · day " + f.watchDay : f.status}</span>
+            </div>`
+                )
+                .join("")
+            : '<div class="empty-note">No foods match these filters.</div>')
+        );
+      }
+
+      // ---------- sheets ----------
+      let sheet = null;
       function openSheet(kind) {
-        sheet = { kind, sel: {} };
+        if (kind === "meal") {
+          sheet = {
+            kind,
+            step: 1,
+            foods: new Set(),
+            catFlags: new Set(),
+            allergenFilter: new Set(),
+            search: "",
+            amount: null,
+            textures: new Set(),
+            styles: new Set(),
+            headsUpDismissed: false,
+          };
+        } else {
+          sheet = { kind };
+        }
         render();
       }
       function closeSheet() {
         sheet = null;
         render();
       }
+
+      // meal sheet helpers (ms*)
+      function msToggleFood(n) {
+        sheet.foods.has(n) ? sheet.foods.delete(n) : sheet.foods.add(n);
+        sheet.headsUpDismissed = false;
+        render();
+      }
+      function msToggleCatFlag(c) {
+        sheet.catFlags.has(c)
+          ? sheet.catFlags.delete(c)
+          : sheet.catFlags.add(c);
+        render();
+      }
+      function msToggleAllergenFilter(a) {
+        sheet.allergenFilter.has(a)
+          ? sheet.allergenFilter.delete(a)
+          : sheet.allergenFilter.add(a);
+        render();
+      }
+      function msSearch(v) {
+        sheet.search = v.toLowerCase();
+        // targeted update only, so the input keeps focus
+        document.getElementById("food-list").innerHTML = msFoodListHTML();
+      }
+      function msHeadsUp() {
+        if (sheet.headsUpDismissed) return "";
+        const msgs = [];
+        const tryingElsewhere = FOODS.filter((f) => f.status === "trying");
+        for (const n of sheet.foods) {
+          const f = foodByName(n);
+          if (!f) continue;
+          if (f.status === "untried") {
+            msgs.push(
+              `First try of <b>${n}</b> — logging this meal starts its 3-day Watch Period.${f.allergens.length ? " ⚠️ contains " + f.allergens.join(", ") + "." : ""}`
+            );
+          } else if (f.status === "trying") {
+            msgs.push(`<b>${n}</b> is mid-watch (day ${f.watchDay} of 3).`);
+          } else if (f.status === "avoid") {
+            msgs.push(
+              `<b>${n}</b> is marked avoid — re-challenging restarts its Watch Period.`
+            );
+          }
+        }
+        const untriedPicked = [...sheet.foods].some(
+          (n) => foodByName(n) && foodByName(n).status === "untried"
+        );
+        if (untriedPicked && tryingElsewhere.length) {
+          msgs.push(
+            `Heads up: you're also watching ${tryingElsewhere.map((f) => f.name).join(", ")} — overlapping intros are fine, just keep an eye out.`
+          );
+        }
+        if (!msgs.length) return "";
+        return `<div class="heads-up"><span>👀</span><span style="flex:1">${msgs.join("<br>")}</span><button onclick="sheet.headsUpDismissed=true;render()">✕</button></div>`;
+      }
+      function msFoodChipHTML(f) {
+        const sel = sheet.foods.has(f.name);
+        return `<button class="chip ${sel ? "sel" : ""}" onclick="msToggleFood('${f.name}')"><span class="dot">${STATUS_DOT[f.status]}</span> ${f.name}${f.allergens.length ? ` <span class="alg">${f.allergens.join(", ")}</span>` : ""}</button>`;
+      }
+      function msFoodListHTML() {
+        let list = FOODS.filter((f) => {
+          if (sheet.search && !f.name.includes(sheet.search)) return false;
+          if (
+            sheet.allergenFilter.size &&
+            !f.allergens.some((a) => sheet.allergenFilter.has(a))
+          )
+            return false;
+          return true;
+        });
+        if (!list.length)
+          return '<div class="empty-note" style="padding:12px">No matches — a custom food could be added here.</div>';
+        return list.map(msFoodChipHTML).join("");
+      }
+      function mealSheetHTML() {
+        if (sheet.step === 1) {
+          const canContinue = sheet.foods.size > 0 || sheet.catFlags.size > 0;
+          return `<h3>Log meal</h3><div class="step-note">Step 1 of 2 — what did they eat?</div>
+          <input class="search-input" placeholder="Search foods…" value="${sheet.search}" oninput="msSearch(this.value)" />
+          ${sheet.foods.size || sheet.catFlags.size ? `<div class="sel-summary">${[...sheet.foods].map((n) => `<button class="chip sel" onclick="msToggleFood('${n}')">${n} ✕</button>`).join("")}${[...sheet.catFlags].map((c) => `<button class="chip sel" onclick="msToggleCatFlag('${c}')">any ${c} ✕</button>`).join("")}</div>` : ""}
+          ${msHeadsUp()}
+          <div class="opt-label">Recent</div>
+          <div class="chip-row">${RECENT.map((n) => msFoodChipHTML(foodByName(n))).join("")}</div>
+          <div class="opt-label">Filter by allergen</div>
+          <div class="chip-row">${BIG9.map((a) => `<button class="chip ${sheet.allergenFilter.has(a) ? "sel" : ""}" onclick="msToggleAllergenFilter('${a}')">${a}</button>`).join("")}</div>
+          <div class="opt-label">All foods</div>
+          <div class="chip-row" id="food-list">${msFoodListHTML()}</div>
+          <div class="opt-label">…or flag a category (safe eating, no Watch Period)</div>
+          <div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${sheet.catFlags.has(c) ? "sel" : ""}" onclick="msToggleCatFlag('${c}')">any ${c}</button>`).join("")}</div>
+          <button class="big-save" ${canContinue ? "" : "disabled"} onclick="sheet.step=2;render()">Continue</button>
+          <div class="hint">Anything untried or trying must be named — the Meal log is the exposure record.</div>`;
+        }
+        // step 2
+        return `<button class="back-link" onclick="sheet.step=1;render()">‹ back to foods</button>
+        <h3>How much?</h3><div class="step-note">Step 2 of 2 — one more tap and you're done</div>
+        <div class="chip-row">${AMOUNTS.map((a) => `<button class="chip ${sheet.amount === a ? "sel" : ""}" style="padding:14px 16px;font-size:15px" onclick="sheet.amount='${a}';render()">${a}</button>`).join("")}</div>
+        <div class="opt-label">Texture (optional, pick any)</div>
+        <div class="chip-row">${TEXTURES.map((t) => `<button class="chip ${sheet.textures.has(t) ? "sel" : ""}" onclick="sheet.textures.has('${t}')?sheet.textures.delete('${t}'):sheet.textures.add('${t}');render()">${t}</button>`).join("")}</div>
+        <div class="opt-label">Feeding style (optional, pick any)</div>
+        <div class="chip-row">${STYLES.map((s) => `<button class="chip ${sheet.styles.has(s) ? "sel" : ""}" onclick="sheet.styles.has('${s}')?sheet.styles.delete('${s}'):sheet.styles.add('${s}');render()">${s}</button>`).join("")}</div>
+        <button class="big-save" ${sheet.amount ? "" : "disabled"} onclick="msSave()">Save meal</button>`;
+      }
+      function msSave() {
+        log("meal", {
+          foods: [...sheet.foods],
+          catFlags: [...sheet.catFlags],
+          amount: sheet.amount,
+          textures: [...sheet.textures],
+          styles: [...sheet.styles],
+        });
+        closeSheet();
+      }
+
       function sheetHTML() {
         if (!sheet) return "";
         let inner = "";
         if (sheet.kind === "meal") {
-          inner = `<h3>Log meal</h3>
-            <div class="chip-row">${["oatmeal", "banana", "peanut butter ⚠️", "sweet potato"].map((f) => `<button class="chip" onclick="this.classList.toggle('sel')">${f}</button>`).join("")}</div>
-            <div class="chip-row">${["none", "a few bites", "about half", "most of it", "all of it"].map((a) => `<button class="chip" onclick="this.classList.toggle('sel')">${a}</button>`).join("")}</div>
-            <button class="big-save" onclick="log('meal',{foods:['(picked foods)'],amount:'(amount)'});closeSheet()">Save meal</button>
-            <div class="hint">Named foods are required for anything untried/trying — that log starts its Watch Period.</div>`;
+          inner = mealSheetHTML();
         } else if (sheet.kind === "medical") {
           inner = `<h3>Log medical</h3>
             <div class="chip-row">${["medication", "vaccine", "symptom", "temperature"].map((c) => `<button class="chip" onclick="this.classList.toggle('sel')">${c}</button>`).join("")}</div>
@@ -711,11 +1164,7 @@
             `<div class="a-grid">
             <button class="a-tile" onclick="log('feed')"><span class="emoji">🤱</span><span><span class="name">Feed</span><div class="last">${f ? rel(f.at) + (f.side ? " · " + f.side : "") : "not yet"}</div></span></button>
             <button class="a-tile" onclick="state.diaperOpen=!state.diaperOpen;render()"><span class="emoji">🧷</span><span><span class="name">Diaper</span><div class="last">${d ? rel(d.at) + " · " + d.diaperType : "not yet"}</div></span></button>
-            ${
-              state.diaperOpen
-                ? `<div class="a-diaper-expand">${["wet", "dirty", "both"].map((t) => `<button class="chip" onclick="log('diaper',{diaperType:'${t}'});state.diaperOpen=false">${t}</button>`).join("")}</div>`
-                : ""
-            }
+            ${state.diaperOpen ? `<div class="a-diaper-expand">${["wet", "dirty", "both"].map((t) => `<button class="chip" onclick="log('diaper',{diaperType:'${t}'});state.diaperOpen=false">${t}</button>`).join("")}</div>` : ""}
             <button class="a-tile ${state.sleepStart ? "sleep-on" : ""}" onclick="toggleSleep()"><span class="emoji">😴</span><span><span class="name">${state.sleepStart ? "Stop sleep" : "Start sleep"}</span><div class="last">${state.sleepStart ? "asleep " + dur(state.sleepStart) : "tap to start timer"}</div></span></button>
             <button class="a-tile" onclick="openSheet('meal')"><span class="emoji">🥣</span><span><span class="name">Meal</span><div class="last">${m ? rel(m.at) : "not yet"}</div></span></button>
             <button class="a-tile" onclick="openSheet('medical')"><span class="emoji">💊</span><span><span class="name">Medical</span><div class="last">sheet →</div></span></button>
@@ -771,9 +1220,13 @@
           screen.innerHTML = headerHTML() + timelineHTML();
         } else if (state.tab === "deleted") {
           screen.innerHTML = headerHTML() + deletedHTML();
+        } else if (state.tab === "foods") {
+          screen.innerHTML = headerHTML() + foodsHTML();
         } else {
           const f = lastOf("feed"),
-            d = lastOf("diaper");
+            d = lastOf("diaper"),
+            m = lastOf("meal");
+          const watching = FOODS.filter((x) => x.status === "trying");
           screen.innerHTML =
             headerHTML() +
             `<div class="c-card ${state.sleepStart ? "sleep-on" : ""}">
@@ -791,16 +1244,20 @@
               <span class="body"><div class="headline">Diaper ${d ? rel(d.at) : "—"}</div><div class="sub">${d ? d.diaperType : ""}</div></span>
               <button class="c-action" onclick="openSheet('diaper')">Change</button>
             </div>
-            <div class="c-card watch">
-              <span class="emoji">👀</span>
-              <span class="body"><div class="headline">Watch: ${state.watch.food}</div><div class="sub">day ${state.watch.day} of 3 · no reaction logged</div></span>
-              <button class="c-action secondary" onclick="toast('Reaction logging would open here (see ticket #5)')">Log reaction</button>
-            </div>
             <div class="c-card">
               <span class="emoji">🥣</span>
-              <span class="body"><div class="headline">Meal</div><div class="sub">foods, amount, texture…</div></span>
+              <span class="body"><div class="headline">${m ? "Last meal " + rel(m.at) : "Meal"}</div><div class="sub">${m ? describe(m).replace("Meal · ", "") : "nothing logged yet"}</div><div class="link" onclick="state.tab='foods';render()">See all foods ›</div></span>
               <button class="c-action" onclick="openSheet('meal')">Log</button>
             </div>
+            ${watching
+              .map(
+                (w) => `<div class="c-card watch">
+              <span class="emoji">👀</span>
+              <span class="body"><div class="headline">Watch: ${w.name}</div><div class="sub">day ${w.watchDay} of 3 · no reaction logged</div></span>
+              <button class="c-action secondary" onclick="toast('Reaction logging would open here (see ticket #5)')">Log reaction</button>
+            </div>`
+              )
+              .join("")}
             <div class="c-card">
               <span class="emoji">💊📏</span>
               <span class="body"><div class="headline">Medical · Growth</div><div class="sub">less frequent, tucked away</div></span>
@@ -812,6 +1269,7 @@
           `<div class="tabbar">
           <button class="${state.tab === "home" ? "active" : ""}" onclick="state.tab='home';render()">Now</button>
           <button class="${state.tab === "timeline" ? "active" : ""}" onclick="state.tab='timeline';render()">Timeline</button>
+          <button class="${state.tab === "foods" ? "active" : ""}" onclick="state.tab='foods';render()">Foods</button>
           <button class="${state.tab === "deleted" ? "active" : ""}" onclick="state.tab='deleted';render()">Recently Deleted</button>
         </div>`;
       }
@@ -833,7 +1291,7 @@
         C: {
           name: "Status first",
           blurb:
-            "Home = “now” cards (asleep 1h, last feed 45m) each with one contextual action.",
+            "Home = “now” cards, each with one contextual action. v2: real meal flow + Foods browser tab.",
           render: renderC,
         },
       };
