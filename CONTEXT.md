@@ -9,8 +9,12 @@ The profile every Entry hangs off: name, birthdate, sex (required for growth cha
 _Avoid_: Profile, kid, baby, patient
 
 **Entry**:
-One logged occurrence in a tracker. Every Entry has a timestamp and can be edited and deleted after logging. The seven Entry kinds are Feed, Diaper Change, Sleep Session, Medical Entry, Growth Measurement, Meal, and Reaction.
+One logged occurrence in a tracker. Every Entry has a timestamp and can be edited and archived after logging. The seven Entry kinds are Feed, Diaper Change, Sleep Session, Medical Entry, Growth Measurement, Meal, and Reaction.
 _Avoid_: Event, log, record, activity
+
+**Archived**:
+The state of an Entry removed from the timeline and every view except Recently Deleted, where it can be restored or permanently deleted (content wiped for good). Deleting an Entry always archives it first — there is no direct permanent delete.
+_Avoid_: soft delete, trash, bin
 
 **Feed**:
 An Entry recording one breastfeeding. A counter plus timestamp; side (left/right) and duration are optional fields.
