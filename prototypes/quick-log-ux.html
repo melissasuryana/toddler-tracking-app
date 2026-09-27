@@ -1,0 +1,885 @@
+<!doctype html>
+<!--
+  PROTOTYPE (throwaway) — quick-log UX and screen structure
+  Ticket: https://github.com/melissasuryana/toddler-tracking-app/issues/6
+  Question: what does the logging UX look like for one-handed, half-asleep entry?
+
+  Three radically different variants of the home screen + quick-log flow,
+  switchable via ?variant=A|B|C or the floating bar at the bottom (arrow keys work too).
+
+  All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prototype: quick-log UX</title>
+    <style>
+      :root {
+        --ink: #1d1b16;
+        --muted: #8a8577;
+        --bg: #efece4;
+        --card: #fffdf8;
+        --accent: #e07856;
+        --accent-soft: #fbe9e2;
+        --line: #e4dfd2;
+        --danger: #c0492f;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        background: #d8d4c8;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px 12px 90px;
+        color: var(--ink);
+      }
+
+      /* ---- phone frame ---- */
+      .phone {
+        width: 375px;
+        height: 720px;
+        background: var(--bg);
+        border-radius: 36px;
+        border: 10px solid #2a2822;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        position: relative;
+      }
+      .screen {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 12px;
+      }
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+
+      .variant-banner {
+        text-align: center;
+        font-size: 13px;
+        color: #55503f;
+        max-width: 375px;
+      }
+      .variant-banner b {
+        color: var(--ink);
+      }
+
+      /* ---- shared bits ---- */
+      .app-header {
+        padding: 18px 18px 10px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .app-header h1 {
+        font-size: 22px;
+      }
+      .app-header .sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .icon-btn {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .tabbar {
+        display: flex;
+        border-top: 1px solid var(--line);
+        background: var(--card);
+      }
+      .tabbar button {
+        flex: 1;
+        border: 0;
+        background: none;
+        padding: 12px 0;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .tabbar button.active {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .entry-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin: 6px 14px;
+        font-size: 14px;
+      }
+      .entry-row .emoji {
+        font-size: 20px;
+      }
+      .entry-row .meta {
+        flex: 1;
+      }
+      .entry-row .meta .t {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .row-actions button {
+        border: 1px solid var(--line);
+        background: none;
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        margin-left: 4px;
+      }
+      .row-actions .restore {
+        color: #2f7c4f;
+        border-color: #bcd9c6;
+      }
+      .row-actions .wipe {
+        color: var(--danger);
+        border-color: #ecc9bf;
+      }
+      .section-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 14px 18px 2px;
+      }
+      .empty-note {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 30px 20px;
+      }
+
+      /* sheet */
+      .sheet-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(30, 28, 22, 0.4);
+        display: flex;
+        align-items: flex-end;
+        z-index: 5;
+      }
+      .sheet {
+        background: var(--card);
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        padding: 16px 16px 22px;
+      }
+      .sheet h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 14px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .chip.sel {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .big-save {
+        width: 100%;
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 14px;
+        border-radius: 14px;
+        cursor: pointer;
+      }
+      .sheet .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      /* toast */
+      .toast {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: #fff;
+        font-size: 12px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        z-index: 9;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* ---- Variant A: dashboard grid ---- */
+      .a-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 6px 14px;
+      }
+      .a-tile {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px 14px;
+        cursor: pointer;
+        text-align: left;
+        min-height: 96px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .a-tile:active {
+        transform: scale(0.97);
+      }
+      .a-tile .emoji {
+        font-size: 26px;
+      }
+      .a-tile .name {
+        font-size: 15px;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .a-tile .last {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .a-tile.sleep-on {
+        background: #2f3a56;
+        color: #fff;
+      }
+      .a-tile.sleep-on .last {
+        color: #b9c2d8;
+      }
+      .a-diaper-expand {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 8px;
+      }
+      .a-diaper-expand .chip {
+        flex: 1;
+        text-align: center;
+        padding: 14px;
+        font-size: 15px;
+        background: var(--card);
+      }
+
+      /* ---- Variant B: timeline first ---- */
+      .b-quickbar {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--card);
+      }
+      .b-quickbar::-webkit-scrollbar {
+        display: none;
+      }
+      .b-quickbar .chip {
+        white-space: nowrap;
+        padding: 12px 16px;
+        font-size: 15px;
+        background: var(--bg);
+      }
+      .b-quickbar .chip.sleep-on {
+        background: #2f3a56;
+        color: #fff;
+      }
+
+      /* ---- Variant C: status first ---- */
+      .c-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        margin: 8px 14px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .c-card .emoji {
+        font-size: 26px;
+      }
+      .c-card .body {
+        flex: 1;
+      }
+      .c-card .headline {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .c-card .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .c-action {
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .c-action.secondary {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .c-card.sleep-on {
+        background: #2f3a56;
+        color: #fff;
+      }
+      .c-card.sleep-on .sub {
+        color: #b9c2d8;
+      }
+      .c-card.watch {
+        border-color: #e5c98a;
+        background: #fdf6e3;
+      }
+
+      /* ---- floating variant switcher (not part of the designs) ---- */
+      .switcher {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1d1b16;
+        color: #fff;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        font-size: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        z-index: 99;
+      }
+      .switcher button {
+        background: none;
+        border: 0;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0 6px;
+      }
+      .switcher .label {
+        min-width: 210px;
+        text-align: center;
+      }
+      .switcher .label small {
+        color: #9a958a;
+        display: block;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="variant-banner" id="banner"></div>
+    <div class="phone" id="phone">
+      <div class="toast" id="toast"></div>
+      <div class="screen" id="screen"></div>
+      <div id="chrome"></div>
+    </div>
+    <div class="switcher">
+      <button id="prev" aria-label="previous variant">◀</button>
+      <div class="label" id="switcher-label"></div>
+      <button id="next" aria-label="next variant">▶</button>
+    </div>
+
+    <script>
+      // ---------- state (in-memory only) ----------
+      const now = Date.now();
+      const min = 60 * 1000;
+      let nextId = 100;
+      const state = {
+        tab: "home", // per-variant meaning; 'home' | 'timeline' | 'deleted'
+        entries: [
+          {
+            id: 1,
+            kind: "sleep",
+            at: now - 9 * 60 * min,
+            end: now - 7 * 60 * min,
+            quality: "okay",
+            archived: false,
+          },
+          {
+            id: 2,
+            kind: "feed",
+            at: now - 6.5 * 60 * min,
+            side: "left",
+            archived: false,
+          },
+          {
+            id: 3,
+            kind: "diaper",
+            at: now - 5 * 60 * min,
+            diaperType: "wet",
+            archived: false,
+          },
+          {
+            id: 4,
+            kind: "meal",
+            at: now - 4 * 60 * min,
+            foods: ["oatmeal", "banana"],
+            amount: "most of it",
+            archived: false,
+          },
+          {
+            id: 5,
+            kind: "feed",
+            at: now - 45 * min,
+            side: "right",
+            archived: false,
+          },
+          {
+            id: 6,
+            kind: "diaper",
+            at: now - 2 * 60 * min,
+            diaperType: "both",
+            archived: false,
+          },
+          // an archived entry so Recently Deleted isn't empty
+          {
+            id: 7,
+            kind: "feed",
+            at: now - 26 * 60 * min,
+            side: "left",
+            archived: true,
+          },
+        ],
+        sleepStart: null, // timestamp when a sleep timer is running
+        watch: { food: "peanut butter", day: 2 }, // static, just to render the heads-up
+      };
+
+      const KIND = {
+        feed: { emoji: "🤱", name: "Feed" },
+        diaper: { emoji: "🧷", name: "Diaper" },
+        sleep: { emoji: "😴", name: "Sleep" },
+        meal: { emoji: "🥣", name: "Meal" },
+        medical: { emoji: "💊", name: "Medical" },
+        growth: { emoji: "📏", name: "Growth" },
+      };
+
+      function rel(at) {
+        const m = Math.round((Date.now() - at) / min);
+        if (m < 1) return "just now";
+        if (m < 60) return m + "m ago";
+        const h = Math.floor(m / 60);
+        return h + "h " + (m % 60) + "m ago";
+      }
+      function dur(start) {
+        const m = Math.max(0, Math.round((Date.now() - start) / min));
+        return Math.floor(m / 60) + "h " + (m % 60) + "m";
+      }
+      function describe(e) {
+        switch (e.kind) {
+          case "feed":
+            return "Feed" + (e.side ? " · " + e.side : "");
+          case "diaper":
+            return "Diaper · " + e.diaperType;
+          case "sleep":
+            return e.end
+              ? "Sleep · " +
+                  Math.round((e.end - e.at) / min) +
+                  "m" +
+                  (e.quality ? " · " + e.quality : "")
+              : "Sleeping…";
+          case "meal":
+            return (
+              "Meal · " +
+              (e.foods || []).join(", ") +
+              (e.amount ? " · " + e.amount : "")
+            );
+          case "medical":
+            return (
+              "Medical · " +
+              (e.category || "") +
+              (e.detail ? " · " + e.detail : "")
+            );
+          case "growth":
+            return "Growth" + (e.detail ? " · " + e.detail : "");
+        }
+      }
+      function lastOf(kind) {
+        return state.entries
+          .filter((e) => e.kind === kind && !e.archived)
+          .sort((a, b) => b.at - a.at)[0];
+      }
+      function toast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove("show"), 1600);
+      }
+
+      // ---------- actions ----------
+      function log(kind, extra) {
+        state.entries.push(
+          Object.assign(
+            { id: nextId++, kind, at: Date.now(), archived: false },
+            extra
+          )
+        );
+        toast(
+          "Logged: " +
+            KIND[kind].name +
+            " @ " +
+            new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+        );
+        render();
+      }
+      function toggleSleep() {
+        if (state.sleepStart) {
+          state.entries.push({
+            id: nextId++,
+            kind: "sleep",
+            at: state.sleepStart,
+            end: Date.now(),
+            archived: false,
+          });
+          toast("Sleep ended · " + dur(state.sleepStart));
+          state.sleepStart = null;
+        } else {
+          state.sleepStart = Date.now();
+          toast("Sleep timer started");
+        }
+        render();
+      }
+      function archive(id) {
+        const e = state.entries.find((x) => x.id === id);
+        if (e) {
+          e.archived = true;
+          toast("Archived — in Recently Deleted");
+        }
+        render();
+      }
+      function restore(id) {
+        const e = state.entries.find((x) => x.id === id);
+        if (e) {
+          e.archived = false;
+          toast("Restored");
+        }
+        render();
+      }
+      function wipe(id) {
+        state.entries = state.entries.filter((x) => x.id !== id);
+        toast("Permanently deleted (content wiped)");
+        render();
+      }
+
+      // ---------- shared views ----------
+      function entryRowHTML(e) {
+        return `
+        <div class="entry-row">
+          <span class="emoji">${KIND[e.kind].emoji}</span>
+          <span class="meta">${describe(e)}<div class="t">${rel(e.at)} · ${new Date(e.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div></span>
+          <span class="row-actions"><button onclick="archive(${e.id})">Archive</button></span>
+        </div>`;
+      }
+      function timelineHTML(limit) {
+        const list = state.entries
+          .filter((e) => !e.archived)
+          .sort((a, b) => b.at - a.at);
+        if (!list.length)
+          return '<div class="empty-note">Nothing logged yet today.</div>';
+        const shown = limit ? list.slice(0, limit) : list;
+        return (
+          '<div class="section-label">Today</div>' +
+          shown.map(entryRowHTML).join("")
+        );
+      }
+      function deletedHTML() {
+        const list = state.entries
+          .filter((e) => e.archived)
+          .sort((a, b) => b.at - a.at);
+        if (!list.length)
+          return '<div class="empty-note">Recently Deleted is empty.</div>';
+        return (
+          '<div class="section-label">Recently Deleted</div>' +
+          list
+            .map(
+              (e) => `
+        <div class="entry-row">
+          <span class="emoji">${KIND[e.kind].emoji}</span>
+          <span class="meta">${describe(e)}<div class="t">${rel(e.at)}</div></span>
+          <span class="row-actions">
+            <button class="restore" onclick="restore(${e.id})">Restore</button>
+            <button class="wipe" onclick="wipe(${e.id})">Delete forever</button>
+          </span>
+        </div>`
+            )
+            .join("") +
+          '<div class="empty-note" style="padding-top:6px">“Delete forever” wipes the content for good.</div>'
+        );
+      }
+      function headerHTML(right) {
+        return `<div class="app-header">
+          <div><h1>Milo</h1><div class="sub">${new Date().toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</div></div>
+          ${right || ""}
+        </div>`;
+      }
+
+      // quick sheets (shared): meal, medical, growth — deliberately thin
+      let sheet = null; // {kind}
+      function openSheet(kind) {
+        sheet = { kind, sel: {} };
+        render();
+      }
+      function closeSheet() {
+        sheet = null;
+        render();
+      }
+      function sheetHTML() {
+        if (!sheet) return "";
+        let inner = "";
+        if (sheet.kind === "meal") {
+          inner = `<h3>Log meal</h3>
+            <div class="chip-row">${["oatmeal", "banana", "peanut butter ⚠️", "sweet potato"].map((f) => `<button class="chip" onclick="this.classList.toggle('sel')">${f}</button>`).join("")}</div>
+            <div class="chip-row">${["none", "a few bites", "about half", "most of it", "all of it"].map((a) => `<button class="chip" onclick="this.classList.toggle('sel')">${a}</button>`).join("")}</div>
+            <button class="big-save" onclick="log('meal',{foods:['(picked foods)'],amount:'(amount)'});closeSheet()">Save meal</button>
+            <div class="hint">Named foods are required for anything untried/trying — that log starts its Watch Period.</div>`;
+        } else if (sheet.kind === "medical") {
+          inner = `<h3>Log medical</h3>
+            <div class="chip-row">${["medication", "vaccine", "symptom", "temperature"].map((c) => `<button class="chip" onclick="this.classList.toggle('sel')">${c}</button>`).join("")}</div>
+            <button class="big-save" onclick="log('medical',{category:'(category)'});closeSheet()">Save</button>`;
+        } else if (sheet.kind === "growth") {
+          inner = `<h3>Log growth</h3>
+            <div class="chip-row">${["weight", "height", "head"].map((c) => `<button class="chip" onclick="this.classList.toggle('sel')">${c}</button>`).join("")}</div>
+            <button class="big-save" onclick="log('growth',{detail:'(values)'});closeSheet()">Save</button>`;
+        } else if (sheet.kind === "diaper") {
+          inner = `<h3>Diaper</h3>
+            <div class="chip-row">${["wet", "dirty", "both"].map((c) => `<button class="chip" style="flex:1;padding:16px;font-size:16px" onclick="log('diaper',{diaperType:'${c}'});closeSheet()">${c}</button>`).join("")}</div>`;
+        }
+        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${inner}</div></div>`;
+      }
+
+      // ---------- Variant A: tracker dashboard ----------
+      function renderA() {
+        const screen = document.getElementById("screen");
+        const chrome = document.getElementById("chrome");
+        if (state.tab === "timeline") {
+          screen.innerHTML = headerHTML() + timelineHTML();
+        } else if (state.tab === "deleted") {
+          screen.innerHTML = headerHTML() + deletedHTML();
+        } else {
+          const f = lastOf("feed"),
+            d = lastOf("diaper"),
+            m = lastOf("meal");
+          screen.innerHTML =
+            headerHTML() +
+            `<div class="a-grid">
+            <button class="a-tile" onclick="log('feed')"><span class="emoji">🤱</span><span><span class="name">Feed</span><div class="last">${f ? rel(f.at) + (f.side ? " · " + f.side : "") : "not yet"}</div></span></button>
+            <button class="a-tile" onclick="state.diaperOpen=!state.diaperOpen;render()"><span class="emoji">🧷</span><span><span class="name">Diaper</span><div class="last">${d ? rel(d.at) + " · " + d.diaperType : "not yet"}</div></span></button>
+            ${
+              state.diaperOpen
+                ? `<div class="a-diaper-expand">${["wet", "dirty", "both"].map((t) => `<button class="chip" onclick="log('diaper',{diaperType:'${t}'});state.diaperOpen=false">${t}</button>`).join("")}</div>`
+                : ""
+            }
+            <button class="a-tile ${state.sleepStart ? "sleep-on" : ""}" onclick="toggleSleep()"><span class="emoji">😴</span><span><span class="name">${state.sleepStart ? "Stop sleep" : "Start sleep"}</span><div class="last">${state.sleepStart ? "asleep " + dur(state.sleepStart) : "tap to start timer"}</div></span></button>
+            <button class="a-tile" onclick="openSheet('meal')"><span class="emoji">🥣</span><span><span class="name">Meal</span><div class="last">${m ? rel(m.at) : "not yet"}</div></span></button>
+            <button class="a-tile" onclick="openSheet('medical')"><span class="emoji">💊</span><span><span class="name">Medical</span><div class="last">sheet →</div></span></button>
+            <button class="a-tile" onclick="openSheet('growth')"><span class="emoji">📏</span><span><span class="name">Growth</span><div class="last">sheet →</div></span></button>
+          </div>
+          <div class="section-label">Latest</div>` +
+            timelineHTML(3).replace(
+              '<div class="section-label">Today</div>',
+              ""
+            );
+        }
+        chrome.innerHTML =
+          sheetHTML() +
+          `<div class="tabbar">
+          <button class="${state.tab === "home" ? "active" : ""}" onclick="state.tab='home';render()">Home</button>
+          <button class="${state.tab === "timeline" ? "active" : ""}" onclick="state.tab='timeline';render()">Timeline</button>
+          <button class="${state.tab === "deleted" ? "active" : ""}" onclick="state.tab='deleted';render()">Recently Deleted</button>
+        </div>`;
+      }
+
+      // ---------- Variant B: timeline first ----------
+      function renderB() {
+        const screen = document.getElementById("screen");
+        const chrome = document.getElementById("chrome");
+        if (state.tab === "deleted") {
+          screen.innerHTML =
+            headerHTML(
+              '<button class="icon-btn" onclick="state.tab=\'home\';render()">‹ back</button>'
+            ) + deletedHTML();
+        } else {
+          screen.innerHTML =
+            headerHTML(
+              '<button class="icon-btn" title="Recently Deleted" onclick="state.tab=\'deleted\';render()">🗑</button>'
+            ) + timelineHTML();
+        }
+        chrome.innerHTML =
+          sheetHTML() +
+          `<div class="b-quickbar">
+          <button class="chip" onclick="log('feed')">🤱 Feed</button>
+          <button class="chip" onclick="openSheet('diaper')">🧷 Diaper</button>
+          <button class="chip ${state.sleepStart ? "sleep-on" : ""}" onclick="toggleSleep()">😴 ${state.sleepStart ? "Stop · " + dur(state.sleepStart) : "Sleep"}</button>
+          <button class="chip" onclick="openSheet('meal')">🥣 Meal</button>
+          <button class="chip" onclick="openSheet('medical')">💊 Med</button>
+          <button class="chip" onclick="openSheet('growth')">📏 Growth</button>
+        </div>`;
+      }
+
+      // ---------- Variant C: status first ----------
+      function renderC() {
+        const screen = document.getElementById("screen");
+        const chrome = document.getElementById("chrome");
+        if (state.tab === "timeline") {
+          screen.innerHTML = headerHTML() + timelineHTML();
+        } else if (state.tab === "deleted") {
+          screen.innerHTML = headerHTML() + deletedHTML();
+        } else {
+          const f = lastOf("feed"),
+            d = lastOf("diaper");
+          screen.innerHTML =
+            headerHTML() +
+            `<div class="c-card ${state.sleepStart ? "sleep-on" : ""}">
+              <span class="emoji">😴</span>
+              <span class="body"><div class="headline">${state.sleepStart ? "Asleep " + dur(state.sleepStart) : "Awake"}</div><div class="sub">${state.sleepStart ? "timer running" : "no active sleep session"}</div></span>
+              <button class="c-action" onclick="toggleSleep()">${state.sleepStart ? "Wake" : "Sleep"}</button>
+            </div>
+            <div class="c-card">
+              <span class="emoji">🤱</span>
+              <span class="body"><div class="headline">Last feed ${f ? rel(f.at) : "—"}</div><div class="sub">${f && f.side ? "last side: " + f.side : ""}</div></span>
+              <button class="c-action" onclick="log('feed',{side:'${f && f.side === "left" ? "right" : "left"}'})">Feed${f ? " · " + (f.side === "left" ? "R" : "L") : ""}</button>
+            </div>
+            <div class="c-card">
+              <span class="emoji">🧷</span>
+              <span class="body"><div class="headline">Diaper ${d ? rel(d.at) : "—"}</div><div class="sub">${d ? d.diaperType : ""}</div></span>
+              <button class="c-action" onclick="openSheet('diaper')">Change</button>
+            </div>
+            <div class="c-card watch">
+              <span class="emoji">👀</span>
+              <span class="body"><div class="headline">Watch: ${state.watch.food}</div><div class="sub">day ${state.watch.day} of 3 · no reaction logged</div></span>
+              <button class="c-action secondary" onclick="toast('Reaction logging would open here (see ticket #5)')">Log reaction</button>
+            </div>
+            <div class="c-card">
+              <span class="emoji">🥣</span>
+              <span class="body"><div class="headline">Meal</div><div class="sub">foods, amount, texture…</div></span>
+              <button class="c-action" onclick="openSheet('meal')">Log</button>
+            </div>
+            <div class="c-card">
+              <span class="emoji">💊📏</span>
+              <span class="body"><div class="headline">Medical · Growth</div><div class="sub">less frequent, tucked away</div></span>
+              <button class="c-action secondary" onclick="openSheet('medical')">Open</button>
+            </div>`;
+        }
+        chrome.innerHTML =
+          sheetHTML() +
+          `<div class="tabbar">
+          <button class="${state.tab === "home" ? "active" : ""}" onclick="state.tab='home';render()">Now</button>
+          <button class="${state.tab === "timeline" ? "active" : ""}" onclick="state.tab='timeline';render()">Timeline</button>
+          <button class="${state.tab === "deleted" ? "active" : ""}" onclick="state.tab='deleted';render()">Recently Deleted</button>
+        </div>`;
+      }
+
+      // ---------- variant switching ----------
+      const VARIANTS = {
+        A: {
+          name: "Tracker dashboard",
+          blurb:
+            "Home = grid of big tracker buttons, one tap per log; timeline is a tab.",
+          render: renderA,
+        },
+        B: {
+          name: "Timeline first",
+          blurb:
+            "Home = the day’s timeline; logging lives in a persistent quick-bar at the bottom.",
+          render: renderB,
+        },
+        C: {
+          name: "Status first",
+          blurb:
+            "Home = “now” cards (asleep 1h, last feed 45m) each with one contextual action.",
+          render: renderC,
+        },
+      };
+      const ORDER = ["A", "B", "C"];
+      function currentVariant() {
+        const v = new URLSearchParams(location.search).get("variant");
+        return VARIANTS[v] ? v : "A";
+      }
+      function setVariant(v) {
+        const url = new URL(location);
+        url.searchParams.set("variant", v);
+        history.replaceState(null, "", url);
+        state.tab = "home";
+        render();
+      }
+      function render() {
+        const key = currentVariant();
+        VARIANTS[key].render();
+        document.getElementById("switcher-label").innerHTML =
+          `${key} <small>${VARIANTS[key].name}</small>`;
+        document.getElementById("banner").innerHTML =
+          `<b>Variant ${key} — ${VARIANTS[key].name}.</b> ${VARIANTS[key].blurb}`;
+      }
+      document.getElementById("prev").onclick = () =>
+        setVariant(
+          ORDER[
+            (ORDER.indexOf(currentVariant()) + ORDER.length - 1) % ORDER.length
+          ]
+        );
+      document.getElementById("next").onclick = () =>
+        setVariant(ORDER[(ORDER.indexOf(currentVariant()) + 1) % ORDER.length]);
+      document.addEventListener("keydown", (e) => {
+        if (
+          /INPUT|TEXTAREA/.test(document.activeElement.tagName) ||
+          document.activeElement.isContentEditable
+        )
+          return;
+        if (e.key === "ArrowLeft") document.getElementById("prev").click();
+        if (e.key === "ArrowRight") document.getElementById("next").click();
+      });
+      // keep the sleep timer ticking
+      setInterval(() => {
+        if (state.sleepStart) render();
+      }, 30000);
+
+      render();
+    </script>
+  </body>
+</html>
