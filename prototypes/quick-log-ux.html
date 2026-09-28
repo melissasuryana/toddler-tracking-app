@@ -17,6 +17,12 @@
   jump, and a Mon–Sun week strip with dots on days that have entries. Entries are
   seeded across the week so the dots and day filtering are visible.
 
+  v4: the ingredients screen (meal step 1) is rebuilt as two sections. First an
+  autocomplete textbox for naming new/recent ingredients: the dropdown opens as
+  you type, and Enter or a click adds the ingredient to the selected list.
+  Second, multi-select lozenges of food categories and allergen categories for
+  the other (already-safe) ingredients in the meal.
+
   All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
 -->
 <html lang="en">
@@ -271,6 +277,47 @@
         font-size: 15px;
         background: var(--bg);
         margin: 6px 0 4px;
+      }
+      .ac-wrap {
+        position: relative;
+      }
+      .ac-drop {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+        overflow: hidden;
+        z-index: 6;
+      }
+      .ac-drop:empty {
+        display: none;
+      }
+      .ac-row {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: none;
+        padding: 10px 12px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .ac-row:active,
+      .ac-row:hover {
+        background: var(--accent-soft);
+      }
+      .ac-row .alg {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .ac-row.custom {
+        color: var(--accent);
+        font-weight: 600;
+        border-top: 1px solid var(--line);
       }
       .heads-up {
         display: flex;
@@ -906,7 +953,6 @@
           status: "untried",
         },
       ];
-      const RECENT = ["oatmeal", "banana", "sweet potato", "yogurt", "chicken"];
       const STATUS_DOT = {
         safe: "🟢",
         trying: "🟡",
@@ -966,7 +1012,8 @@
               : "Sleeping…";
           case "meal": {
             const parts = (e.foods || []).concat(
-              (e.catFlags || []).map((c) => "any " + c)
+              (e.catFlags || []).map((c) => "any " + c),
+              (e.allergenFlags || []).map((a) => "any " + a)
             );
             return (
               "Meal · " +
@@ -1253,7 +1300,7 @@
             step: 1,
             foods: new Set(),
             catFlags: new Set(),
-            allergenFilter: new Set(),
+            allergenFlags: new Set(),
             search: "",
             amount: null,
             textures: new Set(),
@@ -1271,6 +1318,16 @@
       }
 
       // meal sheet helpers (ms*)
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function jsq(s) {
+        return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      }
       function msToggleFood(n) {
         sheet.foods.has(n) ? sheet.foods.delete(n) : sheet.foods.add(n);
         sheet.headsUpDismissed = false;
@@ -1282,16 +1339,66 @@
           : sheet.catFlags.add(c);
         render();
       }
-      function msToggleAllergenFilter(a) {
-        sheet.allergenFilter.has(a)
-          ? sheet.allergenFilter.delete(a)
-          : sheet.allergenFilter.add(a);
+      function msToggleAllergenFlag(a) {
+        sheet.allergenFlags.has(a)
+          ? sheet.allergenFlags.delete(a)
+          : sheet.allergenFlags.add(a);
         render();
       }
-      function msSearch(v) {
-        sheet.search = v.toLowerCase();
+      // autocomplete: matches surface new/recent ingredients first
+      function msAcMatches() {
+        const q = sheet.search.trim().toLowerCase();
+        if (!q) return [];
+        const rank = { trying: 0, untried: 1, safe: 2, avoid: 3 };
+        return FOODS.filter((f) => f.name.includes(q))
+          .sort(
+            (a, b) =>
+              rank[a.status] - rank[b.status] || a.name.localeCompare(b.name)
+          )
+          .slice(0, 6);
+      }
+      function msAcDropHTML() {
+        const q = sheet.search.trim();
+        if (!q) return "";
+        let rows = msAcMatches()
+          .map(
+            (f) =>
+              `<button class="ac-row" onclick="msAddIngredient('${jsq(f.name)}')">${STATUS_DOT[f.status]} ${esc(f.name)} <span class="alg">${f.status === "trying" ? "mid-watch · day " + f.watchDay : f.status}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</span></button>`
+          )
+          .join("");
+        const exists = FOODS.some((f) => f.name === q.toLowerCase());
+        if (!exists)
+          rows += `<button class="ac-row custom" onclick="msAddCustom()">＋ Add “${esc(q)}” as a first introduction</button>`;
+        return rows;
+      }
+      function msAcInput(v) {
+        sheet.search = v;
         // targeted update only, so the input keeps focus
-        document.getElementById("food-list").innerHTML = msFoodListHTML();
+        document.getElementById("ac-drop").innerHTML = msAcDropHTML();
+      }
+      function msAcKey(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const m = msAcMatches();
+          if (m.length) msAddIngredient(m[0].name);
+          else msAddCustom();
+        } else if (e.key === "Escape") {
+          sheet.search = "";
+          e.target.value = "";
+          document.getElementById("ac-drop").innerHTML = "";
+        }
+      }
+      function msAddIngredient(n) {
+        sheet.foods.add(n);
+        sheet.search = "";
+        sheet.headsUpDismissed = false;
+        render();
+        const i = document.getElementById("ing-input");
+        if (i) i.focus();
+      }
+      function msAddCustom() {
+        const n = sheet.search.trim();
+        if (n) msAddIngredient(n);
       }
       function msHeadsUp() {
         if (sheet.headsUpDismissed) return "";
@@ -1323,39 +1430,33 @@
         if (!msgs.length) return "";
         return `<div class="heads-up"><span>👀</span><span style="flex:1">${msgs.join("<br>")}</span><button onclick="sheet.headsUpDismissed=true;render()">✕</button></div>`;
       }
-      function msFoodChipHTML(f) {
-        const sel = sheet.foods.has(f.name);
-        return `<button class="chip ${sel ? "sel" : ""}" onclick="msToggleFood('${f.name}')"><span class="dot">${STATUS_DOT[f.status]}</span> ${f.name}${f.allergens.length ? ` <span class="alg">${f.allergens.join(", ")}</span>` : ""}</button>`;
-      }
-      function msFoodListHTML() {
-        let list = FOODS.filter((f) => {
-          if (sheet.search && !f.name.includes(sheet.search)) return false;
-          if (
-            sheet.allergenFilter.size &&
-            !f.allergens.some((a) => sheet.allergenFilter.has(a))
-          )
-            return false;
-          return true;
-        });
-        if (!list.length)
-          return '<div class="empty-note" style="padding:12px">No matches — a custom food could be added here.</div>';
-        return list.map(msFoodChipHTML).join("");
-      }
       function mealSheetHTML() {
         if (sheet.step === 1) {
-          const canContinue = sheet.foods.size > 0 || sheet.catFlags.size > 0;
+          const canContinue =
+            sheet.foods.size > 0 ||
+            sheet.catFlags.size > 0 ||
+            sheet.allergenFlags.size > 0;
           return `<h3>Log meal</h3><div class="step-note">Step 1 of 2 — what did they eat?</div>
-          <input class="search-input" placeholder="Search foods…" value="${sheet.search}" oninput="msSearch(this.value)" />
-          ${sheet.foods.size || sheet.catFlags.size ? `<div class="sel-summary">${[...sheet.foods].map((n) => `<button class="chip sel" onclick="msToggleFood('${n}')">${n} ✕</button>`).join("")}${[...sheet.catFlags].map((c) => `<button class="chip sel" onclick="msToggleCatFlag('${c}')">any ${c} ✕</button>`).join("")}</div>` : ""}
+          <div class="opt-label">New or recent ingredients — name these (🟡 mid-watch, ⚪ first try)</div>
+          <div class="ac-wrap">
+            <input id="ing-input" class="search-input" placeholder="Type an ingredient…" value="${esc(sheet.search)}" autocomplete="off" oninput="msAcInput(this.value)" onkeydown="msAcKey(event)" />
+            <div class="ac-drop" id="ac-drop">${msAcDropHTML()}</div>
+          </div>
+          ${
+            sheet.foods.size
+              ? `<div class="sel-summary">${[...sheet.foods]
+                  .map((n) => {
+                    const f = foodByName(n);
+                    return `<button class="chip sel" onclick="msToggleFood('${jsq(n)}')">${f ? STATUS_DOT[f.status] + " " : "＋ "}${esc(n)} ✕</button>`;
+                  })
+                  .join("")}</div>`
+              : ""
+          }
           ${msHeadsUp()}
-          <div class="opt-label">Recent</div>
-          <div class="chip-row">${RECENT.map((n) => msFoodChipHTML(foodByName(n))).join("")}</div>
-          <div class="opt-label">Filter by allergen</div>
-          <div class="chip-row">${BIG9.map((a) => `<button class="chip ${sheet.allergenFilter.has(a) ? "sel" : ""}" onclick="msToggleAllergenFilter('${a}')">${a}</button>`).join("")}</div>
-          <div class="opt-label">All foods</div>
-          <div class="chip-row" id="food-list">${msFoodListHTML()}</div>
-          <div class="opt-label">…or flag a category (safe eating, no Watch Period)</div>
-          <div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${sheet.catFlags.has(c) ? "sel" : ""}" onclick="msToggleCatFlag('${c}')">any ${c}</button>`).join("")}</div>
+          <div class="opt-label">Other ingredients — food categories (safe, no Watch Period)</div>
+          <div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${sheet.catFlags.has(c) ? "sel" : ""}" onclick="msToggleCatFlag('${c}')">${c}</button>`).join("")}</div>
+          <div class="opt-label">Other ingredients — allergen categories</div>
+          <div class="chip-row">${BIG9.map((a) => `<button class="chip ${sheet.allergenFlags.has(a) ? "sel" : ""}" onclick="msToggleAllergenFlag('${a}')">${a}</button>`).join("")}</div>
           <button class="big-save" ${canContinue ? "" : "disabled"} onclick="sheet.step=2;render()">Continue</button>
           <div class="hint">Anything untried or trying must be named — the Meal log is the exposure record.</div>`;
         }
@@ -1373,6 +1474,7 @@
         log("meal", {
           foods: [...sheet.foods],
           catFlags: [...sheet.catFlags],
+          allergenFlags: [...sheet.allergenFlags],
           amount: sheet.amount,
           textures: [...sheet.textures],
           styles: [...sheet.styles],
