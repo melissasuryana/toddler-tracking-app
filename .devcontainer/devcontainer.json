@@ -1,0 +1,9 @@
+{
+  "forwardPorts": [4096],
+  "portsAttributes": {
+    "4096": {
+      "onAutoForward": "notify",
+      "visibility": "public"
+    }
+  }
+}
