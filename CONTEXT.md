@@ -41,8 +41,12 @@ An Entry recording weight, height, and/or head circumference at a point in time.
 _Avoid_: Measurement, weigh-in, percentile entry
 
 **Meal**:
-An Entry recording one eating occasion: timestamp, one or more Foods, a 5-point amount-eaten scale, and an optional note. No meal-type category — derivable from timestamp. Logging a Meal containing an untried Food starts that Food's Watch Period; the Meal log is the exposure.
+An Entry recording one eating occasion: timestamp, a 5-point amount-eaten scale, an optional note, and what was eaten as any mix of named Foods and Food Category flags. Named Foods are required for anything untried or trying — the Meal log is the exposure that starts that Food's Watch Period. A Food Category flag is shorthand for "some safe Food from this category" and never starts a Watch Period. Optionally carries a multi-select Texture (purée / mashed / soft finger food / firm finger food) and a multi-select Feeding Style (spoon-fed / self-fed with hands / self-fed with utensils). No meal-type category — derivable from timestamp.
 _Avoid_: Feeding log, food entry
+
+**Food Category**:
+A fixed enum grouping Foods: fruit, vegetables, grains & cereals, proteins, dairy, nuts & seeds, fish & shellfish, compound. Assigned per Food in the seed database; also recordable directly on a Meal as shorthand for safe eating, without naming which Food. Carries no exposure semantics.
+_Avoid_: food group, food type
 
 **Food**:
 A first-class entity: a name plus zero or more Allergen Tags. Ships as a seeded database of a few hundred common foods with pre-set tags; parents can add custom Foods with manual tags. Carries a per-child Food Status.
