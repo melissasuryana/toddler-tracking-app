@@ -9,7 +9,7 @@ The profile every Entry hangs off: name, birthdate, sex (required for growth cha
 _Avoid_: Profile, kid, baby, patient
 
 **Entry**:
-One logged occurrence in a tracker. Every Entry has a timestamp and can be edited and archived after logging. The seven Entry kinds are Feed, Diaper Change, Sleep Session, Medical Entry, Growth Measurement, Meal, and Reaction.
+One logged occurrence in a tracker. Every Entry has a timestamp and can be edited and archived after logging. The eight Entry kinds are Feed, Diaper Change, Sleep Session, Medical Entry, Growth Measurement, Meal, Introduction, and Reaction.
 _Avoid_: Event, log, record, activity
 
 **Archived**:
@@ -41,12 +41,16 @@ An Entry recording weight, height, and/or head circumference at a point in time.
 _Avoid_: Measurement, weigh-in, percentile entry
 
 **Meal**:
-An Entry recording one eating occasion: timestamp, a 5-point amount-eaten scale, an optional note, and what was eaten as any mix of named Foods and Food Category flags. Named Foods are required for anything untried or trying — the Meal log is the exposure that starts that Food's Watch Period. A Food Category flag is shorthand for "some safe Food from this category" and never starts a Watch Period. Optionally carries a multi-select Texture (purée / mashed / soft finger food / firm finger food) and a multi-select Feeding Style (spoon-fed / self-fed with hands / self-fed with utensils). No meal-type category — derivable from timestamp.
+An Entry recording one eating occasion: timestamp, a 5-point amount-eaten scale, an optional note, and what was eaten as two independent manual multi-select flag sets — Food Category flags and Allergen Tag flags — with no named Foods. A Meal carries no exposure semantics: it never changes Food Status and never starts a Watch Period. Optionally carries a multi-select Texture (purée / mashed / soft finger food / firm finger food) and a multi-select Feeding Style (spoon-fed / self-fed with hands / self-fed with utensils). No meal-type category — derivable from timestamp.
 _Avoid_: Feeding log, food entry
 
 **Food Category**:
-A fixed enum grouping Foods: fruit, vegetables, grains & cereals, proteins, dairy, nuts & seeds, fish & shellfish, compound. Assigned per Food in the seed database; also recordable directly on a Meal as shorthand for safe eating, without naming which Food. Carries no exposure semantics.
+A fixed enum grouping Foods: fruit, vegetables, grains & cereals, proteins, dairy, nuts & seeds, fish & shellfish, compound. Assigned per Food in the seed database; also recordable directly on a Meal as a manual flag noting what kinds of food were served. Carries no exposure semantics and claims nothing about which specific Foods were eaten.
 _Avoid_: food group, food type
+
+**Introduction**:
+An Entry recording one exposure of a named Food: timestamp, exactly one Food, an optional note, and an optional single-select Texture (purée / mashed / soft finger food / firm finger food). The Introduction is the only exposure record: logging one flips an untried Food to trying and starts its Watch Period, and logging one for an avoided Food re-challenges it (back to trying, Watch Period restarts). Texture is informational only — Food Status is tracked per Food, not per texture. An optional first-tried date supports backfilling foods introduced before the app was in use; every Food Status change traces to an Introduction (or Reaction) Entry.
+_Avoid_: first taste event, trial, exposure log
 
 **Food**:
 A first-class entity: a name plus zero or more Allergen Tags. Ships as a seeded database of a few hundred common foods with pre-set tags; parents can add custom Foods with manual tags. Carries a per-child Food Status.
@@ -57,11 +61,11 @@ A marker on a Food naming one of the big-9 allergens (milk, egg, peanut, tree nu
 _Avoid_: Allergy category, allergen group
 
 **Food Status**:
-A Food's per-child state: untried / trying / safe / avoid. Flips to trying on first log; derived lazily to safe when the Watch Period ends with no Reaction; set to avoid by any logged Reaction. Re-challenging an avoided Food is allowed and restarts the Watch Period.
+A Food's per-child state: untried / trying / safe / avoid. Always derived from the current set of non-archived Entries — archiving a Food's only Introduction returns it to untried, and editing an Introduction's date moves the Watch Period window. An Introduction flips untried to trying; trying derives lazily to safe when the Watch Period ends with no Reaction, or can be marked safe manually from the Food detail view (ending the Watch Period early); any Reaction sets avoid. Re-challenging an avoided Food happens only by logging a new Introduction, which restarts the Watch Period.
 _Avoid_: Food state, tolerance
 
 **Watch Period**:
-The 3 days after a Food's first log, during which the child is watched for Reactions. Guidance is gentle everywhere: overlapping introductions and first tries of allergen-flagged Foods surface dismissible heads-ups, never blocks.
+The 3 days after a Food's first Introduction, during which the child is watched for Reactions. Guidance is gentle everywhere: overlapping introductions and first tries of allergen-flagged Foods surface dismissible heads-ups, never blocks.
 _Avoid_: Observation window, trial period
 
 **Reaction**:
