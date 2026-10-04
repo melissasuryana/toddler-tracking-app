@@ -9,5 +9,8 @@
   "scripts": {
     "prepare": "husky",
     "lint:boundaries": "depcruise packages"
+  },
+  "dependencies": {
+    "ui-ux-pro-max-cli": "^2.15.0"
   }
 }
