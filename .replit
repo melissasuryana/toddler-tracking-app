@@ -29,3 +29,7 @@ outputType = "webview"
 task = "shell.exec"
 args = "python3 -c 'from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer; H=type(\"H\", (SimpleHTTPRequestHandler,), {\"do_GET\": lambda s: (s.send_response(302), s.send_header(\"Location\", \"/prototypes/quick-log-ux.html?variant=C\"), s.end_headers()) if s.path == \"/\" else SimpleHTTPRequestHandler.do_GET(s)}); ThreadingHTTPServer((\"0.0.0.0\", 5000), H).serve_forever()'"
 waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
