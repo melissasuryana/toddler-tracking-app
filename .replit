@@ -1,7 +1,31 @@
-modules = ["web", "nodejs-20", "bash"]
+modules = ["web", "nodejs-20", "bash", "python-base-3.13"]
 
 [nix]
 channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Prototype preview"
+
+[[workflows.workflow]]
+name = "Prototype preview"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -c 'from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer; H=type(\"H\", (SimpleHTTPRequestHandler,), {\"do_GET\": lambda s: (s.send_response(302), s.send_header(\"Location\", \"/prototypes/quick-log-ux.html?variant=C\"), s.end_headers()) if s.path == \"/\" else SimpleHTTPRequestHandler.do_GET(s)}); ThreadingHTTPServer((\"0.0.0.0\", 5000), H).serve_forever()'"
+waitForPort = 5000
