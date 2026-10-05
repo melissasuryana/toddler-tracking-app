@@ -1,0 +1,1665 @@
+<!doctype html>
+<!--
+  PROTOTYPE (throwaway) — meal logging vs food introduction flows, after the split
+  Ticket: https://github.com/melissasuryana/toddler-tracking-app/issues/27
+  Question: now that Introduction is its own Entry kind (#18) and Meals carry only
+  category + allergen flag sets (#19), how do the two flows look and behave —
+  separate quick-log buttons, or one sheet with a mode switch? How visible is the
+  "Also log a meal" shortcut, and are Meals vs Introductions distinguishable in
+  the timeline?
+
+  Three radically different variants, switchable via ?variant=A|B|C, the floating
+  bar at the bottom, or arrow keys. Builds on the quick-log UX prototype (variant C
+  won there, #6), so all three variants keep that status-first shell.
+
+  A — Separate buttons: Meal and Introduction are two primary actions, everywhere.
+  B — One sheet, mode switch: a single "Log food" action opens a tabbed sheet
+      (Meal | Introduction).
+  C — Contextual Now card: the active Watch Period surfaces as a card with
+      "Try again" / "Log reaction" / "Mark as safe"; the plain Meal action sits
+      beside it.
+
+  Settled (baked in, not re-grilled here): Introduction = timestamp + one named
+  Food + optional note + optional single-select texture; the only exposure record
+  (untried → trying starts the 3-day Watch Period; avoid → trying re-challenges;
+  first-tried date backfills pre-app history). Meal = two independent, optional
+  manual flag sets (Food Category 8-enum, Allergen Tag big-9), no named Foods,
+  5-point amount always present defaulting to 4/5, optional multi-select texture
+  and feeding style remembered from the latest non-Archived Meal. Picker = two
+  labelled chip groups. Heads-ups are dismissible, never blocking. Food Status is
+  derived: archive a Food's only Introduction and it returns to untried.
+
+  All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prototype: meal vs introduction</title>
+    <style>
+      :root {
+        --ink: #1d1b16;
+        --muted: #8a8577;
+        --bg: #efece4;
+        --card: #fffdf8;
+        --accent: #e07856;
+        --accent-soft: #fbe9e2;
+        --line: #e4dfd2;
+        --danger: #c0492f;
+        --ok: #2f7c4f;
+        --ok-soft: #e3f2e8;
+        --warn: #b8860b;
+        --warn-soft: #fdf6e3;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        background: #d8d4c8;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px 12px 90px;
+        color: var(--ink);
+      }
+
+      /* ---- phone frame ---- */
+      .phone {
+        width: 375px;
+        height: 720px;
+        background: var(--bg);
+        border-radius: 36px;
+        border: 10px solid #2a2822;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        position: relative;
+      }
+      .screen {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 12px;
+      }
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+
+      .variant-banner {
+        text-align: center;
+        font-size: 13px;
+        color: #55503f;
+        max-width: 375px;
+      }
+      .variant-banner b {
+        color: var(--ink);
+      }
+
+      /* ---- shared bits ---- */
+      .app-header {
+        padding: 18px 18px 10px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .app-header h1 {
+        font-size: 22px;
+      }
+      .app-header .sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .tabbar {
+        display: flex;
+        border-top: 1px solid var(--line);
+        background: var(--card);
+      }
+      .tabbar button {
+        flex: 1;
+        border: 0;
+        background: none;
+        padding: 12px 0;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .tabbar button.active {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .section-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 14px 18px 2px;
+      }
+      .empty-note {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 30px 20px;
+      }
+
+      /* status cards (won shell from quick-log prototype, variant C) */
+      .c-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        margin: 8px 14px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .c-card .emoji {
+        font-size: 26px;
+      }
+      .c-card .body {
+        flex: 1;
+      }
+      .c-card .headline {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .c-card .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .c-card .link {
+        font-size: 12px;
+        color: var(--accent);
+        margin-top: 4px;
+        cursor: pointer;
+      }
+      .c-action {
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .c-action.secondary {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .c-card.watch {
+        border-color: #e5c98a;
+        background: var(--warn-soft);
+      }
+      .watch-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .watch-actions .c-action {
+        padding: 9px 11px;
+        font-size: 12px;
+      }
+      .c-card.watch .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      /* entry rows */
+      .entry-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin: 6px 14px;
+        font-size: 14px;
+      }
+      .entry-row .emoji {
+        font-size: 20px;
+      }
+      .entry-row .meta {
+        flex: 1;
+      }
+      .entry-row .meta .t {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .entry-row.intro {
+        border-left: 4px solid var(--warn);
+        background: #fffaf0;
+      }
+      .entry-row.reaction {
+        border-left: 4px solid var(--danger);
+      }
+      .row-actions button {
+        border: 1px solid var(--line);
+        background: none;
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        margin-left: 4px;
+      }
+      .row-actions .restore {
+        color: var(--ok);
+        border-color: #bcd9c6;
+      }
+      .row-actions .wipe {
+        color: var(--danger);
+        border-color: #ecc9bf;
+      }
+
+      /* sheet */
+      .sheet-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(30, 28, 22, 0.4);
+        display: flex;
+        align-items: flex-end;
+        z-index: 5;
+      }
+      .sheet {
+        background: var(--card);
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        padding: 16px 16px 22px;
+        max-height: 88%;
+        overflow-y: auto;
+      }
+      .sheet h3 {
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .sheet .step-note {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .mode-tabs {
+        display: flex;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+        margin-bottom: 12px;
+      }
+      .mode-tabs button {
+        flex: 1;
+        border: 0;
+        background: none;
+        border-radius: 9px;
+        padding: 10px 6px;
+        font-size: 13.5px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .mode-tabs button.sel {
+        background: var(--card);
+        color: var(--ink);
+        font-weight: 700;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      }
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 14px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .chip.sel {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .big-save {
+        width: 100%;
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 14px;
+        border-radius: 14px;
+        cursor: pointer;
+      }
+      .big-save:disabled {
+        opacity: 0.4;
+      }
+      .sheet .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .opt-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 2px;
+      }
+      .group-label {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 12px 0 2px;
+      }
+      .group-label small {
+        font-weight: 400;
+        color: var(--muted);
+      }
+      .search-input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 15px;
+        background: var(--bg);
+        margin: 6px 0 4px;
+      }
+      .ac-wrap {
+        position: relative;
+      }
+      .ac-drop {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+        overflow: hidden;
+        z-index: 6;
+      }
+      .ac-drop:empty {
+        display: none;
+      }
+      .ac-row {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: none;
+        padding: 10px 12px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .ac-row:active,
+      .ac-row:hover {
+        background: var(--accent-soft);
+      }
+      .ac-row .alg {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .ac-row.custom {
+        color: var(--accent);
+        font-weight: 600;
+        border-top: 1px solid var(--line);
+      }
+      .picked-food {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 6px 0 4px;
+      }
+      .picked-food button {
+        margin-left: auto;
+        border: 0;
+        background: none;
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .heads-up {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        background: var(--warn-soft);
+        border: 1px solid #e5c98a;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 12.5px;
+        margin: 4px 0 10px;
+      }
+      .heads-up button {
+        background: none;
+        border: 0;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0;
+      }
+      .meal-offer {
+        border: 1px dashed var(--accent);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+        margin: 10px 0;
+        background: #fff;
+      }
+      .meal-offer label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .meal-offer input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      .meal-offer .preview {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .backdate {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 10px 0 0;
+      }
+      .backdate input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+      }
+      .backdate select {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px 8px;
+        background: var(--bg);
+        font-size: 12.5px;
+        color: var(--ink);
+      }
+      .note-input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 14px;
+        background: var(--bg);
+        margin: 4px 0;
+        font-family: inherit;
+      }
+
+      /* toast */
+      .toast {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: #fff;
+        font-size: 12px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        z-index: 9;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* foods browser */
+      .food-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin: 6px 14px;
+        font-size: 14px;
+      }
+      .food-row .body {
+        flex: 1;
+      }
+      .food-row .cat {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .food-row .mark-safe {
+        border: 1px solid #bcd9c6;
+        background: none;
+        color: var(--ok);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      .status-pill.safe {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+      .status-pill.trying {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .status-pill.untried {
+        background: var(--bg);
+        color: var(--muted);
+      }
+      .status-pill.avoid {
+        background: var(--accent-soft);
+        color: var(--danger);
+      }
+      .food-summary {
+        display: flex;
+        gap: 12px;
+        padding: 4px 18px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .filter-block {
+        padding: 0 14px;
+      }
+      .filter-block .chip {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+
+      /* ---- floating variant switcher (not part of the designs) ---- */
+      .switcher {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1d1b16;
+        color: #fff;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        font-size: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        z-index: 99;
+      }
+      .switcher button {
+        background: none;
+        border: 0;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0 6px;
+      }
+      .switcher .label {
+        min-width: 210px;
+        text-align: center;
+      }
+      .switcher .label small {
+        color: #9a958a;
+        display: block;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="variant-banner" id="banner"></div>
+    <div class="phone" id="phone">
+      <div class="toast" id="toast"></div>
+      <div class="screen" id="screen"></div>
+      <div id="chrome"></div>
+    </div>
+    <div class="switcher">
+      <button id="prev" aria-label="previous variant">◀</button>
+      <div class="label" id="switcher-label"></div>
+      <button id="next" aria-label="next variant">▶</button>
+    </div>
+
+    <script>
+      // ---------- time helpers ----------
+      const now = Date.now();
+      const min = 60 * 1000;
+      const hour = 60 * min;
+      const day = 24 * hour;
+      let nextId = 100;
+      function startOfDay(t) {
+        const d = new Date(t);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+      function rel(at) {
+        const m = Math.max(0, Math.round((Date.now() - at) / min));
+        if (m < 1) return "just now";
+        if (m < 60) return m + "m ago";
+        const h = Math.floor(m / 60);
+        if (h < 24) return h + "h " + (m % 60) + "m ago";
+        const d = Math.floor(h / 24);
+        return d + "d ago";
+      }
+      function timeOf(at) {
+        return new Date(at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function jsq(s) {
+        return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      }
+
+      // ---------- vocab (CONTEXT.md) ----------
+      const CATEGORIES = [
+        "fruit",
+        "vegetables",
+        "grains & cereals",
+        "proteins",
+        "dairy",
+        "nuts & seeds",
+        "fish & shellfish",
+        "compound",
+      ];
+      const BIG9 = [
+        "milk",
+        "egg",
+        "peanut",
+        "tree nuts",
+        "soy",
+        "wheat",
+        "fish",
+        "shellfish",
+        "sesame",
+      ];
+      const AMOUNTS = [
+        "none",
+        "a few bites",
+        "about half",
+        "most of it",
+        "all of it",
+      ];
+      const TEXTURES = [
+        "purée",
+        "mashed",
+        "soft finger food",
+        "firm finger food",
+      ];
+      const STYLES = ["spoon-fed", "self-fed: hands", "self-fed: utensils"];
+      const STATUS_DOT = {
+        safe: "🟢",
+        trying: "🟡",
+        untried: "⚪",
+        avoid: "🔴",
+      };
+      const WATCH_DAYS = 3;
+      // anchor "today's" entries to the local morning so the timeline always has
+      // a mixed day to show, no matter what time the file is opened
+      const today = startOfDay(now).getTime();
+      const KIND = {
+        feed: { emoji: "🤱", name: "Feed" },
+        diaper: { emoji: "🧷", name: "Diaper" },
+        sleep: { emoji: "😴", name: "Sleep" },
+        meal: { emoji: "🥣", name: "Meal" },
+        introduction: { emoji: "🆕", name: "Introduction" },
+        reaction: { emoji: "⚠️", name: "Reaction" },
+      };
+
+      // ---------- state (in-memory only) ----------
+      const state = {
+        tab: "home", // 'home' | 'timeline' | 'foods' | 'deleted'
+        selectedDate: startOfDay(Date.now()).getTime(),
+        // foods: status is DERIVED from non-archived Introductions/Reactions,
+        // never stored. watchDay only exists while trying.
+        foods: [
+          { name: "oatmeal", cat: "grains & cereals", allergens: [] },
+          { name: "banana", cat: "fruit", allergens: [] },
+          { name: "sweet potato", cat: "vegetables", allergens: [] },
+          { name: "peanut butter", cat: "nuts & seeds", allergens: ["peanut"] },
+          { name: "scrambled egg", cat: "proteins", allergens: ["egg"] },
+          { name: "yogurt", cat: "dairy", allergens: ["milk"] },
+          { name: "chicken", cat: "proteins", allergens: [] },
+          { name: "pasta", cat: "grains & cereals", allergens: ["wheat"] },
+          { name: "salmon", cat: "fish & shellfish", allergens: ["fish"] },
+          { name: "rice", cat: "grains & cereals", allergens: [] },
+          { name: "shrimp", cat: "fish & shellfish", allergens: ["shellfish"] },
+          { name: "strawberry", cat: "fruit", allergens: [] },
+          {
+            name: "whole wheat toast",
+            cat: "grains & cereals",
+            allergens: ["wheat"],
+          },
+          { name: "tofu", cat: "proteins", allergens: ["soy"] },
+          { name: "cheddar", cat: "dairy", allergens: ["milk"] },
+          { name: "hummus", cat: "proteins", allergens: ["sesame"] },
+          { name: "almond butter", cat: "nuts & seeds", allergens: ["tree nuts"] },
+        ],
+        entries: [
+          // earlier Introductions that have passed their Watch Period → safe
+          { id: 1, kind: "introduction", at: now - 20 * day, food: "oatmeal", archived: false },
+          { id: 2, kind: "introduction", at: now - 19 * day, food: "banana", archived: false },
+          { id: 3, kind: "introduction", at: now - 18 * day, food: "sweet potato", archived: false },
+          { id: 4, kind: "introduction", at: now - 15 * day, food: "scrambled egg", archived: false },
+          { id: 5, kind: "introduction", at: now - 14 * day, food: "yogurt", archived: false },
+          { id: 6, kind: "introduction", at: now - 12 * day, food: "chicken", archived: false },
+          { id: 7, kind: "introduction", at: now - 10 * day, food: "pasta", archived: false },
+          { id: 8, kind: "introduction", at: now - 9 * day, food: "salmon", archived: false },
+          { id: 9, kind: "introduction", at: now - 8 * day, food: "rice", archived: false },
+          // shrimp: introduced, then a Reaction → avoid
+          { id: 10, kind: "introduction", at: now - 7 * day, food: "shrimp", archived: false },
+          {
+            id: 11,
+            kind: "reaction",
+            at: now - 6 * day,
+            food: "shrimp",
+            severity: "moderate",
+            symptoms: ["rash/hives"],
+            archived: false,
+          },
+          // peanut butter: introduced this morning → mid-watch (day 1) and
+          // visible in today's timeline next to the meal below
+          { id: 12, kind: "introduction", at: today + 8 * hour, food: "peanut butter", texture: "mashed", archived: false },
+          // the rest of today, so the timeline shows the mixed list
+          { id: 13, kind: "sleep", at: today + 1.5 * hour, end: today + 3.5 * hour, quality: "okay", archived: false },
+          { id: 14, kind: "feed", at: today + 7 * hour, side: "left", archived: false },
+          { id: 15, kind: "diaper", at: today + 8.5 * hour, diaperType: "wet", archived: false },
+          {
+            id: 16,
+            kind: "meal",
+            at: today + 9 * hour,
+            catFlags: ["grains & cereals", "fruit"],
+            allergenFlags: [],
+            amount: "most of it",
+            textures: ["mashed"],
+            styles: ["spoon-fed"],
+            archived: false,
+          },
+          { id: 17, kind: "feed", at: today + 12.5 * hour, side: "right", archived: false },
+          { id: 18, kind: "diaper", at: today + 13 * hour, diaperType: "both", archived: false },
+          // an archived Introduction so Recently Deleted shows the derivation live
+          { id: 19, kind: "introduction", at: today - day + 9 * hour, food: "blueberries", archived: true },
+        ],
+      };
+      // blueberries is a custom food known only through its (archived) Introduction
+      state.foods.push({ name: "blueberries", cat: "fruit", allergens: [] });
+
+      // ---------- derived Food Status ----------
+      function foodByName(n) {
+        return state.foods.find((f) => f.name === n);
+      }
+      function introsFor(name) {
+        return state.entries
+          .filter(
+            (e) => e.kind === "introduction" && e.food === name && !e.archived
+          )
+          .sort((a, b) => a.at - b.at);
+      }
+      function reactionFor(name) {
+        return state.entries.find(
+          (e) => e.kind === "reaction" && e.food === name && !e.archived
+        );
+      }
+      function markedSafe(name) {
+        return state.entries.find(
+          (e) => e.kind === "markSafe" && e.food === name && !e.archived
+        );
+      }
+      function foodStatus(f) {
+        if (reactionFor(f.name)) return { status: "avoid" };
+        const intros = introsFor(f.name);
+        if (!intros.length) return { status: "untried" };
+        if (markedSafe(f.name)) return { status: "safe" };
+        const last = intros[intros.length - 1];
+        const elapsed = Date.now() - last.at;
+        if (elapsed >= WATCH_DAYS * day) return { status: "safe" };
+        return {
+          status: "trying",
+          watchDay: Math.max(1, Math.min(WATCH_DAYS, Math.floor(elapsed / day) + 1)),
+        };
+      }
+      function statusLine(f) {
+        const s = foodStatus(f);
+        if (s.status === "trying") return "trying · day " + s.watchDay + " of 3";
+        return s.status;
+      }
+      function watchingFoods() {
+        return state.foods.filter((f) => foodStatus(f).status === "trying");
+      }
+      function latestMeal() {
+        return state.entries
+          .filter((e) => e.kind === "meal" && !e.archived)
+          .sort((a, b) => b.at - a.at)[0];
+      }
+
+      // ---------- shared rendering ----------
+      function describe(e) {
+        switch (e.kind) {
+          case "feed":
+            return "Feed" + (e.side ? " · " + e.side : "");
+          case "diaper":
+            return "Diaper · " + e.diaperType;
+          case "sleep":
+            return e.end
+              ? "Sleep · " +
+                  Math.round((e.end - e.at) / min) +
+                  "m" +
+                  (e.quality ? " · " + e.quality : "")
+              : "Sleeping…";
+          case "meal": {
+            const bits = [];
+            if (e.catFlags && e.catFlags.length)
+              bits.push("kinds: " + e.catFlags.join(", "));
+            if (e.allergenFlags && e.allergenFlags.length)
+              bits.push("allergens: " + e.allergenFlags.join(", "));
+            return (
+              "Meal · " +
+              (bits.join(" · ") || "no flags") +
+              " · " +
+              (e.amount || "most of it")
+            );
+          }
+          case "introduction": {
+            const f = foodByName(e.food);
+            const s = f ? foodStatus(f) : { status: "untried" };
+            let tail = "";
+            if (e.backdated) tail = " · first tried " + e.backdated;
+            else if (s.status === "trying")
+              tail = " · watch day " + s.watchDay + " of 3";
+            else if (s.status === "safe") tail = " · safe";
+            else if (s.status === "avoid") tail = " · re-challenged → avoid";
+            return "🆕 " + e.food + tail;
+          }
+          case "reaction":
+            return (
+              "Reaction · " +
+              e.food +
+              " · " +
+              e.severity +
+              (e.symptoms && e.symptoms.length
+                ? " · " + e.symptoms.join(", ")
+                : "")
+            );
+          case "markSafe":
+            return e.food + " marked safe";
+        }
+      }
+      function entryRowHTML(e) {
+        const cls = [
+          "entry-row",
+          e.kind === "introduction" ? "intro" : "",
+          e.kind === "reaction" ? "reaction" : "",
+        ]
+          .join(" ")
+          .trim();
+        const emoji = e.kind === "markSafe" ? "✅" : KIND[e.kind].emoji;
+        return `
+        <div class="${cls}">
+          <span class="emoji">${emoji}</span>
+          <span class="meta">${esc(describe(e))}<div class="t">${rel(e.at)} · ${timeOf(e.at)}</div></span>
+          <span class="row-actions"><button onclick="archive(${e.id})">Archive</button></span>
+        </div>`;
+      }
+      function entriesOn(dayT) {
+        const t = startOfDay(dayT).getTime();
+        return state.entries
+          .filter((e) => !e.archived && startOfDay(e.at).getTime() === t)
+          .sort((a, b) => b.at - a.at);
+      }
+      function mondayOf(t) {
+        const d = startOfDay(t);
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        return d;
+      }
+      function pickDay(t) {
+        state.selectedDate = startOfDay(t).getTime();
+        render();
+      }
+      function shiftWeek(n) {
+        state.selectedDate = startOfDay(state.selectedDate).getTime() + n * 7 * day;
+        render();
+      }
+      function goToday() {
+        state.selectedDate = startOfDay(Date.now()).getTime();
+        render();
+      }
+      function weekLabel() {
+        const m = mondayOf(state.selectedDate).getTime();
+        const thisM = mondayOf(Date.now()).getTime();
+        if (m === thisM) return "This Week";
+        if (m === thisM - 7 * day) return "Last Week";
+        const f = (t) =>
+          new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
+        return f(m) + " – " + f(m + 6 * day);
+      }
+      function dayLabel() {
+        const sel = startOfDay(state.selectedDate).getTime();
+        const today = startOfDay(Date.now()).getTime();
+        if (sel === today) return "Today";
+        if (sel === today - day) return "Yesterday";
+        return new Date(sel).toLocaleDateString([], {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
+      }
+      function dateHeaderHTML() {
+        const mon = mondayOf(state.selectedDate);
+        const todayT = startOfDay(Date.now()).getTime();
+        const onCurrentWeek =
+          mondayOf(state.selectedDate).getTime() === mondayOf(Date.now()).getTime();
+        const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const cells = DOW.map((dow, i) => {
+          const t = mon.getTime() + i * day;
+          const sel = startOfDay(state.selectedDate).getTime() === t;
+          const has = entriesOn(t).length > 0;
+          return `<button class="day-cell ${sel ? "sel" : ""} ${t === todayT && !sel ? "today" : ""}" style="flex:1;border:1px solid ${sel ? "transparent" : t === todayT ? "var(--accent)" : "transparent"};background:${sel ? "var(--accent)" : "var(--card)"};color:${sel ? "#fff" : "var(--ink)"};border-radius:14px;padding:8px 0 6px;text-align:center;cursor:pointer" onclick="pickDay(${t})">
+            <div style="font-size:10px;color:${sel ? "#ffe3d9" : "var(--muted)"};text-transform:uppercase">${dow}</div><div style="font-size:16px;font-weight:700">${new Date(t).getDate()}</div><div style="font-size:8px;color:${sel ? "#ffe3d9" : "var(--accent)"};line-height:1;min-height:8px">${has ? "●" : ""}</div>
+          </button>`;
+        }).join("");
+        return `<div style="display:flex;align-items:center;gap:10px;padding:6px 14px 2px">
+          <button class="icon-btn" onclick="shiftWeek(-1)">‹</button>
+          <span style="font-size:17px;font-weight:700;flex:1;text-align:center">${weekLabel()}</span>
+          <button class="icon-btn" ${onCurrentWeek ? "disabled style='opacity:.35'" : ""} onclick="shiftWeek(1)">›</button>
+          <button class="icon-btn" style="color:var(--accent);font-weight:600" onclick="goToday()">Today</button>
+        </div>
+        <div style="display:flex;gap:4px;padding:8px 14px 4px">${cells}</div>`;
+      }
+      function dayTimelineHTML() {
+        const list = entriesOn(state.selectedDate);
+        return (
+          dateHeaderHTML() +
+          '<div class="section-label">' +
+          dayLabel() +
+          "</div>" +
+          (list.length
+            ? list.map((e) => entryRowHTML(e)).join("")
+            : '<div class="empty-note">Nothing logged this day.</div>')
+        );
+      }
+      function deletedHTML() {
+        const list = state.entries
+          .filter((e) => e.archived)
+          .sort((a, b) => b.at - a.at);
+        if (!list.length)
+          return '<div class="empty-note">Recently Deleted is empty.</div>';
+        return (
+          '<div class="section-label">Recently Deleted</div>' +
+          list
+            .map(
+              (e) => `
+          <div class="entry-row">
+            <span class="emoji">${KIND[e.kind].emoji}</span>
+            <span class="meta">${esc(describe(e))}<div class="t">${rel(e.at)}${e.kind === "introduction" ? " · restore re-arms the watch" : ""}</div></span>
+            <span class="row-actions">
+              <button class="restore" onclick="restore(${e.id})">Restore</button>
+              <button class="wipe" onclick="wipe(${e.id})">Delete forever</button>
+            </span>
+          </div>`
+            )
+            .join("") +
+          '<div class="empty-note" style="padding-top:6px">“Delete forever” wipes the content for good. Archiving a Food’s only Introduction returns it to untried.</div>'
+        );
+      }
+      function headerHTML(right) {
+        return `<div class="app-header">
+          <div><h1>Milo</h1><div class="sub">${new Date().toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</div></div>
+          ${right || ""}
+        </div>`;
+      }
+      function iconBtn(label, onclick, style) {
+        return `<button onclick="${onclick}" style="border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 10px;font-size:13px;cursor:pointer;color:var(--muted);${style || ""}">${label}</button>`;
+      }
+
+      // ---------- foods browser ----------
+      const foodsFilter = { cats: new Set(), allergens: new Set() };
+      function ffToggleCat(c) {
+        foodsFilter.cats.has(c)
+          ? foodsFilter.cats.delete(c)
+          : foodsFilter.cats.add(c);
+        render();
+      }
+      function ffToggleAllergen(a) {
+        foodsFilter.allergens.has(a)
+          ? foodsFilter.allergens.delete(a)
+          : foodsFilter.allergens.add(a);
+        render();
+      }
+      function foodsHTML() {
+        const counts = { safe: 0, trying: 0, untried: 0, avoid: 0 };
+        state.foods.forEach((f) => counts[foodStatus(f).status]++);
+        const list = state.foods.filter((f) => {
+          if (foodsFilter.cats.size && !foodsFilter.cats.has(f.cat)) return false;
+          if (
+            foodsFilter.allergens.size &&
+            !f.allergens.some((a) => foodsFilter.allergens.has(a))
+          )
+            return false;
+          return true;
+        });
+        return (
+          `<div class="food-summary"><span>🟢 ${counts.safe} safe</span><span>🟡 ${counts.trying} trying</span><span>⚪ ${counts.untried} untried</span><span>🔴 ${counts.avoid} avoid</span></div>
+          <div class="section-label">Filter by category</div>
+          <div class="filter-block"><div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${foodsFilter.cats.has(c) ? "sel" : ""}" onclick="ffToggleCat('${c}')">${c}</button>`).join("")}</div></div>
+          <div class="section-label">Filter by allergen</div>
+          <div class="filter-block"><div class="chip-row">${BIG9.map((a) => `<button class="chip ${foodsFilter.allergens.has(a) ? "sel" : ""}" onclick="ffToggleAllergen('${a}')">${a}</button>`).join("")}</div></div>
+          <div class="section-label">${list.length} foods</div>` +
+          (list.length
+            ? list
+                .map((f) => {
+                  const s = foodStatus(f);
+                  return `
+            <div class="food-row">
+              <span class="body">${esc(f.name)}<div class="cat">${f.cat}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</div></span>
+              ${s.status === "trying" ? `<button class="mark-safe" onclick="markSafe('${jsq(f.name)}')">Mark safe</button>` : ""}
+              <span class="status-pill ${s.status}">${statusLine(f)}</span>
+            </div>`;
+                })
+                .join("")
+            : '<div class="empty-note">No foods match these filters.</div>')
+        );
+      }
+
+      // ---------- actions ----------
+      function toast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove("show"), 1800);
+      }
+      function log(kind, extra) {
+        state.entries.push(
+          Object.assign(
+            { id: nextId++, kind, at: Date.now(), archived: false },
+            extra
+          )
+        );
+        toast("Logged: " + KIND[kind].name + " @ " + timeOf(Date.now()));
+        render();
+      }
+      function archive(id) {
+        const e = state.entries.find((x) => x.id === id);
+        if (!e) return;
+        e.archived = true;
+        if (e.kind === "introduction") {
+          const f = foodByName(e.food);
+          const s = foodStatus(f);
+          toast(
+            s.status === "untried"
+              ? `Archived — ${e.food} is untried again`
+              : "Archived — in Recently Deleted"
+          );
+        } else {
+          toast("Archived — in Recently Deleted");
+        }
+        render();
+      }
+      function restore(id) {
+        const e = state.entries.find((x) => x.id === id);
+        if (!e) return;
+        e.archived = false;
+        if (e.kind === "introduction") {
+          const s = foodStatus(foodByName(e.food));
+          toast(
+            s.status === "trying"
+              ? `Restored — ${e.food} is trying (watch runs from the logged date)`
+              : "Restored"
+          );
+        } else {
+          toast("Restored");
+        }
+        render();
+      }
+      function wipe(id) {
+        state.entries = state.entries.filter((x) => x.id !== id);
+        toast("Permanently deleted (content wiped)");
+        render();
+      }
+      function markSafe(name) {
+        state.entries.push({
+          id: nextId++,
+          kind: "markSafe",
+          at: Date.now(),
+          food: name,
+          archived: false,
+        });
+        toast(name + " marked safe — Watch Period ended");
+        render();
+      }
+
+      // ---------- sheets ----------
+      let sheet = null;
+      function openSheet(mode, opts) {
+        const last = latestMeal();
+        sheet = {
+          mode, // 'meal' | 'introduction' | 'reaction'
+          // meal fields
+          catFlags: new Set(),
+          allergenFlags: new Set(),
+          amount: "most of it", // 4 of 5, always present
+          textures: new Set(last ? last.textures || [] : []),
+          styles: new Set(last ? last.styles || [] : []),
+          note: "",
+          // introduction fields
+          food: null,
+          search: "",
+          texture: null,
+          alsoMeal: false,
+          backdate: false,
+          backdateOffset: "3",
+          headsUpDismissed: false,
+          // prefill support for "Also log a meal"
+          fromIntro: null,
+        };
+        if (opts && opts.prefillFromIntro) {
+          const f = opts.prefillFromIntro;
+          sheet.mode = "meal";
+          sheet.fromIntro = f;
+          sheet.catFlags = new Set(f.cat ? [f.cat] : []);
+          sheet.allergenFlags = new Set(f.allergens || []);
+          if (opts.texture) sheet.textures = new Set([opts.texture]);
+        }
+        if (opts && opts.food) {
+          sheet.food = opts.food;
+        }
+        render();
+      }
+      function closeSheet() {
+        sheet = null;
+        render();
+      }
+      function msToggleCat(c) {
+        sheet.catFlags.has(c) ? sheet.catFlags.delete(c) : sheet.catFlags.add(c);
+        render();
+      }
+      function msToggleAlg(a) {
+        sheet.allergenFlags.has(a)
+          ? sheet.allergenFlags.delete(a)
+          : sheet.allergenFlags.add(a);
+        render();
+      }
+      function msToggleSet(setName, v) {
+        sheet[setName].has(v) ? sheet[setName].delete(v) : sheet[setName].add(v);
+        render();
+      }
+
+      // introduction sheet helpers (in*)
+      function inAcMatches() {
+        const q = sheet.search.trim().toLowerCase();
+        if (!q) return [];
+        const rank = { trying: 0, untried: 1, safe: 2, avoid: 3 };
+        return state.foods
+          .filter((f) => f.name.includes(q))
+          .sort(
+            (a, b) =>
+              rank[foodStatus(a).status] - rank[foodStatus(b).status] ||
+              a.name.localeCompare(b.name)
+          )
+          .slice(0, 6);
+      }
+      function inAcDropHTML() {
+        const q = sheet.search.trim();
+        if (!q) return "";
+        let rows = inAcMatches()
+          .map((f) => {
+            const s = foodStatus(f);
+            return `<button class="ac-row" onclick="inPick('${jsq(f.name)}')">${STATUS_DOT[s.status]} ${esc(f.name)} <span class="alg">${statusLine(f)}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</span></button>`;
+          })
+          .join("");
+        const exists = state.foods.some((f) => f.name === q.toLowerCase());
+        if (!exists)
+          rows += `<button class="ac-row custom" onclick="inAddCustom()">＋ Add “${esc(q)}” as a new Food</button>`;
+        return rows;
+      }
+      function inAcInput(v) {
+        sheet.search = v;
+        document.getElementById("ac-drop").innerHTML = inAcDropHTML();
+      }
+      function inAcKey(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const m = inAcMatches();
+          if (m.length) inPick(m[0].name);
+          else inAddCustom();
+        } else if (e.key === "Escape") {
+          sheet.search = "";
+          e.target.value = "";
+          document.getElementById("ac-drop").innerHTML = "";
+        }
+      }
+      function inPick(name) {
+        sheet.food = name;
+        sheet.search = "";
+        sheet.headsUpDismissed = false;
+        render();
+      }
+      function inAddCustom() {
+        const n = sheet.search.trim().toLowerCase();
+        if (!n) return;
+        state.foods.push({ name: n, cat: null, allergens: [] });
+        inPick(n);
+      }
+      function inHeadsUpHTML() {
+        if (sheet.headsUpDismissed || !sheet.food) return "";
+        const f = foodByName(sheet.food);
+        if (!f) return "";
+        const s = foodStatus(f);
+        const msgs = [];
+        if (s.status === "untried") {
+          msgs.push(
+            `First try of <b>${esc(f.name)}</b> — logging this starts its 3-day Watch Period.${f.allergens.length ? " ⚠️ big-9 allergen: " + f.allergens.join(", ") + "." : ""}`
+          );
+        } else if (s.status === "trying") {
+          msgs.push(
+            `<b>${esc(f.name)}</b> is mid-watch (day ${s.watchDay} of 3) — another Introduction is fine, the Watch Period keeps running.`
+          );
+        } else if (s.status === "avoid") {
+          msgs.push(
+            `<b>${esc(f.name)}</b> is marked avoid — this logs a re-challenge and restarts the Watch Period.`
+          );
+        }
+        const others = watchingFoods().filter((w) => w.name !== f.name);
+        if (s.status === "untried" && others.length) {
+          msgs.push(
+            `You're also watching ${others.map((w) => esc(w.name)).join(", ")} — overlapping intros are fine, just keep an eye out.`
+          );
+        }
+        if (!msgs.length) return "";
+        return `<div class="heads-up"><span>👀</span><span style="flex:1">${msgs.join("<br>")}</span><button onclick="sheet.headsUpDismissed=true;render()">✕</button></div>`;
+      }
+
+      // ---------- shared sheet bodies ----------
+      function mealSheetBodyHTML() {
+        return `
+          <div class="group-label">What kinds of food <small>· optional, pick any</small></div>
+          <div class="chip-row">${CATEGORIES.map((c) => `<button class="chip ${sheet.catFlags.has(c) ? "sel" : ""}" onclick="msToggleCat('${c}')">${c}</button>`).join("")}</div>
+          <div class="group-label">Contains allergens <small>· optional, big-9</small></div>
+          <div class="chip-row">${BIG9.map((a) => `<button class="chip ${sheet.allergenFlags.has(a) ? "sel" : ""}" onclick="msToggleAlg('${a}')">${a}</button>`).join("")}</div>
+          <div class="group-label">How much <small>· always recorded</small></div>
+          <div class="chip-row">${AMOUNTS.map((a) => `<button class="chip ${sheet.amount === a ? "sel" : ""}" style="padding:12px 14px;font-size:14.5px" onclick="sheet.amount='${a}';render()">${a}</button>`).join("")}</div>
+          <div class="opt-label">Texture (optional, pick any)</div>
+          <div class="chip-row">${TEXTURES.map((t) => `<button class="chip ${sheet.textures.has(t) ? "sel" : ""}" onclick="msToggleSet('textures','${t}')">${t}</button>`).join("")}</div>
+          <div class="opt-label">Feeding style (optional, pick any)</div>
+          <div class="chip-row">${STYLES.map((s) => `<button class="chip ${sheet.styles.has(s) ? "sel" : ""}" onclick="msToggleSet('styles','${s}')">${s}</button>`).join("")}</div>
+          <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />`;
+      }
+      function introSheetBodyHTML() {
+        const f = sheet.food ? foodByName(sheet.food) : null;
+        return `
+          ${
+            f
+              ? `<div class="picked-food">${STATUS_DOT[foodStatus(f).status]} ${esc(f.name)} <span style="font-weight:400;font-size:12px;color:var(--muted)">${statusLine(f)}</span><button onclick="sheet.food=null;render()">✕</button></div>`
+              : `<div class="ac-wrap">
+              <input id="ing-input" class="search-input" placeholder="Which food? Type to search…" value="${esc(sheet.search)}" autocomplete="off" oninput="inAcInput(this.value)" onkeydown="inAcKey(event)" />
+              <div class="ac-drop" id="ac-drop">${inAcDropHTML()}</div>
+            </div>`
+          }
+          ${inHeadsUpHTML()}
+          <div class="opt-label">Texture (optional, pick one)</div>
+          <div class="chip-row">${TEXTURES.map((t) => `<button class="chip ${sheet.texture === t ? "sel" : ""}" onclick="sheet.texture=sheet.texture==='${t}'?null:'${t}';render()">${t}</button>`).join("")}</div>
+          <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
+          <div class="meal-offer">
+            <label><input type="checkbox" ${sheet.alsoMeal ? "checked" : ""} onchange="sheet.alsoMeal=this.checked;render()" /> <b>Also log a meal</b> — part of a bigger meal?</label>
+            <div class="preview">Pre-fills a Meal with this Food's category + allergen flags${sheet.texture ? " and “" + sheet.texture + "” as texture" : ""}. Amount and everything else can be edited.</div>
+          </div>
+          <div class="backdate">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${sheet.backdate ? "checked" : ""} onchange="sheet.backdate=this.checked;render()" /> Already tried before</label>
+            ${
+              sheet.backdate
+                ? `<select onchange="sheet.backdateOffset=this.value">
+                ${[["3", "3 days ago"], ["7", "a week ago"], ["30", "a month ago"], ["90", "3 months ago"]]
+                  .map(([v, l]) => `<option value="${v}" ${sheet.backdateOffset === v ? "selected" : ""}>${l}</option>`)
+                  .join("")}
+              </select>`
+                : ""
+            }
+          </div>`;
+      }
+      function saveMeal() {
+        log("meal", {
+          catFlags: [...sheet.catFlags],
+          allergenFlags: [...sheet.allergenFlags],
+          amount: sheet.amount,
+          textures: [...sheet.textures],
+          styles: [...sheet.styles],
+          note: sheet.note,
+        });
+        closeSheet();
+      }
+      function saveIntro() {
+        const f = foodByName(sheet.food);
+        const also = sheet.alsoMeal;
+        const texture = sheet.texture;
+        const introAt = sheet.backdate
+          ? Date.now() - Number(sheet.backdateOffset) * day
+          : Date.now();
+        state.entries.push({
+          id: nextId++,
+          kind: "introduction",
+          at: introAt,
+          food: sheet.food,
+          texture,
+          note: sheet.note,
+          backdated: sheet.backdate
+            ? sheet.backdateOffset === "3"
+              ? "3 days ago"
+              : sheet.backdateOffset === "7"
+                ? "a week ago"
+                : sheet.backdateOffset === "30"
+                  ? "a month ago"
+                  : "3 months ago"
+            : null,
+          archived: false,
+        });
+        const s = foodStatus(f);
+        toast(
+          sheet.backdate
+            ? `Introduction logged — ${sheet.food} is ${s.status} (watch window already passed)`
+            : s.status === "trying"
+              ? `Watch Period started for ${sheet.food}`
+              : `Introduction logged: ${sheet.food}`
+        );
+        if (also) {
+          // "Also log a meal": same timestamp, category + allergen flags pre-filled,
+          // the Introduction's texture replaces the remembered texture.
+          openSheet("meal", { prefillFromIntro: f, texture });
+          return;
+        }
+        closeSheet();
+      }
+      function saveReaction() {
+        log("reaction", {
+          food: sheet.food,
+          severity: sheet.severity,
+          symptoms: [...(sheet.symptoms || [])],
+        });
+        closeSheet();
+      }
+      function reactionSheetHTML() {
+        return `<h3>Log reaction</h3><div class="step-note">${esc(sheet.food)} — moves the Food to avoid</div>
+          <div class="opt-label">Severity</div>
+          <div class="chip-row">${["mild", "moderate", "severe"].map((sv) => `<button class="chip ${sheet.severity === sv ? "sel" : ""}" onclick="sheet.severity='${sv}';render()">${sv}</button>`).join("")}</div>
+          <div class="opt-label">Symptoms (pick any)</div>
+          <div class="chip-row">${["rash/hives", "vomiting", "diarrhea", "swelling", "breathing issues"].map((sy) => `<button class="chip ${sheet.symptoms && sheet.symptoms.has(sy) ? "sel" : ""}" onclick="sheet.symptoms=sheet.symptoms||new Set();sheet.symptoms.has('${sy}')?sheet.symptoms.delete('${sy}'):sheet.symptoms.add('${sy}');render()">${sy}</button>`).join("")}</div>
+          <button class="big-save" ${sheet.severity ? "" : "disabled"} onclick="saveReaction()">Save reaction</button>`;
+      }
+
+      // ---------- Variant A: separate buttons ----------
+      function homeAHTML() {
+        const m = latestMeal();
+        const lastIntro = state.entries
+          .filter((e) => e.kind === "introduction" && !e.archived)
+          .sort((a, b) => b.at - a.at)[0];
+        return (
+          headerHTML() +
+          `<div class="c-card">
+            <span class="emoji">🥣</span>
+            <span class="body"><div class="headline">${m ? "Last meal " + rel(m.at) : "Meal"}</div><div class="sub">${m ? esc(describe(m).replace("Meal · ", "")) : "categories + allergens, no named foods"}</div></span>
+            <button class="c-action" onclick="openSheet('meal')">Log meal</button>
+          </div>
+          <div class="c-card">
+            <span class="emoji">🆕</span>
+            <span class="body"><div class="headline">${lastIntro ? "Last intro: " + esc(lastIntro.food) : "First taste"}</div><div class="sub">${lastIntro ? rel(lastIntro.at) + " · " + statusLine(foodByName(lastIntro.food)) : "start a Watch Period"}</div><div class="link" onclick="state.tab='foods';render()">See all foods ›</div></span>
+            <button class="c-action" onclick="openSheet('introduction')">Log intro</button>
+          </div>` +
+          watchCardsHTML(false) +
+          `<div class="c-card">
+            <span class="emoji">🤱🧷😴</span>
+            <span class="body"><div class="headline">Feed · Diaper · Sleep</div><div class="sub">same as before the split</div></span>
+            <button class="c-action secondary" onclick="toast('Unchanged — see the quick-log prototype')">Log</button>
+          </div>
+          <div class="section-label">Latest</div>` +
+          recentRowsHTML(3)
+        );
+      }
+      function chromeAHTML() {
+        return (
+          sheetHTML() +
+          `<div class="tabbar">
+          <button class="${state.tab === "home" ? "active" : ""}" onclick="state.tab='home';render()">Home</button>
+          <button class="${state.tab === "timeline" ? "active" : ""}" onclick="state.tab='timeline';render()">Timeline</button>
+          <button class="${state.tab === "foods" ? "active" : ""}" onclick="state.tab='foods';render()">Foods</button>
+          <button class="${state.tab === "deleted" ? "active" : ""}" onclick="state.tab='deleted';render()">Deleted</button>
+        </div>`
+        );
+      }
+
+      // ---------- Variant B: one sheet, mode switch ----------
+      function homeBHTML() {
+        const m = latestMeal();
+        const lastIntro = state.entries
+          .filter((e) => e.kind === "introduction" && !e.archived)
+          .sort((a, b) => b.at - a.at)[0];
+        return (
+          headerHTML() +
+          `<div class="c-card">
+            <span class="emoji">🍽</span>
+            <span class="body"><div class="headline">Food</div><div class="sub">${m ? "meal " + rel(m.at) : "no meals yet"}${lastIntro ? " · intro: " + esc(lastIntro.food) + " " + rel(lastIntro.at) : ""}</div><div class="link" onclick="state.tab='foods';render()">See all foods ›</div></span>
+            <button class="c-action" onclick="openSheet('meal')">Log food</button>
+          </div>` +
+          watchCardsHTML(false) +
+          `<div class="c-card">
+            <span class="emoji">🤱🧷😴</span>
+            <span class="body"><div class="headline">Feed · Diaper · Sleep</div><div class="sub">same as before the split</div></span>
+            <button class="c-action secondary" onclick="toast('Unchanged — see the quick-log prototype')">Log</button>
+          </div>
+          <div class="section-label">Latest</div>` +
+          recentRowsHTML(3)
+        );
+      }
+      function chromeBHTML() {
+        return chromeAHTML();
+      }
+
+      // ---------- Variant C: contextual Now card ----------
+      function homeCHTML() {
+        const m = latestMeal();
+        return (
+          headerHTML() +
+          `<div class="c-card">
+            <span class="emoji">🥣</span>
+            <span class="body"><div class="headline">${m ? "Last meal " + rel(m.at) : "Meal"}</div><div class="sub">${m ? esc(describe(m).replace("Meal · ", "")) : "categories + allergens, no named foods"}</div></span>
+            <button class="c-action" onclick="openSheet('meal')">Log meal</button>
+          </div>` +
+          watchCardsHTML(true) +
+          `<div class="c-card">
+            <span class="emoji">🤱🧷😴</span>
+            <span class="body"><div class="headline">Feed · Diaper · Sleep</div><div class="sub">same as before the split</div></span>
+            <button class="c-action secondary" onclick="toast('Unchanged — see the quick-log prototype')">Log</button>
+          </div>
+          <div class="section-label">Latest</div>` +
+          recentRowsHTML(3)
+        );
+      }
+      function chromeCHTML() {
+        return chromeAHTML();
+      }
+
+      // watch cards: quiet (A/B) vs Now card with actions (C)
+      function watchCardsHTML(withActions) {
+        return watchingFoods()
+          .map((w) => {
+            const s = foodStatus(w);
+            if (!withActions) {
+              return `<div class="c-card watch">
+                <span class="emoji">👀</span>
+                <span class="body"><div class="headline">Watch: ${esc(w.name)}</div><div class="sub">day ${s.watchDay} of 3 · no reaction logged</div></span>
+                <button class="c-action secondary" onclick="openSheet('introduction',{food:'${jsq(w.name)}'})">Try again</button>
+              </div>`;
+            }
+            return `<div class="c-card watch" style="align-items:flex-start">
+              <span class="emoji">👀</span>
+              <span class="body"><div class="headline">Watching: ${esc(w.name)}</div><div class="sub">day ${s.watchDay} of 3 · offer it again, or log a reaction</div>
+                <div class="watch-actions">
+                  <button class="c-action" onclick="openSheet('introduction',{food:'${jsq(w.name)}'})">Try again</button>
+                  <button class="c-action" style="background:var(--danger)" onclick="openReaction('${jsq(w.name)}')">Log reaction</button>
+                  <button class="c-action secondary" onclick="markSafe('${jsq(w.name)}')">Mark safe</button>
+                </div>
+              </span>
+            </div>`;
+          })
+          .join("");
+      }
+      function openReaction(food) {
+        openSheet("reaction", { food });
+      }
+      function recentRowsHTML(n) {
+        const list = state.entries
+          .filter((e) => !e.archived)
+          .sort((a, b) => b.at - a.at)
+          .slice(0, n);
+        return list.length
+          ? list.map((e) => entryRowHTML(e)).join("")
+          : '<div class="empty-note">Nothing logged yet today.</div>';
+      }
+
+      // ---------- sheet assembly per variant ----------
+      function sheetHTML() {
+        if (!sheet) return "";
+        const v = currentVariant();
+        let inner = "";
+        if (sheet.mode === "reaction") {
+          inner = reactionSheetHTML();
+        } else if (v === "B" && !sheet.fromIntro) {
+          // one sheet, mode switch
+          inner = `<div class="mode-tabs">
+              <button class="${sheet.mode === "meal" ? "sel" : ""}" onclick="openSheet('meal')">🥣 Meal</button>
+              <button class="${sheet.mode === "introduction" ? "sel" : ""}" onclick="openSheet('introduction')">🆕 Introduction</button>
+            </div>` +
+            (sheet.mode === "meal"
+              ? `<div class="step-note">What was on the plate — flags only, no named foods.</div>` +
+                mealSheetBodyHTML() +
+                `<button class="big-save" style="margin-top:10px" onclick="saveMeal()">Save meal</button>
+                 <div class="hint">Texture and feeding style remembered from the last meal.</div>`
+              : `<div class="step-note">One named food — the exposure record that starts a Watch Period.</div>` +
+                introSheetBodyHTML() +
+                `<button class="big-save" style="margin-top:10px" ${sheet.food ? "" : "disabled"} onclick="saveIntro()">Save introduction</button>`);
+        } else if (sheet.mode === "meal") {
+          inner =
+            (sheet.fromIntro
+              ? `<div class="step-note" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:8px 10px">🆕➜🥣 Pre-filled from the ${esc(sheet.fromIntro.name)} introduction — same time, flags and texture carried over.</div>`
+              : "") +
+            `<h3>Log meal</h3><div class="step-note">What was on the plate — flags only, no named foods.</div>` +
+            mealSheetBodyHTML() +
+            `<button class="big-save" style="margin-top:10px" onclick="saveMeal()">Save meal</button>
+             <div class="hint">Texture and feeding style remembered from the last meal.</div>`;
+        } else {
+          inner =
+            `<h3>Log introduction</h3><div class="step-note">One named food — the exposure record that starts a Watch Period.</div>` +
+            introSheetBodyHTML() +
+            `<button class="big-save" style="margin-top:10px" ${sheet.food ? "" : "disabled"} onclick="saveIntro()">Save introduction</button>`;
+        }
+        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${inner}</div></div>`;
+      }
+
+      // ---------- screen assembly per variant ----------
+      function renderVariant(homeFn, chromeFn) {
+        const screen = document.getElementById("screen");
+        const chrome = document.getElementById("chrome");
+        if (state.tab === "timeline") {
+          screen.innerHTML = headerHTML() + dayTimelineHTML();
+        } else if (state.tab === "deleted") {
+          screen.innerHTML = headerHTML() + deletedHTML();
+        } else if (state.tab === "foods") {
+          screen.innerHTML = headerHTML() + foodsHTML();
+        } else {
+          screen.innerHTML = homeFn();
+        }
+        chrome.innerHTML = chromeFn();
+      }
+
+      // ---------- variant switching ----------
+      const VARIANTS = {
+        A: {
+          name: "Separate buttons",
+          blurb:
+            "Meal and Introduction are two equal primary actions on Home. One tap to the right sheet, zero ambiguity — one more row of chrome.",
+          render: () => renderVariant(homeAHTML, chromeAHTML),
+        },
+        B: {
+          name: "One sheet, mode switch",
+          blurb:
+            "A single “Log food” action opens one sheet tabbed Meal | Introduction. Less chrome, but the exposure record hides behind a second tap.",
+          render: () => renderVariant(homeBHTML, chromeBHTML),
+        },
+        C: {
+          name: "Contextual Now card",
+          blurb:
+            "The active Watch Period becomes a Now card with Try again / Log reaction / Mark safe. Plain “Log meal” sits beside it; intros start from the card or the Foods screen.",
+          render: () => renderVariant(homeCHTML, chromeCHTML),
+        },
+      };
+      const ORDER = ["A", "B", "C"];
+      function currentVariant() {
+        const v = new URLSearchParams(location.search).get("variant");
+        return VARIANTS[v] ? v : "A";
+      }
+      function setVariant(v) {
+        const url = new URL(location);
+        url.searchParams.set("variant", v);
+        history.replaceState(null, "", url);
+        state.tab = "home";
+        sheet = null;
+        render();
+      }
+      function render() {
+        const key = currentVariant();
+        VARIANTS[key].render();
+        document.getElementById("switcher-label").innerHTML =
+          `${key} <small>${VARIANTS[key].name}</small>`;
+        document.getElementById("banner").innerHTML =
+          `<b>Variant ${key} — ${VARIANTS[key].name}.</b> ${VARIANTS[key].blurb}`;
+      }
+      document.getElementById("prev").onclick = () =>
+        setVariant(
+          ORDER[(ORDER.indexOf(currentVariant()) + ORDER.length - 1) % ORDER.length]
+        );
+      document.getElementById("next").onclick = () =>
+        setVariant(ORDER[(ORDER.indexOf(currentVariant()) + 1) % ORDER.length]);
+      document.addEventListener("keydown", (e) => {
+        if (
+          /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) ||
+          document.activeElement.isContentEditable
+        )
+          return;
+        if (e.key === "ArrowLeft") document.getElementById("prev").click();
+        if (e.key === "ArrowRight") document.getElementById("next").click();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
