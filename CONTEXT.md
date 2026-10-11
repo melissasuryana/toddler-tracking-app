@@ -49,7 +49,7 @@ A fixed enum grouping Foods: fruit, vegetables, grains & cereals, proteins, dair
 _Avoid_: food group, food type
 
 **Introduction**:
-An Entry recording one exposure of a named Food: timestamp, exactly one Food, an optional note, and an optional single-select Texture (purée / mashed / soft finger food / firm finger food). The Introduction is the only exposure record: logging one flips an untried Food to trying and starts its Watch Period, and logging one for an avoided Food re-challenges it (back to trying, Watch Period restarts). Texture is informational only — Food Status is tracked per Food, not per texture. An optional first-tried date supports backfilling foods introduced before the app was in use; every Food Status change traces to an Introduction (or Reaction) Entry.
+An Entry recording one exposure of a named Food: timestamp, exactly one Food, an optional note, and an optional single-select Texture (purée / mashed / soft finger food / firm finger food). The Introduction is the only exposure record: logging one flips an untried Food to trying and starts its Watch Period, and logging one for an avoided Food re-challenges it (back to trying, Watch Period restarts). Texture is informational only — Food Status is tracked per Food, not per texture. An optional first-tried date supports backfilling foods introduced before the app was in use; every Food Status change traces to an Introduction (or Reaction) Entry. Backfill also comes in bulk: a CSV import (Settings → "Import tried foods") creates backdated Introductions from a 4-column file (name, date, food category, allergens), auto-creating unrecognized names as custom Foods.
 _Avoid_: first taste event, trial, exposure log
 
 **Food**:
