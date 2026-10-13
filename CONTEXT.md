@@ -33,7 +33,7 @@ A tag on a Sleep Session marking a suspected cause of poor sleep (seeded: many w
 _Avoid_: Sleep disturbance, sleep tag
 
 **Medical Entry**:
-An Entry in one of four categories — medication, vaccine, symptom, temperature — with a note. Lightly structured: medication entries carry name + dose; temperature entries carry a numeric value.
+An Entry in one of four categories — medication, vaccine, symptom, temperature — with a timestamp and an optional note on every category. Medication entries carry a required name (free text, autocompleted from the Child's medication history) and an optional free-text dose combining amount and unit ("5 ml"). Vaccine entries carry a required name with the same history autocomplete; there is no seeded vaccine list. Symptom entries carry a required short free-text description and cover illness and observation only — allergy symptoms belong to Reaction. Temperature entries carry a required numeric value with its unit (°C or °F) stored per Entry, defaulting from the app's temperature-unit setting; no measurement site is captured.
 _Avoid_: Health record, doctor visit
 
 **Growth Measurement**:
@@ -69,5 +69,5 @@ The 3 days after a Food's first Introduction, during which the child is watched 
 _Avoid_: Observation window, trial period
 
 **Reaction**:
-An Entry logging an adverse response to a single Food: timestamp, 3-point severity (mild / moderate / severe), a seeded symptom checklist (rash/hives, vomiting, diarrhea, swelling, breathing issues), and an optional note. Any Reaction moves the Food to avoid and adds it to the Child's derived suspected allergies.
+An Entry logging an adverse response to one or more suspected Foods: timestamp (when the symptoms appeared, backdateable, with no link to any Introduction), at least one Food (any Food may be flagged; the picker sorts trying Foods first), a required 3-point severity (mild / moderate / severe), an optional multi-select from a seeded symptom checklist (rash/hives, vomiting, diarrhea, swelling, breathing issues — seed-only, the note covers anything else), and an optional note. A Reaction is a terminal override: it ends any active Watch Period and moves every flagged Food to avoid from any status — including untried, which covers reactions to foods tried before the app was in use — adding them to the Child's derived suspected allergies.
 _Avoid_: Allergic event, incident
