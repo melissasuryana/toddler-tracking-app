@@ -20,7 +20,8 @@
 
   All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
   Home comparison: original cards, compact launchpad, and bottom action dock,
-  switchable via ?variant=A/B/C. Layout exploration only, not an approved decision.
+  switchable via ?variant=A/B/C. B (compact launchpad) is the preferred default.
+  Shared event date/time editing is interactive for all logging forms.
 -->
 <html lang="en">
   <head>
@@ -750,11 +751,11 @@
     <div class="banner">
       <b>End-to-end MVP.</b> Every settled flow in one shell: Now cards, all 8
       Entry kinds, edit-from-detail, confirm-and-scrub Delete (no Recently
-      Deleted), Foods browser. Compare Home layouts below; existing forms are
-      unchanged. Use the arrows below to compare <b>A: original cards</b>,
-      <b>B: compact launchpad</b>, and <b>C: bottom action dock</b>; the
-      <code>?variant=A/B/C</code> URL keeps your selection on reload. Charts +
-      stats are post-MVP stubs.
+      Deleted), Foods browser. Compare Home layouts below; logging forms now
+      include shared timestamp editing. Use the arrows below to compare
+      <b>A: original cards</b>, <b>B: compact launchpad (preferred default)</b>,
+      and <b>C: bottom action dock</b>; the <code>?variant=A/B/C</code> URL
+      keeps your selection on reload. Charts + stats are post-MVP stubs.
       <details>
         <summary>What does “consistent timestamp editing” mean?</summary>
         <p>
@@ -772,11 +773,12 @@
           its time must not move it to now.
         </p>
         <p>
-          Not implemented here: most forms have no date/time picker, sleep keeps
-          its timer’s times, and Introduction only has rough “Already tried
-          before” offsets. Those offsets are not a shared timestamp editor. Home
-          variants compare layouts only. All demo data is in memory; reloading
-          resets it.
+          Try it: log an entry with an earlier “When”, then open it from Latest
+          or Timeline → Edit and correct the time. Sleep has separate start/end
+          fields. Introduction uses the same picker instead of rough offsets,
+          and “Also log a meal” carries its time into the meal form. All times
+          use your device’s local timezone. All demo data is in memory;
+          reloading resets it.
         </p>
       </details>
     </div>
@@ -807,7 +809,7 @@
       };
       function variantFromURL() {
         const key = new URL(location.href).searchParams.get("variant");
-        return Object.hasOwn(homeVariants, key) ? key : "A";
+        return Object.hasOwn(homeVariants, key) ? key : "B";
       }
       let homeVariant = variantFromURL();
       function cycleVariant(direction) {
@@ -1401,11 +1403,11 @@
       function log(kind, extra) {
         state.entries.push(
           Object.assign(
-            { id: nextId++, kind, at: Date.now(), deleted: false },
+            { id: nextId++, kind, at: sheet.at, deleted: false },
             extra
           )
         );
-        toast("Logged: " + KIND[kind].name + " @ " + timeOf(Date.now()));
+        toast("Logged: " + KIND[kind].name + " @ " + timeOf(sheet.at));
         render();
       }
       // Delete (#16/#17): confirm-and-scrub. Content wiped for good, no restore,
@@ -1549,6 +1551,7 @@
         const last = latestMeal();
         sheet = {
           kind,
+          at: opts?.at ?? Date.now(),
           editing: null,
           note: "",
           // feed
@@ -1557,8 +1560,8 @@
           // diaper
           diaperType: null,
           // sleep
-          sleepStartAt: null,
-          sleepEndAt: null,
+          sleepStartAt: Date.now(),
+          sleepEndAt: Date.now(),
           quality: null,
           factors: new Set(),
           // medical
@@ -1583,8 +1586,6 @@
           search: "",
           texture: null,
           alsoMeal: false,
-          backdate: false,
-          backdateOffset: "3",
           headsUpDismissed: false,
           fromIntro: null,
           // reaction
@@ -1615,6 +1616,7 @@
         if (!e) return;
         openSheet(e.kind);
         sheet.editing = id;
+        sheet.at = e.at;
         sheet.note = e.note || "";
         if (e.kind === "feed") {
           sheet.side = e.side || null;
@@ -1645,7 +1647,6 @@
         } else if (e.kind === "introduction") {
           sheet.food = e.food;
           sheet.texture = e.texture || null;
-          sheet.backdate = !!e.backdated;
         } else if (e.kind === "reaction") {
           sheet.reactFoods = new Set(e.foods || []);
           sheet.severity = e.severity;
@@ -1664,6 +1665,18 @@
         render();
       }
       function saveSheet() {
+        const at = sheet.kind === "sleep" ? sheet.sleepStartAt : sheet.at;
+        if (
+          !Number.isFinite(at) ||
+          (sheet.kind === "sleep" && !Number.isFinite(sheet.sleepEndAt))
+        ) {
+          toast("Choose a valid date and time.");
+          return;
+        }
+        if (sheet.kind === "sleep" && sheet.sleepEndAt < at) {
+          toast("Sleep end must be at or after its start.");
+          return;
+        }
         if (sheet.editing != null) {
           const e = state.entries.find((x) => x.id === sheet.editing);
           if (e) applySheetTo(e);
@@ -1675,6 +1688,8 @@
         closeSheet();
       }
       function applySheetTo(e) {
+        e.at = sheet.kind === "sleep" ? sheet.sleepStartAt : sheet.at;
+        e.updatedAt = Date.now();
         if (e.kind === "feed") {
           e.side = sheet.side;
           e.duration = sheet.duration ? Number(sheet.duration) : null;
@@ -1717,26 +1732,13 @@
           e.food = sheet.food;
           e.texture = sheet.texture;
           e.note = sheet.note;
-          if (sheet.backdate && !e.backdated) {
-            e.at = Date.now() - Number(sheet.backdateOffset) * day;
-            e.backdated = backdateLabel();
-          } else if (!sheet.backdate) {
-            delete e.backdated;
-          }
+          delete e.backdated;
         } else if (e.kind === "reaction") {
           e.foods = [...sheet.reactFoods];
           e.severity = sheet.severity;
           e.symptoms = [...sheet.symptoms];
           e.note = sheet.note;
         }
-      }
-      function backdateLabel() {
-        return {
-          3: "3 days ago",
-          7: "a week ago",
-          30: "a month ago",
-          90: "3 months ago",
-        }[sheet.backdateOffset];
       }
       function saveNew() {
         const k = sheet.kind;
@@ -1748,8 +1750,8 @@
         else if (k === "diaper")
           log("diaper", { diaperType: sheet.diaperType, note: sheet.note });
         else if (k === "sleep") {
-          const at = sheet.sleepStartAt || Date.now();
-          const end = sheet.sleepEndAt || Date.now();
+          const at = sheet.sleepStartAt;
+          const end = sheet.sleepEndAt;
           state.entries.push({
             id: nextId++,
             kind: "sleep",
@@ -1795,7 +1797,7 @@
           state.entries.push({
             id: nextId++,
             kind: "reaction",
-            at: Date.now(),
+            at: sheet.at,
             foods: [...sheet.reactFoods],
             severity: sheet.severity,
             symptoms: [...sheet.symptoms],
@@ -1811,9 +1813,7 @@
       function saveIntro() {
         const also = sheet.alsoMeal;
         const texture = sheet.texture;
-        const at = sheet.backdate
-          ? Date.now() - Number(sheet.backdateOffset) * day
-          : Date.now();
+        const at = sheet.at;
         state.entries.push({
           id: nextId++,
           kind: "introduction",
@@ -1821,21 +1821,15 @@
           food: sheet.food,
           texture,
           note: sheet.note,
-          backdated: sheet.backdate ? backdateLabel() : null,
           deleted: false,
         });
         const s = foodStatus(foodByName(sheet.food));
-        toast(
-          sheet.backdate
-            ? `Introduction logged — ${sheet.food} is ${s.status} (watch window already passed)`
-            : s.status === "trying"
-              ? `Watch Period started for ${sheet.food}`
-              : `Introduction logged: ${sheet.food}`
-        );
+        toast(`Introduction logged — ${sheet.food}: ${s.status}`);
         if (also) {
           openSheet("meal", {
             prefillFromIntro: foodByName(sheet.food),
             texture,
+            at,
           });
           return;
         }
@@ -1985,7 +1979,7 @@
       // ---------- sheet bodies ----------
       function editBannerHTML() {
         return sheet.editing != null
-          ? `<div class="edit-note">✏️ Editing — change the fields shown below. The Entry keeps its identity. This demo has no shared date/time editor; most entries keep their recorded time. See “consistent timestamp editing” above for the intended behavior.</div>`
+          ? `<div class="edit-note">✏️ Editing — the Entry keeps its identity. “When” is when it happened, not when you save. Correcting it updates the timeline, summaries, and watch windows.</div>`
           : "";
       }
       function feedSheetHTML() {
@@ -2007,14 +2001,14 @@
       function sleepSheetHTML() {
         const started = sheet.sleepStartAt || Date.now();
         return `<h3>${sheet.editing != null ? "Edit sleep" : "End sleep"}</h3>
-          <div class="step-note">${sheet.editing != null ? "Adjust quality and factors; this demo keeps the recorded start/end." : "Timer ran " + Math.round((Date.now() - started) / min) + "m — rate it or just save."}</div>
+          <div class="step-note">${sheet.editing != null ? "Adjust start/end, quality, and factors." : "Timer ran " + Math.round((Date.now() - started) / min) + "m — adjust the times, rate it, or just save."}</div>
           ${editBannerHTML()}
           <div class="opt-label">Quality (optional)</div>
           <div class="chip-row">${QUALITIES.map((q) => `<button class="chip ${sheet.quality === q ? "sel" : ""}" style="flex:1;padding:14px;font-size:15px" onclick="sheet.quality=sheet.quality==='${q}'?null:'${q}';render()">${q}</button>`).join("")}</div>
           <div class="opt-label">Suspected factors (optional, pick any)</div>
           <div class="chip-row">${SLEEP_FACTORS.map((f) => `<button class="chip ${sheet.factors.has(f) ? "sel" : ""}" onclick="toggleSet('factors','${f}')">${f}</button>`).join("")}</div>
           <button class="big-save" style="margin-top:12px" onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save sleep"}</button>
-          <div class="hint">Start/end times editable here in the real thing — the prototype keeps the timer's.</div>`;
+          <div class="hint">Start/end default to the timer's times. End cannot be earlier than start.</div>`;
       }
       function medicalSheetHTML() {
         let body = `<h3>Log medical</h3><div class="step-note">One of four categories — all + optional note.</div>
@@ -2116,29 +2110,11 @@
               ? `<div class="meal-offer">
             <label><input type="checkbox" ${sheet.alsoMeal ? "checked" : ""} onchange="sheet.alsoMeal=this.checked;render()" /> <b>Also log a meal</b> — part of a bigger meal?</label>
             <div class="preview">Pre-fills a Meal with this Food's category + allergen flags${sheet.texture ? " and “" + sheet.texture + "” as texture" : ""}. Amount and everything else can be edited.</div>
-          </div>
-          <div class="backdate">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${sheet.backdate ? "checked" : ""} onchange="sheet.backdate=this.checked;render()" /> Already tried before</label>
-            ${
-              sheet.backdate
-                ? `<select onchange="sheet.backdateOffset=this.value">${[
-                    ["3", "3 days ago"],
-                    ["7", "a week ago"],
-                    ["30", "a month ago"],
-                    ["90", "3 months ago"],
-                  ]
-                    .map(
-                      ([v, l]) =>
-                        `<option value="${v}" ${sheet.backdateOffset === v ? "selected" : ""}>${l}</option>`
-                    )
-                    .join("")}</select>`
-                : ""
-            }
           </div>`
               : ""
           }
           <button class="big-save" style="margin-top:10px" ${sheet.food ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save introduction"}</button>
-          ${sheet.editing != null ? '<div class="hint">Changing the Food or date recalculates its status and Watch Period — even after a manual mark-safe.</div>' : ""}`;
+          <div class="hint">Already tried before? Set “When” to the earlier exposure. Status and Watch Period follow exposure times; manual mark-safe and reaction records still take precedence.</div>`;
       }
       function reactionSheetHTML() {
         return `
@@ -2161,6 +2137,36 @@
           <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
           <button class="big-save danger" style="margin-top:10px" ${sheet.reactFoods.size && sheet.severity ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save reaction"}</button>`;
       }
+      function localDateTime(at) {
+        if (!Number.isFinite(at)) return "";
+        const date = new Date(at);
+        return new Date(at - date.getTimezoneOffset() * min)
+          .toISOString()
+          .slice(0, 16);
+      }
+      function timestampFieldsHTML() {
+        const fields =
+          sheet.kind === "sleep"
+            ? [
+                ["sleepStartAt", "Sleep start"],
+                ["sleepEndAt", "Sleep end"],
+              ]
+            : [["at", "When"]];
+        return `<div class="home-summary">
+          ${fields
+            .map(
+              ([
+                key,
+                label,
+              ]) => `<label class="opt-label" for="entry-${key}">${label}</label>
+          <input id="entry-${key}" class="text-input" type="datetime-local"
+            value="${localDateTime(sheet[key])}"
+            oninput="sheet.${key}=this.value ? new Date(this.value).getTime() : NaN" />`
+            )
+            .join("")}
+          <div class="hint">Event date and time · local timezone. Saving other changes keeps this time.</div>
+        </div>`;
+      }
       function sheetHTML() {
         if (!sheet) return "";
         const bodies = {
@@ -2178,7 +2184,7 @@
           sheet.editing != null
             ? `<button class="delete-link" onclick="closeSheet();openConfirm(${sheet.editing})">Delete this entry…</button>`
             : "";
-        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${inner}${del}</div></div>`;
+        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${timestampFieldsHTML()}${inner}${del}</div></div>`;
       }
 
       // ---------- confirm-and-scrub delete dialog (#16: the only guard) ----------
