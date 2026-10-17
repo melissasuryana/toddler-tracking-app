@@ -8,8 +8,8 @@
   from detail (#15), confirm-and-scrub delete with NO Recently Deleted screen
   (#16/#17), and the Meal/Introduction split (#18/#19) — on the variant-C shell.
 
-  One variant this time: the earlier tickets picked the directions, this file
-  checks whether the full set still coheres. Every screen and every Entry kind
+  The earlier tickets picked the flow directions; this file checks whether the
+  full set still coheres. Every screen and every Entry kind
   is exercisable; growth charts (#9) and the stats dashboard (#13) are stubs.
 
   What to react to (from the ticket):
@@ -751,8 +751,34 @@
       <b>End-to-end MVP.</b> Every settled flow in one shell: Now cards, all 8
       Entry kinds, edit-from-detail, confirm-and-scrub Delete (no Recently
       Deleted), Foods browser. Compare Home layouts below; existing forms are
-      unchanged. Charts + stats are post-MVP stubs. Timestamp editing is not
-      implemented consistently in this throwaway demo.
+      unchanged. Use the arrows below to compare <b>A: original cards</b>,
+      <b>B: compact launchpad</b>, and <b>C: bottom action dock</b>; the
+      <code>?variant=A/B/C</code> URL keeps your selection on reload. Charts +
+      stats are post-MVP stubs.
+      <details>
+        <summary>What does “consistent timestamp editing” mean?</summary>
+        <p>
+          The intended behavior is the same editable “When” date and time on
+          every logging and editing form: default to now for a new entry, retain
+          the recorded time when editing, and allow correcting it or logging
+          something that happened earlier. This is when the event happened, not
+          when you saved the correction.
+        </p>
+        <p>
+          Sleep needs start and end times, with end no earlier than start.
+          Saving a corrected time should update timeline order and day grouping,
+          “last feed/diaper/meal” summaries, sleep duration, and introduction
+          watch windows. The entry keeps its identity; saving without changing
+          its time must not move it to now.
+        </p>
+        <p>
+          Not implemented here: most forms have no date/time picker, sleep keeps
+          its timer’s times, and Introduction only has rough “Already tried
+          before” offsets. Those offsets are not a shared timestamp editor. Home
+          variants compare layouts only. All demo data is in memory; reloading
+          resets it.
+        </p>
+      </details>
     </div>
     <div class="phone" id="phone">
       <div class="toast" id="toast"></div>
@@ -1959,7 +1985,7 @@
       // ---------- sheet bodies ----------
       function editBannerHTML() {
         return sheet.editing != null
-          ? `<div class="edit-note">✏️ Editing — every field can change. The Entry keeps its identity; saving bumps its updated time. Timestamp edits re-derive anything that hangs off them (watch windows, meal defaults).</div>`
+          ? `<div class="edit-note">✏️ Editing — change the fields shown below. The Entry keeps its identity. This demo has no shared date/time editor; most entries keep their recorded time. See “consistent timestamp editing” above for the intended behavior.</div>`
           : "";
       }
       function feedSheetHTML() {
@@ -1981,7 +2007,7 @@
       function sleepSheetHTML() {
         const started = sheet.sleepStartAt || Date.now();
         return `<h3>${sheet.editing != null ? "Edit sleep" : "End sleep"}</h3>
-          <div class="step-note">${sheet.editing != null ? "Adjust start/end, quality, and factors." : "Timer ran " + Math.round((Date.now() - started) / min) + "m — rate it or just save."}</div>
+          <div class="step-note">${sheet.editing != null ? "Adjust quality and factors; this demo keeps the recorded start/end." : "Timer ran " + Math.round((Date.now() - started) / min) + "m — rate it or just save."}</div>
           ${editBannerHTML()}
           <div class="opt-label">Quality (optional)</div>
           <div class="chip-row">${QUALITIES.map((q) => `<button class="chip ${sheet.quality === q ? "sel" : ""}" style="flex:1;padding:14px;font-size:15px" onclick="sheet.quality=sheet.quality==='${q}'?null:'${q}';render()">${q}</button>`).join("")}</div>
