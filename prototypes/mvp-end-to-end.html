@@ -19,6 +19,8 @@
     4. Is the Reaction flow findable mid-incident where it lives?
 
   All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
+  Home comparison: original cards, compact launchpad, and bottom action dock,
+  switchable via ?variant=A/B/C. Layout exploration only, not an approved decision.
 -->
 <html lang="en">
   <head>
@@ -663,21 +665,163 @@
         border: 1px solid var(--accent);
         border-radius: 8px 8px 0 0;
       }
+      body {
+        padding-bottom: 90px;
+      }
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        padding: 12px 14px;
+      }
+      .quick-grid button {
+        min-height: 54px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .quick-grid button.reaction-action {
+        background: var(--danger-soft);
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .action-dock {
+        border-top: 1px solid var(--line);
+        background: var(--accent-soft);
+      }
+      .home-summary {
+        margin: 10px 14px;
+        padding: 12px;
+        background: var(--card);
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .prototype-switcher {
+        position: fixed;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #24231f;
+        color: white;
+        border-radius: 18px;
+        padding: 8px;
+        z-index: 20;
+        width: min(370px, calc(100% - 16px));
+        box-shadow: 0 4px 18px #0005;
+      }
+      .prototype-switcher button {
+        min-width: 44px;
+        min-height: 44px;
+        border: 0;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+      .prototype-switcher span {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+      }
+      .prototype-switcher small {
+        display: block;
+        margin-top: 4px;
+      }
+      @media (max-width: 420px) {
+        body {
+          padding-top: 8px;
+          justify-content: flex-start;
+        }
+        .phone {
+          width: min(375px, 100%);
+          height: calc(100dvh - 190px);
+          min-height: 420px;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="banner">
       <b>End-to-end MVP.</b> Every settled flow in one shell: Now cards, all 8
       Entry kinds, edit-from-detail, confirm-and-scrub Delete (no Recently
-      Deleted), Foods browser. Growth charts + stats are stubs (#9/#13 open).
+      Deleted), Foods browser. Compare Home layouts below; existing forms are
+      unchanged. Charts + stats are post-MVP stubs. Timestamp editing is not
+      implemented consistently in this throwaway demo.
     </div>
     <div class="phone" id="phone">
       <div class="toast" id="toast"></div>
       <div class="screen" id="screen"></div>
       <div id="chrome"></div>
     </div>
+    <nav class="prototype-switcher" aria-label="Prototype Home variants">
+      <button
+        type="button"
+        onclick="cycleVariant(-1)"
+        aria-label="Previous variant"
+      >
+        ←
+      </button>
+      <span id="variant-label" aria-live="polite"></span>
+      <button type="button" onclick="cycleVariant(1)" aria-label="Next variant">
+        →
+      </button>
+    </nav>
 
     <script>
+      const homeVariants = {
+        A: "Original cards",
+        B: "Compact launchpad",
+        C: "Bottom action dock",
+      };
+      function variantFromURL() {
+        const key = new URL(location.href).searchParams.get("variant");
+        return Object.hasOwn(homeVariants, key) ? key : "A";
+      }
+      let homeVariant = variantFromURL();
+      function cycleVariant(direction) {
+        const keys = Object.keys(homeVariants);
+        homeVariant =
+          keys[
+            (keys.indexOf(homeVariant) + direction + keys.length) % keys.length
+          ];
+        const url = new URL(location.href);
+        url.searchParams.set("variant", homeVariant);
+        history.replaceState(null, "", url);
+        showVariant();
+      }
+      function showVariant() {
+        state.tab = "home";
+        state.detailId = null;
+        sheet = null;
+        confirmDeleteId = null;
+        render();
+        document.getElementById("screen").scrollTop = 0;
+      }
+      window.addEventListener("popstate", () => {
+        homeVariant = variantFromURL();
+        showVariant();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.target.closest("input, textarea, select, [contenteditable]") ||
+          sheet ||
+          confirmDeleteId != null ||
+          event.altKey ||
+          event.ctrlKey ||
+          event.metaKey
+        )
+          return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          cycleVariant(event.key === "ArrowLeft" ? -1 : 1);
+        }
+      });
       // ---------- time helpers ----------
       const now = Date.now();
       const min = 60 * 1000;
@@ -757,7 +901,12 @@
         "fussiness/cries",
         "long awake time",
       ];
-      const MED_CATEGORIES = ["medication", "vaccine", "symptom", "temperature"];
+      const MED_CATEGORIES = [
+        "medication",
+        "vaccine",
+        "symptom",
+        "temperature",
+      ];
       const SEVERITIES = ["mild", "moderate", "severe"];
       const REACTION_SYMPTOMS = [
         "rash/hives",
@@ -809,25 +958,93 @@
           { name: "rice", cat: "grains & cereals", allergens: [] },
           { name: "shrimp", cat: "fish & shellfish", allergens: ["shellfish"] },
           { name: "strawberry", cat: "fruit", allergens: [] },
-          { name: "whole wheat toast", cat: "grains & cereals", allergens: ["wheat"] },
+          {
+            name: "whole wheat toast",
+            cat: "grains & cereals",
+            allergens: ["wheat"],
+          },
           { name: "tofu", cat: "proteins", allergens: ["soy"] },
           { name: "cheddar", cat: "dairy", allergens: ["milk"] },
           { name: "hummus", cat: "proteins", allergens: ["sesame"] },
-          { name: "almond butter", cat: "nuts & seeds", allergens: ["tree nuts"] },
+          {
+            name: "almond butter",
+            cat: "nuts & seeds",
+            allergens: ["tree nuts"],
+          },
         ],
         entries: [
           // past Introductions whose Watch Period has passed → safe
-          { id: 1, kind: "introduction", at: now - 20 * day, food: "oatmeal", deleted: false },
-          { id: 2, kind: "introduction", at: now - 19 * day, food: "banana", deleted: false },
-          { id: 3, kind: "introduction", at: now - 18 * day, food: "sweet potato", deleted: false },
-          { id: 4, kind: "introduction", at: now - 15 * day, food: "scrambled egg", deleted: false },
-          { id: 5, kind: "introduction", at: now - 14 * day, food: "yogurt", deleted: false },
-          { id: 6, kind: "introduction", at: now - 12 * day, food: "chicken", deleted: false },
-          { id: 7, kind: "introduction", at: now - 10 * day, food: "pasta", deleted: false },
-          { id: 8, kind: "introduction", at: now - 9 * day, food: "salmon", deleted: false },
-          { id: 9, kind: "introduction", at: now - 8 * day, food: "rice", deleted: false },
+          {
+            id: 1,
+            kind: "introduction",
+            at: now - 20 * day,
+            food: "oatmeal",
+            deleted: false,
+          },
+          {
+            id: 2,
+            kind: "introduction",
+            at: now - 19 * day,
+            food: "banana",
+            deleted: false,
+          },
+          {
+            id: 3,
+            kind: "introduction",
+            at: now - 18 * day,
+            food: "sweet potato",
+            deleted: false,
+          },
+          {
+            id: 4,
+            kind: "introduction",
+            at: now - 15 * day,
+            food: "scrambled egg",
+            deleted: false,
+          },
+          {
+            id: 5,
+            kind: "introduction",
+            at: now - 14 * day,
+            food: "yogurt",
+            deleted: false,
+          },
+          {
+            id: 6,
+            kind: "introduction",
+            at: now - 12 * day,
+            food: "chicken",
+            deleted: false,
+          },
+          {
+            id: 7,
+            kind: "introduction",
+            at: now - 10 * day,
+            food: "pasta",
+            deleted: false,
+          },
+          {
+            id: 8,
+            kind: "introduction",
+            at: now - 9 * day,
+            food: "salmon",
+            deleted: false,
+          },
+          {
+            id: 9,
+            kind: "introduction",
+            at: now - 8 * day,
+            food: "rice",
+            deleted: false,
+          },
           // shrimp: introduced, then a Reaction → avoid
-          { id: 10, kind: "introduction", at: now - 7 * day, food: "shrimp", deleted: false },
+          {
+            id: 10,
+            kind: "introduction",
+            at: now - 7 * day,
+            food: "shrimp",
+            deleted: false,
+          },
           {
             id: 11,
             kind: "reaction",
@@ -839,11 +1056,41 @@
             deleted: false,
           },
           // peanut butter introduced this morning → mid-watch day 1
-          { id: 12, kind: "introduction", at: today + 8 * hour, food: "peanut butter", texture: "mashed", note: "", deleted: false },
+          {
+            id: 12,
+            kind: "introduction",
+            at: today + 8 * hour,
+            food: "peanut butter",
+            texture: "mashed",
+            note: "",
+            deleted: false,
+          },
           // the rest of today: a full mixed day across all 8 kinds
-          { id: 13, kind: "sleep", at: today + 1.5 * hour, end: today + 3.5 * hour, quality: "okay", factors: ["many wakeups"], deleted: false },
-          { id: 14, kind: "feed", at: today + 7 * hour, side: "left", duration: 15, deleted: false },
-          { id: 15, kind: "diaper", at: today + 8.5 * hour, diaperType: "wet", note: "", deleted: false },
+          {
+            id: 13,
+            kind: "sleep",
+            at: today + 1.5 * hour,
+            end: today + 3.5 * hour,
+            quality: "okay",
+            factors: ["many wakeups"],
+            deleted: false,
+          },
+          {
+            id: 14,
+            kind: "feed",
+            at: today + 7 * hour,
+            side: "left",
+            duration: 15,
+            deleted: false,
+          },
+          {
+            id: 15,
+            kind: "diaper",
+            at: today + 8.5 * hour,
+            diaperType: "wet",
+            note: "",
+            deleted: false,
+          },
           {
             id: 16,
             kind: "meal",
@@ -856,17 +1103,99 @@
             note: "",
             deleted: false,
           },
-          { id: 17, kind: "medical", at: today + 9.5 * hour, category: "medication", name: "paracetamol", dose: "2.5 ml", note: "teething", deleted: false },
-          { id: 18, kind: "growth", at: today + 10 * hour, weight: 9.4, height: null, head: null, deleted: false },
-          { id: 19, kind: "feed", at: today + 12.5 * hour, side: "right", duration: null, deleted: false },
-          { id: 20, kind: "diaper", at: today + 13 * hour, diaperType: "both", note: "", deleted: false },
-          { id: 21, kind: "medical", at: today + 13.5 * hour, category: "temperature", value: 37.6, unit: "°C", note: "", deleted: false },
+          {
+            id: 17,
+            kind: "medical",
+            at: today + 9.5 * hour,
+            category: "medication",
+            name: "paracetamol",
+            dose: "2.5 ml",
+            note: "teething",
+            deleted: false,
+          },
+          {
+            id: 18,
+            kind: "growth",
+            at: today + 10 * hour,
+            weight: 9.4,
+            height: null,
+            head: null,
+            deleted: false,
+          },
+          {
+            id: 19,
+            kind: "feed",
+            at: today + 12.5 * hour,
+            side: "right",
+            duration: null,
+            deleted: false,
+          },
+          {
+            id: 20,
+            kind: "diaper",
+            at: today + 13 * hour,
+            diaperType: "both",
+            note: "",
+            deleted: false,
+          },
+          {
+            id: 21,
+            kind: "medical",
+            at: today + 13.5 * hour,
+            category: "temperature",
+            value: 37.6,
+            unit: "°C",
+            note: "",
+            deleted: false,
+          },
           // a couple more earlier this week so the week strip shows dots
-          { id: 22, kind: "sleep", at: now - 26 * hour, end: now - 24.5 * hour, quality: "poor", factors: ["illness", "many wakeups"], deleted: false },
-          { id: 23, kind: "medical", at: now - 25 * hour, category: "symptom", name: "runny nose", note: "", deleted: false },
-          { id: 24, kind: "feed", at: now - 25.5 * hour, side: "left", duration: null, deleted: false },
-          { id: 25, kind: "medical", at: now - 50 * hour, category: "vaccine", name: "MMR", note: "", deleted: false },
-          { id: 26, kind: "meal", at: now - 52 * hour, catFlags: ["proteins"], allergenFlags: ["egg"], amount: "about half", textures: ["soft finger food"], styles: ["self-fed: hands"], note: "", deleted: false },
+          {
+            id: 22,
+            kind: "sleep",
+            at: now - 26 * hour,
+            end: now - 24.5 * hour,
+            quality: "poor",
+            factors: ["illness", "many wakeups"],
+            deleted: false,
+          },
+          {
+            id: 23,
+            kind: "medical",
+            at: now - 25 * hour,
+            category: "symptom",
+            name: "runny nose",
+            note: "",
+            deleted: false,
+          },
+          {
+            id: 24,
+            kind: "feed",
+            at: now - 25.5 * hour,
+            side: "left",
+            duration: null,
+            deleted: false,
+          },
+          {
+            id: 25,
+            kind: "medical",
+            at: now - 50 * hour,
+            category: "vaccine",
+            name: "MMR",
+            note: "",
+            deleted: false,
+          },
+          {
+            id: 26,
+            kind: "meal",
+            at: now - 52 * hour,
+            catFlags: ["proteins"],
+            allergenFlags: ["egg"],
+            amount: "about half",
+            textures: ["soft finger food"],
+            styles: ["self-fed: hands"],
+            note: "",
+            deleted: false,
+          },
         ],
       };
 
@@ -876,12 +1205,17 @@
       }
       function introsFor(name) {
         return state.entries
-          .filter((e) => e.kind === "introduction" && e.food === name && !e.deleted)
+          .filter(
+            (e) => e.kind === "introduction" && e.food === name && !e.deleted
+          )
           .sort((a, b) => a.at - b.at);
       }
       function reactionFor(name) {
         return state.entries.find(
-          (e) => e.kind === "reaction" && (e.foods || []).includes(name) && !e.deleted
+          (e) =>
+            e.kind === "reaction" &&
+            (e.foods || []).includes(name) &&
+            !e.deleted
         );
       }
       function markedSafe(name) {
@@ -899,12 +1233,16 @@
         if (elapsed >= WATCH_DAYS * day) return { status: "safe" };
         return {
           status: "trying",
-          watchDay: Math.max(1, Math.min(WATCH_DAYS, Math.floor(elapsed / day) + 1)),
+          watchDay: Math.max(
+            1,
+            Math.min(WATCH_DAYS, Math.floor(elapsed / day) + 1)
+          ),
         };
       }
       function statusLine(f) {
         const s = foodStatus(f);
-        if (s.status === "trying") return "trying · day " + s.watchDay + " of 3";
+        if (s.status === "trying")
+          return "trying · day " + s.watchDay + " of 3";
         return s.status;
       }
       function watchingFoods() {
@@ -931,28 +1269,49 @@
               (e.duration ? " · " + e.duration + " min" : "")
             );
           case "diaper":
-            return "Diaper · " + e.diaperType + (e.note ? " · “" + e.note + "”" : "");
+            return (
+              "Diaper · " + e.diaperType + (e.note ? " · “" + e.note + "”" : "")
+            );
           case "sleep":
             return e.end
               ? "Sleep · " +
                   Math.round((e.end - e.at) / min) +
                   "m" +
                   (e.quality ? " · " + e.quality : "") +
-                  (e.factors && e.factors.length ? " · " + e.factors.join(", ") : "")
+                  (e.factors && e.factors.length
+                    ? " · " + e.factors.join(", ")
+                    : "")
               : "Sleeping…";
           case "meal": {
             const bits = [];
-            if (e.catFlags && e.catFlags.length) bits.push("kinds: " + e.catFlags.join(", "));
+            if (e.catFlags && e.catFlags.length)
+              bits.push("kinds: " + e.catFlags.join(", "));
             if (e.allergenFlags && e.allergenFlags.length)
               bits.push("allergens: " + e.allergenFlags.join(", "));
-            return "Meal · " + (bits.join(" · ") || "no flags") + " · " + (e.amount || "most of it");
+            return (
+              "Meal · " +
+              (bits.join(" · ") || "no flags") +
+              " · " +
+              (e.amount || "most of it")
+            );
           }
           case "medical": {
             if (e.category === "medication")
-              return "Medical · medication · " + e.name + (e.dose ? " · " + e.dose : "");
-            if (e.category === "vaccine") return "Medical · vaccine · " + e.name;
-            if (e.category === "symptom") return "Medical · symptom · " + e.name;
-            return "Medical · temperature · " + e.value + " " + (e.unit || state.tempUnit);
+              return (
+                "Medical · medication · " +
+                e.name +
+                (e.dose ? " · " + e.dose : "")
+              );
+            if (e.category === "vaccine")
+              return "Medical · vaccine · " + e.name;
+            if (e.category === "symptom")
+              return "Medical · symptom · " + e.name;
+            return (
+              "Medical · temperature · " +
+              e.value +
+              " " +
+              (e.unit || state.tempUnit)
+            );
           }
           case "growth": {
             const bits = [];
@@ -966,7 +1325,8 @@
             const s = f ? foodStatus(f) : { status: "untried" };
             let tail = "";
             if (e.backdated) tail = " · first tried " + e.backdated;
-            else if (s.status === "trying") tail = " · watch day " + s.watchDay + " of 3";
+            else if (s.status === "trying")
+              tail = " · watch day " + s.watchDay + " of 3";
             else if (s.status === "safe") tail = " · safe";
             else if (s.status === "avoid") tail = " · re-challenged → avoid";
             return "🆕 " + e.food + tail;
@@ -977,7 +1337,9 @@
               (e.foods || []).join(", ") +
               " · " +
               e.severity +
-              (e.symptoms && e.symptoms.length ? " · " + e.symptoms.join(", ") : "")
+              (e.symptoms && e.symptoms.length
+                ? " · " + e.symptoms.join(", ")
+                : "")
             );
           case "markSafe":
             return e.food + " marked safe";
@@ -988,7 +1350,9 @@
           "entry-row",
           e.kind === "introduction" ? "intro" : "",
           e.kind === "reaction" ? "reaction" : "",
-        ].join(" ").trim();
+        ]
+          .join(" ")
+          .trim();
         const emoji = e.kind === "markSafe" ? "✅" : KIND[e.kind].emoji;
         return `
         <div class="${cls}" onclick="openDetail(${e.id})">
@@ -1010,7 +1374,10 @@
       // ---------- actions ----------
       function log(kind, extra) {
         state.entries.push(
-          Object.assign({ id: nextId++, kind, at: Date.now(), deleted: false }, extra)
+          Object.assign(
+            { id: nextId++, kind, at: Date.now(), deleted: false },
+            extra
+          )
         );
         toast("Logged: " + KIND[kind].name + " @ " + timeOf(Date.now()));
         render();
@@ -1022,7 +1389,10 @@
         if (!e) return;
         state.entries = state.entries.filter((x) => x.id !== id);
         state.detailId = null;
-        const label = e.kind === "introduction" ? e.food + " introduction" : KIND[e.kind].name;
+        const label =
+          e.kind === "introduction"
+            ? e.food + " introduction"
+            : KIND[e.kind].name;
         toast(label + " permanently deleted");
         render();
       }
@@ -1061,9 +1431,20 @@
       }
       function detailHTML(e) {
         const rows = [];
-        const kv = (k, v) => rows.push(`<div class="detail-kv"><span class="k">${k}</span><span class="v">${v}</span></div>`);
+        const kv = (k, v) =>
+          rows.push(
+            `<div class="detail-kv"><span class="k">${k}</span><span class="v">${v}</span></div>`
+          );
         kv("Kind", KIND[e.kind].name);
-        kv("Time", timeOf(e.at) + " · " + new Date(e.at).toLocaleDateString([], { month: "short", day: "numeric" }));
+        kv(
+          "Time",
+          timeOf(e.at) +
+            " · " +
+            new Date(e.at).toLocaleDateString([], {
+              month: "short",
+              day: "numeric",
+            })
+        );
         if (e.kind === "feed") {
           kv("Side", e.side || "—");
           kv("Duration", e.duration ? e.duration + " min" : "—");
@@ -1073,16 +1454,31 @@
         } else if (e.kind === "sleep") {
           kv("End", e.end ? timeOf(e.end) : "still asleep");
           kv("Quality", e.quality || "—");
-          kv("Factors", e.factors && e.factors.length ? e.factors.join(", ") : "—");
+          kv(
+            "Factors",
+            e.factors && e.factors.length ? e.factors.join(", ") : "—"
+          );
         } else if (e.kind === "meal") {
-          kv("Kinds", e.catFlags && e.catFlags.length ? e.catFlags.join(", ") : "—");
-          kv("Allergens", e.allergenFlags && e.allergenFlags.length ? e.allergenFlags.join(", ") : "—");
+          kv(
+            "Kinds",
+            e.catFlags && e.catFlags.length ? e.catFlags.join(", ") : "—"
+          );
+          kv(
+            "Allergens",
+            e.allergenFlags && e.allergenFlags.length
+              ? e.allergenFlags.join(", ")
+              : "—"
+          );
           kv("Amount", e.amount);
-          kv("Texture", e.textures && e.textures.length ? e.textures.join(", ") : "—");
+          kv(
+            "Texture",
+            e.textures && e.textures.length ? e.textures.join(", ") : "—"
+          );
           kv("Style", e.styles && e.styles.length ? e.styles.join(", ") : "—");
         } else if (e.kind === "medical") {
           kv("Category", e.category);
-          if (e.category === "temperature") kv("Value", e.value + " " + (e.unit || state.tempUnit));
+          if (e.category === "temperature")
+            kv("Value", e.value + " " + (e.unit || state.tempUnit));
           else kv("Name", esc(e.name || "—"));
           if (e.category === "medication") kv("Dose", esc(e.dose || "—"));
           kv("Note", e.note ? "“" + esc(e.note) + "”" : "—");
@@ -1098,7 +1494,10 @@
         } else if (e.kind === "reaction") {
           kv("Foods", (e.foods || []).map(esc).join(", "));
           kv("Severity", e.severity);
-          kv("Symptoms", e.symptoms && e.symptoms.length ? e.symptoms.join(", ") : "—");
+          kv(
+            "Symptoms",
+            e.symptoms && e.symptoms.length ? e.symptoms.join(", ") : "—"
+          );
           kv("Note", e.note ? "“" + esc(e.note) + "”" : "—");
         }
         return (
@@ -1233,7 +1632,9 @@
         render();
       }
       function toggleSet(setName, v) {
-        sheet[setName].has(v) ? sheet[setName].delete(v) : sheet[setName].add(v);
+        sheet[setName].has(v)
+          ? sheet[setName].delete(v)
+          : sheet[setName].add(v);
         render();
       }
       function saveSheet() {
@@ -1268,7 +1669,8 @@
             delete e.dose;
           } else {
             e.name = sheet.medName.trim();
-            if (e.category === "medication") e.dose = sheet.medDose.trim() || null;
+            if (e.category === "medication")
+              e.dose = sheet.medDose.trim() || null;
             else delete e.dose;
             delete e.value;
             delete e.unit;
@@ -1303,16 +1705,34 @@
         }
       }
       function backdateLabel() {
-        return { "3": "3 days ago", "7": "a week ago", "30": "a month ago", "90": "3 months ago" }[sheet.backdateOffset];
+        return {
+          3: "3 days ago",
+          7: "a week ago",
+          30: "a month ago",
+          90: "3 months ago",
+        }[sheet.backdateOffset];
       }
       function saveNew() {
         const k = sheet.kind;
-        if (k === "feed") log("feed", { side: sheet.side, duration: sheet.duration ? Number(sheet.duration) : null });
-        else if (k === "diaper") log("diaper", { diaperType: sheet.diaperType, note: sheet.note });
+        if (k === "feed")
+          log("feed", {
+            side: sheet.side,
+            duration: sheet.duration ? Number(sheet.duration) : null,
+          });
+        else if (k === "diaper")
+          log("diaper", { diaperType: sheet.diaperType, note: sheet.note });
         else if (k === "sleep") {
           const at = sheet.sleepStartAt || Date.now();
           const end = sheet.sleepEndAt || Date.now();
-          state.entries.push({ id: nextId++, kind: "sleep", at, end, quality: sheet.quality, factors: [...sheet.factors], deleted: false });
+          state.entries.push({
+            id: nextId++,
+            kind: "sleep",
+            at,
+            end,
+            quality: sheet.quality,
+            factors: [...sheet.factors],
+            deleted: false,
+          });
           toast("Sleep logged · " + Math.round((end - at) / min) + "m");
         } else if (k === "medical") {
           const extra = { category: sheet.medCategory, note: sheet.note };
@@ -1323,7 +1743,8 @@
             extra.name = sheet.medName.trim();
             const hist = state.medHistory[sheet.medCategory];
             if (hist && !hist.includes(extra.name)) hist.unshift(extra.name);
-            if (sheet.medCategory === "medication") extra.dose = sheet.medDose.trim() || null;
+            if (sheet.medCategory === "medication")
+              extra.dose = sheet.medDose.trim() || null;
           }
           log("medical", extra);
         } else if (k === "growth") {
@@ -1355,14 +1776,18 @@
             note: sheet.note,
             deleted: false,
           });
-          toast("Reaction logged — " + [...sheet.reactFoods].join(", ") + " → avoid");
+          toast(
+            "Reaction logged — " + [...sheet.reactFoods].join(", ") + " → avoid"
+          );
         }
         closeSheet();
       }
       function saveIntro() {
         const also = sheet.alsoMeal;
         const texture = sheet.texture;
-        const at = sheet.backdate ? Date.now() - Number(sheet.backdateOffset) * day : Date.now();
+        const at = sheet.backdate
+          ? Date.now() - Number(sheet.backdateOffset) * day
+          : Date.now();
         state.entries.push({
           id: nextId++,
           kind: "introduction",
@@ -1382,7 +1807,10 @@
               : `Introduction logged: ${sheet.food}`
         );
         if (also) {
-          openSheet("meal", { prefillFromIntro: foodByName(sheet.food), texture });
+          openSheet("meal", {
+            prefillFromIntro: foodByName(sheet.food),
+            texture,
+          });
           return;
         }
         closeSheet();
@@ -1492,7 +1920,9 @@
       function reactAcKey(e) {
         if (e.key === "Enter") {
           e.preventDefault();
-          const m = acMatches(sheet.reactSearch, true).filter((f) => !sheet.reactFoods.has(f.name));
+          const m = acMatches(sheet.reactSearch, true).filter(
+            (f) => !sheet.reactFoods.has(f.name)
+          );
           if (m.length) reactAdd(m[0].name);
         } else if (e.key === "Escape") {
           sheet.reactSearch = "";
@@ -1509,7 +1939,10 @@
       function medAcDropHTML() {
         const hist = state.medHistory[sheet.medCategory] || [];
         const q = sheet.medName.trim().toLowerCase();
-        const matches = (q ? hist.filter((n) => n.includes(q)) : hist).slice(0, 5);
+        const matches = (q ? hist.filter((n) => n.includes(q)) : hist).slice(
+          0,
+          5
+        );
         return matches
           .map(
             (n) =>
@@ -1603,7 +2036,8 @@
         return body;
       }
       function growthSheetHTML() {
-        const any = sheet.weight !== "" || sheet.height !== "" || sheet.head !== "";
+        const any =
+          sheet.weight !== "" || sheet.height !== "" || sheet.head !== "";
         return `<h3>Log growth</h3><div class="step-note">Any of the three — each optional per Entry.</div>
           ${editBannerHTML()}
           <div class="opt-label">Weight (kg)</div>
@@ -1659,7 +2093,21 @@
           </div>
           <div class="backdate">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${sheet.backdate ? "checked" : ""} onchange="sheet.backdate=this.checked;render()" /> Already tried before</label>
-            ${sheet.backdate ? `<select onchange="sheet.backdateOffset=this.value">${[["3", "3 days ago"], ["7", "a week ago"], ["30", "a month ago"], ["90", "3 months ago"]].map(([v, l]) => `<option value="${v}" ${sheet.backdateOffset === v ? "selected" : ""}>${l}</option>`).join("")}</select>` : ""}
+            ${
+              sheet.backdate
+                ? `<select onchange="sheet.backdateOffset=this.value">${[
+                    ["3", "3 days ago"],
+                    ["7", "a week ago"],
+                    ["30", "a month ago"],
+                    ["90", "3 months ago"],
+                  ]
+                    .map(
+                      ([v, l]) =>
+                        `<option value="${v}" ${sheet.backdateOffset === v ? "selected" : ""}>${l}</option>`
+                    )
+                    .join("")}</select>`
+                : ""
+            }
           </div>`
               : ""
           }
@@ -1747,7 +2195,8 @@
         render();
       }
       function shiftWeek(n) {
-        state.selectedDate = startOfDay(state.selectedDate).getTime() + n * 7 * day;
+        state.selectedDate =
+          startOfDay(state.selectedDate).getTime() + n * 7 * day;
         render();
       }
       function goToday() {
@@ -1759,7 +2208,11 @@
         const thisM = mondayOf(Date.now()).getTime();
         if (m === thisM) return "This Week";
         if (m === thisM - 7 * day) return "Last Week";
-        const f = (t) => new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
+        const f = (t) =>
+          new Date(t).toLocaleDateString([], {
+            month: "short",
+            day: "numeric",
+          });
         return f(m) + " – " + f(m + 6 * day);
       }
       function dayLabel() {
@@ -1767,12 +2220,18 @@
         const t0 = startOfDay(Date.now()).getTime();
         if (sel === t0) return "Today";
         if (sel === t0 - day) return "Yesterday";
-        return new Date(sel).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+        return new Date(sel).toLocaleDateString([], {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
       }
       function dateHeaderHTML() {
         const mon = mondayOf(state.selectedDate);
         const todayT = startOfDay(Date.now()).getTime();
-        const onCurrentWeek = mondayOf(state.selectedDate).getTime() === mondayOf(Date.now()).getTime();
+        const onCurrentWeek =
+          mondayOf(state.selectedDate).getTime() ===
+          mondayOf(Date.now()).getTime();
         const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const cells = DOW.map((dow, i) => {
           const t = mon.getTime() + i * day;
@@ -1794,7 +2253,9 @@
         const list = entriesOn(state.selectedDate);
         return (
           dateHeaderHTML() +
-          '<div class="section-label">' + dayLabel() + "</div>" +
+          '<div class="section-label">' +
+          dayLabel() +
+          "</div>" +
           (list.length
             ? list.map((e) => entryRowHTML(e)).join("")
             : '<div class="empty-note">Nothing logged this day.</div>')
@@ -1804,19 +2265,28 @@
       // ---------- Foods browser (with detail actions: mark safe / log intro / reaction) ----------
       const foodsFilter = { cats: new Set(), allergens: new Set() };
       function ffToggleCat(c) {
-        foodsFilter.cats.has(c) ? foodsFilter.cats.delete(c) : foodsFilter.cats.add(c);
+        foodsFilter.cats.has(c)
+          ? foodsFilter.cats.delete(c)
+          : foodsFilter.cats.add(c);
         render();
       }
       function ffToggleAllergen(a) {
-        foodsFilter.allergens.has(a) ? foodsFilter.allergens.delete(a) : foodsFilter.allergens.add(a);
+        foodsFilter.allergens.has(a)
+          ? foodsFilter.allergens.delete(a)
+          : foodsFilter.allergens.add(a);
         render();
       }
       function foodsHTML() {
         const counts = { safe: 0, trying: 0, untried: 0, avoid: 0 };
         state.foods.forEach((f) => counts[foodStatus(f).status]++);
         const list = state.foods.filter((f) => {
-          if (foodsFilter.cats.size && !foodsFilter.cats.has(f.cat)) return false;
-          if (foodsFilter.allergens.size && !f.allergens.some((a) => foodsFilter.allergens.has(a))) return false;
+          if (foodsFilter.cats.size && !foodsFilter.cats.has(f.cat))
+            return false;
+          if (
+            foodsFilter.allergens.size &&
+            !f.allergens.some((a) => foodsFilter.allergens.has(a))
+          )
+            return false;
           return true;
         });
         return (
@@ -1912,21 +2382,7 @@
             <span class="body"><div class="headline">${m ? "Last meal " + rel(m.at) : "Meal"}</div><div class="sub">${m ? esc(describe(m).replace("Meal · ", "")) : "categories + allergens, no named foods"}</div></span>
             <button class="c-action" onclick="openSheet('meal')">Log meal</button>
           </div>` +
-          watchingFoods()
-            .map((w) => {
-              const s = foodStatus(w);
-              return `<div class="c-card watch">
-              <span class="emoji">👀</span>
-              <span class="body"><div class="headline">Watching: ${esc(w.name)}</div><div class="sub">day ${s.watchDay} of 3 · offer it again, or log a reaction</div>
-                <div class="watch-actions">
-                  <button class="c-action" onclick="openSheet('introduction',{food:'${jsq(w.name)}'})">Try again</button>
-                  <button class="c-action danger" onclick="openSheet('reaction',{food:'${jsq(w.name)}'})">Log reaction</button>
-                  <button class="c-action secondary" onclick="markSafe('${jsq(w.name)}')">Mark safe</button>
-                </div>
-              </span>
-            </div>`;
-            })
-            .join("") +
+          watchCardsHTML() +
           `<div class="c-card">
             <span class="emoji">🆕</span>
             <span class="body"><div class="headline">First taste</div><div class="sub">start a Watch Period for a new food</div><div class="link" onclick="state.tab='foods';render()">See all foods ›</div></span>
@@ -1954,6 +2410,60 @@
         );
       }
 
+      function watchCardsHTML() {
+        return watchingFoods()
+          .map((w) => {
+            const s = foodStatus(w);
+            return `<div class="c-card watch">
+              <span class="emoji">👀</span>
+              <span class="body"><div class="headline">Watching: ${esc(w.name)}</div><div class="sub">day ${s.watchDay} of 3 · offer it again, or log a reaction</div>
+                <div class="watch-actions">
+                  <button class="c-action" onclick="openSheet('introduction',{food:'${jsq(w.name)}'})">Try again</button>
+                  <button class="c-action danger" onclick="openSheet('reaction',{food:'${jsq(w.name)}'})">Log reaction</button>
+                  <button class="c-action secondary" onclick="markSafe('${jsq(w.name)}')">Mark safe</button>
+                </div>
+              </span>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function quickActionsHTML() {
+        return `<div class="quick-grid" aria-label="Quick logging">
+          <button onclick="openSheet('feed')">🤱 Feed</button>
+          <button onclick="openSheet('diaper')">🧷 Diaper</button>
+          <button onclick="toggleSleep()">😴 ${state.sleepStart ? "Wake" : "Sleep"}</button>
+          <button onclick="openSheet('meal')">🥣 Meal</button>
+          <button class="reaction-action" onclick="openSheet('reaction')">⚠️ Reaction</button>
+          <button onclick="openSheet('introduction')">🆕 Intro</button>
+          <button onclick="openSheet('medical')">💊 Medical</button>
+          <button onclick="openSheet('growth')">📏 Growth</button>
+        </div>`;
+      }
+
+      function alternativeHomeHTML() {
+        const feed = lastOf("feed");
+        const diaper = lastOf("diaper");
+        const recent = state.entries
+          .filter((e) => !e.deleted)
+          .sort((a, b) => b.at - a.at)
+          .slice(0, 3);
+        const summary = `<div class="home-summary">
+          <b>${state.sleepStart ? "Asleep · " + Math.round((Date.now() - state.sleepStart) / min) + "m" : "Awake · no running timer"}</b><br>
+          Feed ${feed ? rel(feed.at) : "—"} · Diaper ${diaper ? rel(diaper.at) : "—"}
+        </div>`;
+        return (
+          (homeVariant === "B"
+            ? `<div class="section-label">Log now</div>${quickActionsHTML()}${summary}`
+            : summary) +
+          watchCardsHTML() +
+          `<div class="section-label">Latest</div>` +
+          (recent.length
+            ? recent.map(entryRowHTML).join("")
+            : '<div class="empty-note">Nothing logged yet today.</div>')
+        );
+      }
+
       // ---------- render ----------
       function headerHTML(right) {
         return `<div class="app-header">
@@ -1964,7 +2474,10 @@
       function render() {
         const screen = document.getElementById("screen");
         const chrome = document.getElementById("chrome");
-        const detail = state.detailId != null ? state.entries.find((e) => e.id === state.detailId) : null;
+        const detail =
+          state.detailId != null
+            ? state.entries.find((e) => e.id === state.detailId)
+            : null;
         if (detail) {
           screen.innerHTML = detailHTML(detail);
         } else if (state.tab === "timeline") {
@@ -1972,21 +2485,31 @@
         } else if (state.tab === "foods") {
           screen.innerHTML = headerHTML() + foodsHTML();
         } else if (state.tab === "growth") {
-          screen.innerHTML = headerHTML('<button class="chip" onclick="state.tab=\'home\';render()">‹ home</button>') + growthHTML();
+          screen.innerHTML =
+            headerHTML(
+              '<button class="chip" onclick="state.tab=\'home\';render()">‹ home</button>'
+            ) + growthHTML();
         } else if (state.tab === "settings") {
           screen.innerHTML = headerHTML() + settingsHTML();
         } else {
-          screen.innerHTML = headerHTML() + homeHTML();
+          screen.innerHTML =
+            headerHTML() +
+            (homeVariant === "A" ? homeHTML() : alternativeHomeHTML());
         }
         chrome.innerHTML =
           sheetHTML() +
           confirmHTML() +
+          (homeVariant === "C" && state.tab === "home" && !detail
+            ? `<div class="action-dock">${quickActionsHTML()}</div>`
+            : "") +
           `<div class="tabbar">
           <button class="${state.tab === "home" ? "active" : ""}" onclick="state.tab='home';state.detailId=null;render()"><span class="ico">🏠</span>Now</button>
           <button class="${state.tab === "timeline" ? "active" : ""}" onclick="state.tab='timeline';state.detailId=null;render()"><span class="ico">🗓</span>Timeline</button>
           <button class="${state.tab === "foods" ? "active" : ""}" onclick="state.tab='foods';state.detailId=null;render()"><span class="ico">🥕</span>Foods</button>
           <button class="${state.tab === "settings" ? "active" : ""}" onclick="state.tab='settings';state.detailId=null;render()"><span class="ico">⚙️</span>Settings</button>
         </div>`;
+        document.getElementById("variant-label").innerHTML =
+          `Home ${homeVariant} · ${homeVariants[homeVariant]}<small>Prototype only · ${state.entries.filter((e) => !e.deleted).length} entries · ${watchingFoods().length} watches · timer ${state.sleepStart ? "on" : "off"}</small>`;
       }
       // keep the sleep timer ticking
       setInterval(() => {
