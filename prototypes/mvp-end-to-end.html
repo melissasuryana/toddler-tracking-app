@@ -773,12 +773,13 @@
           its time must not move it to now.
         </p>
         <p>
-          Try it: log an entry with an earlier “When”, then open it from Latest
-          or Timeline → Edit and correct the time. Sleep has separate start/end
-          fields. Introduction uses the same picker instead of rough offsets,
-          and “Also log a meal” carries its time into the meal form. All times
-          use your device’s local timezone. All demo data is in memory;
-          reloading resets it.
+          Try it: find “When” at the bottom of any form, just before Save. Log
+          an entry with an earlier time, then open it from Latest or Timeline →
+          Edit and correct the time. Sleep has separate start/end fields.
+          Introduction uses the same picker instead of rough offsets, and “Also
+          log a meal” carries its time into the meal form. All times use your
+          device’s local timezone. All demo data is in memory; reloading resets
+          it.
         </p>
       </details>
     </div>
@@ -1989,6 +1990,7 @@
           <div class="chip-row">${["left", "right"].map((s) => `<button class="chip ${sheet.side === s ? "sel" : ""}" style="flex:1;padding:14px;font-size:15px" onclick="sheet.side=sheet.side==='${s}'?null:'${s}';render()">${s}</button>`).join("")}</div>
           <div class="opt-label">Duration in minutes (optional)</div>
           <input class="text-input" type="number" min="0" placeholder="e.g. 15" value="${esc(String(sheet.duration))}" oninput="sheet.duration=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:12px" onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save feed"}</button>`;
       }
       function diaperSheetHTML() {
@@ -1996,6 +1998,7 @@
           ${editBannerHTML()}
           <div class="chip-row">${["wet", "dirty", "both"].map((t) => `<button class="chip ${sheet.diaperType === t ? "sel" : ""}" style="flex:1;padding:16px;font-size:16px" onclick="sheet.diaperType='${t}';render()">${t}</button>`).join("")}</div>
           <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:10px" ${sheet.diaperType ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save diaper"}</button>`;
       }
       function sleepSheetHTML() {
@@ -2007,6 +2010,7 @@
           <div class="chip-row">${QUALITIES.map((q) => `<button class="chip ${sheet.quality === q ? "sel" : ""}" style="flex:1;padding:14px;font-size:15px" onclick="sheet.quality=sheet.quality==='${q}'?null:'${q}';render()">${q}</button>`).join("")}</div>
           <div class="opt-label">Suspected factors (optional, pick any)</div>
           <div class="chip-row">${SLEEP_FACTORS.map((f) => `<button class="chip ${sheet.factors.has(f) ? "sel" : ""}" onclick="toggleSet('factors','${f}')">${f}</button>`).join("")}</div>
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:12px" onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save sleep"}</button>
           <div class="hint">Start/end default to the timer's times. End cannot be earlier than start.</div>`;
       }
@@ -2051,6 +2055,7 @@
               : sheet.medName.trim().length > 0;
           body += `
           <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:10px" ${valid ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save medical"}</button>`;
         }
         return body;
@@ -2066,6 +2071,7 @@
           <input class="text-input" type="number" step="0.1" placeholder="e.g. 74" value="${esc(sheet.height)}" oninput="sheet.height=this.value" />
           <div class="opt-label">Head circumference (cm)</div>
           <input class="text-input" type="number" step="0.1" placeholder="e.g. 46.5" value="${esc(sheet.head)}" oninput="sheet.head=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:12px" ${any ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save growth"}</button>
           <div class="hint">Percentile charts live on the Growth screen — stubbed here (#9 still open).</div>`;
       }
@@ -2085,6 +2091,7 @@
           <div class="opt-label">Feeding style (optional, pick any)</div>
           <div class="chip-row">${STYLES.map((s) => `<button class="chip ${sheet.styles.has(s) ? "sel" : ""}" onclick="toggleSet('styles','${s}')">${s}</button>`).join("")}</div>
           <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:10px" onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save meal"}</button>
           <div class="hint">Texture and feeding style remembered from the last meal.</div>`;
       }
@@ -2113,6 +2120,7 @@
           </div>`
               : ""
           }
+          ${timestampFieldsHTML()}
           <button class="big-save" style="margin-top:10px" ${sheet.food ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save introduction"}</button>
           <div class="hint">Already tried before? Set “When” to the earlier exposure. Status and Watch Period follow exposure times; manual mark-safe and reaction records still take precedence.</div>`;
       }
@@ -2135,6 +2143,7 @@
           <div class="opt-label">Symptoms (optional, pick any)</div>
           <div class="chip-row">${REACTION_SYMPTOMS.map((sy) => `<button class="chip ${sheet.symptoms.has(sy) ? "sel" : ""}" onclick="toggleSet('symptoms','${sy}')">${sy}</button>`).join("")}</div>
           <input class="note-input" placeholder="Note (optional)" value="${esc(sheet.note)}" oninput="sheet.note=this.value" />
+          ${timestampFieldsHTML()}
           <button class="big-save danger" style="margin-top:10px" ${sheet.reactFoods.size && sheet.severity ? "" : "disabled"} onclick="saveSheet()">${sheet.editing != null ? "Save changes" : "Save reaction"}</button>`;
       }
       function localDateTime(at) {
@@ -2184,7 +2193,7 @@
           sheet.editing != null
             ? `<button class="delete-link" onclick="closeSheet();openConfirm(${sheet.editing})">Delete this entry…</button>`
             : "";
-        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${timestampFieldsHTML()}${inner}${del}</div></div>`;
+        return `<div class="sheet-backdrop" onclick="if(event.target===this)closeSheet()"><div class="sheet">${inner}${del}</div></div>`;
       }
 
       // ---------- confirm-and-scrub delete dialog (#16: the only guard) ----------
