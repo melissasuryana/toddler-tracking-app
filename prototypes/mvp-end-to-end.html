@@ -1617,6 +1617,7 @@
           // reaction
           reactFoods: new Set(),
           reactSearch: "",
+          reactPickerOpen: true,
           severity: null,
           symptoms: new Set(),
         };
@@ -1628,8 +1629,10 @@
           sheet.textures = new Set(opts.texture ? [opts.texture] : []);
         }
         if (opts && opts.food) {
-          if (kind === "reaction") sheet.reactFoods.add(opts.food);
-          else sheet.food = opts.food;
+          if (kind === "reaction") {
+            sheet.reactFoods.add(opts.food);
+            sheet.reactPickerOpen = false;
+          } else sheet.food = opts.food;
         }
         if (opts && opts.stopAt) {
           sheet.sleepStartAt = opts.startAt;
@@ -1685,6 +1688,7 @@
           sheet.texture = e.texture || null;
         } else if (e.kind === "reaction") {
           sheet.reactFoods = new Set(e.foods || []);
+          sheet.reactPickerOpen = false;
           sheet.severity = e.severity;
           sheet.symptoms = new Set(e.symptoms || []);
         }
@@ -1966,16 +1970,21 @@
       }
       // reaction picker: one-or-more foods, trying first (#14)
       function reactAcDropHTML() {
-        return acMatches(sheet.reactSearch, true)
-          .filter((f) => !sheet.reactFoods.has(f.name))
-          .map((f) => {
-            const s = foodStatus(f);
-            return `<button class="ac-row" onclick="reactAdd('${jsq(f.name)}')">${STATUS_DOT[s.status]} ${esc(f.name)} <span class="alg">${statusLine(f)}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</span></button>`;
-          })
-          .join("");
+        if (!sheet.reactPickerOpen) return "";
+        return (
+          `<button class="ac-row" onclick="sheet.reactPickerOpen=false;render()">Close suggestions</button>` +
+          acMatches(sheet.reactSearch, true)
+            .filter((f) => !sheet.reactFoods.has(f.name))
+            .map((f) => {
+              const s = foodStatus(f);
+              return `<button class="ac-row" onclick="reactAdd('${jsq(f.name)}')">${STATUS_DOT[s.status]} ${esc(f.name)} <span class="alg">${statusLine(f)}${f.allergens.length ? " · " + f.allergens.join(", ") : ""}</span></button>`;
+            })
+            .join("")
+        );
       }
       function reactAcInput(v) {
         sheet.reactSearch = v;
+        sheet.reactPickerOpen = true;
         document.getElementById("ac-drop").innerHTML = reactAcDropHTML();
       }
       function reactAcKey(e) {
@@ -1987,6 +1996,7 @@
           if (m.length) reactAdd(m[0].name);
         } else if (e.key === "Escape") {
           sheet.reactSearch = "";
+          sheet.reactPickerOpen = false;
           e.target.value = "";
           document.getElementById("ac-drop").innerHTML = "";
         }
@@ -1994,6 +2004,7 @@
       function reactAdd(name) {
         sheet.reactFoods.add(name);
         sheet.reactSearch = "";
+        sheet.reactPickerOpen = false;
         render();
       }
       // medical name autocomplete from history (#14)
@@ -2187,7 +2198,7 @@
               : ""
           }
           <div class="ac-wrap">
-            <input class="search-input" placeholder="Add a suspected food…" value="${esc(sheet.reactSearch)}" autocomplete="off" oninput="reactAcInput(this.value)" onkeydown="reactAcKey(event)" />
+            <input class="search-input" placeholder="Add a suspected food…" value="${esc(sheet.reactSearch)}" autocomplete="off" onfocus="sheet.reactPickerOpen=true;document.getElementById('ac-drop').innerHTML=reactAcDropHTML()" oninput="reactAcInput(this.value)" onkeydown="reactAcKey(event)" />
             <div class="ac-drop" id="ac-drop">${reactAcDropHTML()}</div>
           </div>
           <div class="opt-label">Severity (required)</div>
