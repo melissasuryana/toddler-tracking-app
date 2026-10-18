@@ -292,7 +292,7 @@
       }
       @media (min-width: 900px) {
         .compare {
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
         }
       }
       .compare .col {
@@ -1465,6 +1465,351 @@
         font-weight: 700;
       }
 
+      /* ============================================================
+         DIRECTION D — KEEPSAKE (Bloom × Ledger merge)
+         Ledger's clean structure — hairline rules, quiet rows, one
+         accent spent sparingly, tabular order — carrying Bloom's
+         garden palette, serif/italic voice, and icon discs.
+         ============================================================ */
+      .d-screen {
+        background: #fbf6ee;
+        color: #33302a;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
+      }
+      .d-body {
+        flex: 1;
+        overflow: hidden;
+        padding: 8px 0 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .d-pad {
+        padding: 0 18px;
+      }
+      .d-masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 18px 12px;
+      }
+      .d-h1 {
+        font-family:
+          "Iowan Old Style", Palatino, "Palatino Linotype", ui-serif, Georgia,
+          serif;
+        font-size: 26px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .d-h1 em {
+        font-style: italic;
+        color: #c96f4a;
+      }
+      .d-kicker {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8b8375;
+      }
+      .d-rule {
+        border-top: 1px solid #33302a;
+      }
+      .d-rule-thin {
+        border-top: 1px solid #e9dfcd;
+      }
+      .d-sleep {
+        padding: 14px 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 14px;
+        align-items: center;
+        background: #eef2e8;
+      }
+      .d-sleep .lbl {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #55694e;
+      }
+      .d-sleep .big {
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 32px;
+        line-height: 1.05;
+        font-variant-numeric: tabular-nums;
+      }
+      .d-sleep .big em {
+        font-style: italic;
+        color: #55694e;
+      }
+      .d-sleep .sub {
+        font-size: 10.5px;
+        color: #55694e;
+      }
+      .d-sleep button {
+        grid-row: span 2;
+        align-self: center;
+        background: #33302a;
+        color: #fbf6ee;
+        border: 0;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+        padding: 11px 16px;
+      }
+      .d-watch {
+        border-top: 2px solid #c96f4a;
+        background: #fdf1e7;
+        padding: 12px 18px 14px;
+      }
+      .d-watch .lbl {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #c96f4a;
+      }
+      .d-watch .food {
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 19px;
+        margin-top: 3px;
+      }
+      .d-watch .meta {
+        font-size: 10.5px;
+        color: #a5775c;
+        margin-top: 2px;
+      }
+      .d-watch .ticks {
+        display: flex;
+        gap: 4px;
+        margin: 10px 0;
+      }
+      .d-watch .ticks i {
+        width: 26px;
+        height: 5px;
+        border-radius: 99px;
+        background: #efd8c3;
+      }
+      .d-watch .ticks i.on {
+        background: #c96f4a;
+      }
+      .d-watch .acts {
+        display: flex;
+        gap: 16px;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .d-watch .acts span {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: #d8b794;
+        color: #8a5a3d;
+      }
+      .d-watch .acts .hot {
+        color: #c96f4a;
+        text-decoration-color: #c96f4a;
+      }
+      .d-watch .acts .danger {
+        color: #b4552e;
+        text-decoration-color: #b4552e;
+      }
+      .d-row {
+        display: grid;
+        grid-template-columns: 40px 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 18px;
+        border-top: 1px solid #e9dfcd;
+      }
+      .d-orb {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .d-orb svg {
+        width: 17px;
+        height: 17px;
+      }
+      .d-row .t {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .d-row .s {
+        font-size: 10.5px;
+        color: #8b8375;
+        margin-top: 1px;
+      }
+      .d-row .go {
+        font-size: 11px;
+        font-weight: 650;
+        color: #c96f4a;
+        background: none;
+        border: 1px solid #e2c3ab;
+        border-radius: 999px;
+        padding: 7px 13px;
+      }
+      .d-row .time {
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-style: italic;
+        font-size: 11.5px;
+        color: #8b8375;
+      }
+      .d-section {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b8375;
+        padding: 12px 18px 6px;
+      }
+      .d-tabbar {
+        display: flex;
+        border-top: 1px solid #33302a;
+        background: #fbf6ee;
+        padding: 9px 10px 15px;
+      }
+      .d-tabbar div {
+        flex: 1;
+        text-align: center;
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #a89f8e;
+        display: grid;
+        gap: 4px;
+        justify-items: center;
+      }
+      .d-tabbar div.on {
+        color: #33302a;
+      }
+      .d-tabbar div.on svg {
+        color: #c96f4a;
+      }
+      .d-tabbar svg {
+        width: 17px;
+        height: 17px;
+      }
+      .d-statusbar {
+        display: flex;
+        gap: 12px;
+        padding: 10px 18px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: #8b8375;
+      }
+      .d-statusbar b {
+        font-weight: 700;
+        color: #33302a;
+      }
+      .d-pill {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 999px;
+        flex: none;
+      }
+      .d-sheet {
+        position: absolute;
+        inset: auto 0 0 0;
+        background: #fffdf8;
+        border-top: 2px solid #33302a;
+        padding: 14px 18px 20px;
+        box-shadow: 0 -18px 44px rgba(51, 48, 42, 0.2);
+        z-index: 10;
+      }
+      .d-sheet h4 {
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 21px;
+        font-weight: 500;
+        margin-top: 2px;
+      }
+      .d-sheet h4 em {
+        font-style: italic;
+        color: #c96f4a;
+      }
+      .d-amount {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin: 14px 0 4px;
+      }
+      .d-amount i {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1.5px solid #e5d9c4;
+        display: grid;
+        place-items: center;
+      }
+      .d-amount i.on {
+        background: #d9e4d0;
+        border-color: #a9c19d;
+      }
+      .d-amount svg {
+        width: 16px;
+        height: 16px;
+        color: #55694e;
+      }
+      .d-amount i.off svg {
+        color: #cfc3ad;
+      }
+      .d-amountlbl {
+        text-align: center;
+        font-size: 10.5px;
+        color: #8b8375;
+        font-weight: 600;
+      }
+      .d-flags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      .d-flags span {
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 7px 13px;
+        border-radius: 999px;
+        border: 1px solid #e5d9c4;
+        color: #8b8375;
+        background: #fffdf8;
+      }
+      .d-flags span.sel {
+        background: #f3e3d3;
+        border-color: #d8b794;
+        color: #8a5a3d;
+      }
+      .d-ts {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #e9dfcd;
+        border-bottom: 1px solid #e9dfcd;
+        padding: 10px 2px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #6f675a;
+        margin-top: 14px;
+      }
+      .d-ts .e {
+        color: #c96f4a;
+        font-weight: 650;
+      }
+      .d-save {
+        width: 100%;
+        margin-top: 12px;
+        background: #33302a;
+        color: #fbf6ee;
+        border: 0;
+        border-radius: 999px;
+        padding: 14px;
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+      }
+
       @media print {
         .doc-nav {
           display: none;
@@ -1514,7 +1859,9 @@
           <path d="M4 20V8M4 20h16" />
           <path d="M8 16v-4M12 16V7M16 16v-6M20 16V5" />
         </symbol>
-        <symbol id="i-now" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2" /></symbol>
+        <symbol id="i-now" viewBox="0 0 24 24">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+        </symbol>
         <symbol id="i-timeline" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="8" />
           <path d="M12 7.5V12l3 2" />
@@ -1531,7 +1878,9 @@
             d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M17.7 6.3l-1.8 1.8M8.1 15.9l-1.8 1.8"
           />
         </symbol>
-        <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </symbol>
       </defs>
     </svg>
 
@@ -1539,18 +1888,24 @@
       <div class="doc-eyebrow">
         Toddler Routine Tracker · Visual Design Exploration v2 · October 2026
       </div>
-      <h1 class="doc-title">Three design directions</h1>
+      <h1 class="doc-title">Four design directions</h1>
       <p class="doc-lede">
         v2, regenerated after feedback that v1 sat too close to the prototypes
-        (emoji icons, similar system fonts). These three directions share
+        (emoji icons, similar system fonts). All directions share
         <b>no emoji in the product UI</b> — a single minimal stroke-icon set
-        instead — and deliberately diverge in type system, geometry, and mood: a
-        Swiss grid, an organic editorial, and a dark instrument panel. All keep
-        the settled features: eight Entry kinds, Watch Cards with quick actions,
-        timestamp-above-Save logging sheets, and consistent Food Status colors.
+        instead. A, B and C deliberately diverge (Swiss grid, organic editorial,
+        dark instrument panel); <b>D — Keepsake</b> is the merged direction you
+        asked for: Ledger's clean structure with Bloom's calm palette, serif
+        voice, and personality. All keep the settled features: eight Entry
+        kinds, Watch Cards with quick actions, timestamp-above-Save logging
+        sheets, and consistent Food Status colors.
       </p>
 
       <nav class="doc-nav sans">
+        <a href="#dir-d"
+          ><span class="num">D</span>Keepsake
+          <span style="color: #c96f4a">·merged pick</span></a
+        >
         <a href="#dir-a"><span class="num">A</span>Ledger</a>
         <a href="#dir-b"><span class="num">B</span>Bloom</a>
         <a href="#dir-c"><span class="num">C</span>Monolith</a>
@@ -2830,11 +3185,448 @@
       </section>
 
       <!-- ============================================================
+           DIRECTION D — KEEPSAKE (Bloom × Ledger)
+           ============================================================ -->
+      <section class="direction" id="dir-d">
+        <div class="direction-head">
+          <div>
+            <div class="doc-eyebrow">Direction D · merged</div>
+            <h2 class="direction-name">Keepsake</h2>
+            <p class="direction-tag">
+              The merge of your two picks:
+              <b>Ledger's clean, modern structure</b> — hairline rules instead
+              of boxes, quiet ordered rows, one accent spent sparingly,
+              everything aligned to a strict page grid — carrying
+              <b>Bloom's calm garden palette and voice</b>: the serif with
+              italic accents, terracotta/sage/butter naturals, and tracker icons
+              resting in soft discs. Personality comes from color and type;
+              order comes from the grid. Warm, but never decorated.
+            </p>
+          </div>
+          <ul class="principles">
+            <li>
+              <b>Ledger bones</b>Hairline rules, strict 18px page margins, rows
+              instead of cards, a 2px top rule marking the one alert surface. No
+              boxes-in-boxes.
+            </li>
+            <li>
+              <b>Bloom skin</b>Paper canvas, sage/butter/petal discs behind
+              every line icon, terracotta as the single warm accent, serif
+              italics for timestamps and emphasis.
+            </li>
+            <li>
+              <b>One mood, two states</b>Calm by default; the terracotta Watch
+              band and the serif sleep figure are the only raised voices on the
+              screen.
+            </li>
+          </ul>
+        </div>
+
+        <div class="block-label">Palette — Bloom's garden, disciplined</div>
+        <div class="swatch-grid sans">
+          <div class="swatch">
+            <div class="chip-color" style="background: #fbf6ee"></div>
+            <div class="chip-meta">
+              <span class="nm">Paper</span><br />#FBF6EE<br />bg
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #33302a"></div>
+            <div class="chip-meta">
+              <span class="nm">Umber</span><br />#33302A<br />ink / rules
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #c96f4a"></div>
+            <div class="chip-meta">
+              <span class="nm">Terracotta</span><br />#C96F4A<br />the one
+              accent
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #eef2e8"></div>
+            <div class="chip-meta">
+              <span class="nm">Sage Wash</span><br />#EEF2E8<br />sleep band
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #d9e4d0"></div>
+            <div class="chip-meta">
+              <span class="nm">Sage</span><br />#D9E4D0<br />safe / discs
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #f6e3c2"></div>
+            <div class="chip-meta">
+              <span class="nm">Butter</span><br />#F6E3C2<br />feed disc
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #dcebf2"></div>
+            <div class="chip-meta">
+              <span class="nm">Rain</span><br />#DCEBF2<br />diaper / medical
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="chip-color" style="background: #b4552e"></div>
+            <div class="chip-meta">
+              <span class="nm">Clay</span><br />#B4552E<br />avoid / delete
+            </div>
+          </div>
+        </div>
+
+        <div class="block-label">Type &amp; shape</div>
+        <div class="type-spec">
+          <div class="type-row">
+            <span class="spec">Display · Serif 26/500</span
+            ><span
+              style="
+                font-family:
+                  &quot;Iowan Old Style&quot;, Palatino, ui-serif, Georgia,
+                  serif;
+                font-size: 23px;
+              "
+              >Milo's <em style="color: #c96f4a">Friday</em></span
+            >
+          </div>
+          <div class="type-row">
+            <span class="spec">Data serif · 32/500 tabular</span
+            ><span
+              style="
+                font-family:
+                  &quot;Iowan Old Style&quot;, Palatino, ui-serif, Georgia,
+                  serif;
+                font-size: 26px;
+              "
+              >6h 42m <em style="color: #55694e">of sleep</em></span
+            >
+          </div>
+          <div class="type-row">
+            <span class="spec">Meta · Sans 10/600 caps</span
+            ><span
+              class="sans"
+              style="font-size: 11px; letter-spacing: 0.12em; color: #8b8375"
+              >DAY 2 OF 3 · WATCH PERIOD</span
+            >
+          </div>
+          <div class="type-row">
+            <span class="spec">Shape</span
+            ><span class="sans" style="font-size: 13px"
+              >Hairline rules (1px oat / 1px umber) · circles only for icon
+              discs and pills · radius lives on buttons, never on rows ·
+              Ledger's grid, Bloom's warmth</span
+            >
+          </div>
+        </div>
+
+        <div class="block-label">Key screens — Now, meal sheet, Foods</div>
+        <div class="screens-row">
+          <!-- D1: now -->
+          <div class="screen-cell">
+            <div class="phone">
+              <div class="phone-screen d-screen">
+                <div class="phone-notch"></div>
+                <div class="phone-status">
+                  <span>9:41</span><span>●●●</span>
+                </div>
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span
+                  ><span class="d-kicker">Oct 16</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-sleep">
+                  <div>
+                    <div class="lbl">Sleep</div>
+                    <div class="big">6h 42m <em>· great</em></div>
+                  </div>
+                  <button>Start sleep</button>
+                  <div class="sub" style="grid-column: 1/3">
+                    woke 6:58 this morning
+                  </div>
+                </div>
+                <div class="d-watch">
+                  <div class="lbl">Watching · day 2 of 3</div>
+                  <div class="food">Peanut butter</div>
+                  <div class="meta">
+                    ends Sunday morning · no reactions logged
+                  </div>
+                  <div class="ticks">
+                    <i class="on"></i><i class="on"></i><i></i>
+                  </div>
+                  <div class="acts">
+                    <span class="hot">Try again</span
+                    ><span class="danger">Log reaction</span
+                    ><span>Mark safe</span>
+                  </div>
+                </div>
+                <div class="d-body" style="flex: none">
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #f6e3c2"
+                      ><svg class="ic" style="color: #a4741f">
+                        <use href="#i-feed" /></svg></span
+                    ><span
+                      ><div class="t">Feed</div>
+                      <div class="s">45m ago · left side</div></span
+                    ><button class="go">Log</button>
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #dcebf2"
+                      ><svg class="ic" style="color: #4a7b96">
+                        <use href="#i-diaper" /></svg></span
+                    ><span
+                      ><div class="t">Diaper</div>
+                      <div class="s">1h ago · wet</div></span
+                    ><button class="go">Log</button>
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #d9e4d0"
+                      ><svg class="ic" style="color: #55694e">
+                        <use href="#i-meal" /></svg></span
+                    ><span
+                      ><div class="t">Meal</div>
+                      <div class="s">breakfast · ate all</div></span
+                    ><button class="go">Log</button>
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #eedde8"
+                      ><svg class="ic" style="color: #9a5c80">
+                        <use href="#i-medical" /></svg></span
+                    ><span
+                      ><div class="t">Medical</div>
+                      <div class="s">medication · vaccine · temp</div></span
+                    ><button class="go">Log</button>
+                  </div>
+                </div>
+                <div style="flex: 1"></div>
+                <div class="d-tabbar">
+                  <div class="on">
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Timeline
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Settings
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cap">
+              Now: Ledger's ruled page + Bloom's garden. Sage sleep band, one
+              terracotta watch band, icon discs on quiet rows.
+            </div>
+          </div>
+          <!-- D2: meal sheet -->
+          <div class="screen-cell">
+            <div class="phone">
+              <div class="phone-screen d-screen">
+                <div class="phone-notch"></div>
+                <div class="phone-status">
+                  <span>9:41</span><span>●●●</span>
+                </div>
+                <div class="d-masthead">
+                  <span class="d-h1">Friday's <em>entries</em></span
+                  ><span class="d-kicker">Timeline</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-row">
+                  <span class="d-orb" style="background: #d9e4d0"
+                    ><svg class="ic" style="color: #55694e">
+                      <use href="#i-meal" /></svg></span
+                  ><span
+                    ><div class="t">Breakfast</div>
+                    <div class="s">ate all · fruit, grains</div></span
+                  ><span class="time">8:10 am</span>
+                </div>
+                <div class="d-row">
+                  <span class="d-orb" style="background: #f6e3c2"
+                    ><svg class="ic" style="color: #a4741f">
+                      <use href="#i-feed" /></svg></span
+                  ><span
+                    ><div class="t">Feed · right</div>
+                    <div class="s">12 min</div></span
+                  ><span class="time">7:58 am</span>
+                </div>
+                <div class="d-row">
+                  <span class="d-orb" style="background: #dcebf2"
+                    ><svg class="ic" style="color: #4a7b96">
+                      <use href="#i-sleep" /></svg></span
+                  ><span
+                    ><div class="t">Sleep · 6h 42m</div>
+                    <div class="s">rated great</div></span
+                  ><span class="time">overnight</span>
+                </div>
+                <div class="d-sheet">
+                  <div class="d-kicker">New entry</div>
+                  <h4>Log a <em>meal</em></h4>
+                  <div class="d-amount">
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="off"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                  </div>
+                  <div class="d-amountlbl">4 of 5 · ate most</div>
+                  <div class="d-flags">
+                    <span class="sel">Fruit</span><span class="sel">Grains</span
+                    ><span>Vegetables</span><span>Dairy</span
+                    ><span>Nuts &amp; seeds</span>
+                  </div>
+                  <div class="d-ts">
+                    <span>This morning · 9:41</span
+                    ><span class="e">Change</span>
+                  </div>
+                  <button class="d-save">Save meal</button>
+                </div>
+              </div>
+            </div>
+            <div class="cap">
+              Meal sheet: Bloom's sage check-discs and oat pills on Ledger's
+              ruled, boxless sheet — timestamp rule pinned above Save.
+            </div>
+          </div>
+          <!-- D3: foods -->
+          <div class="screen-cell">
+            <div class="phone">
+              <div class="phone-screen d-screen">
+                <div class="phone-notch"></div>
+                <div class="phone-status">
+                  <span>9:41</span><span>●●●</span>
+                </div>
+                <div class="d-masthead">
+                  <span class="d-h1">The <em>food</em> journal</span
+                  ><span class="d-kicker">174</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-statusbar">
+                  <span><b>41</b> safe</span><span><b>2</b> trying</span
+                  ><span><b>130</b> untried</span
+                  ><span style="color: #b4552e"><b>1</b> avoid</span>
+                </div>
+                <div class="d-rule-thin"></div>
+                <div class="d-body" style="flex: none">
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #d9e4d0"
+                      ><svg class="ic" style="color: #55694e">
+                        <use href="#i-foods" /></svg></span
+                    ><span
+                      ><div class="t">Banana</div>
+                      <div class="s">fruit</div></span
+                    ><span
+                      class="d-pill"
+                      style="background: #e3eddc; color: #4c6a43"
+                      >Safe</span
+                    >
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #f6e3c2"
+                      ><svg class="ic" style="color: #a4741f">
+                        <use href="#i-foods" /></svg></span
+                    ><span
+                      ><div class="t">Peanut butter</div>
+                      <div class="s">nuts &amp; seeds · peanut</div></span
+                    ><span
+                      class="d-pill"
+                      style="background: #fdf1e7; color: #c96f4a"
+                      >Day 2</span
+                    >
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #f3ddd4"
+                      ><svg class="ic" style="color: #b4552e">
+                        <use href="#i-foods" /></svg></span
+                    ><span
+                      ><div class="t">Shrimp</div>
+                      <div class="s">fish &amp; shellfish</div></span
+                    ><span
+                      class="d-pill"
+                      style="background: #f3ddd4; color: #b4552e"
+                      >Avoid</span
+                    >
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #efe9dc"
+                      ><svg class="ic" style="color: #9a917e">
+                        <use href="#i-foods" /></svg></span
+                    ><span
+                      ><div class="t">Avocado</div>
+                      <div class="s">fruit</div></span
+                    ><span
+                      class="d-pill"
+                      style="background: #efe9dc; color: #9a917e"
+                      >Untried</span
+                    >
+                  </div>
+                  <div class="d-row">
+                    <span class="d-orb" style="background: #d9e4d0"
+                      ><svg class="ic" style="color: #55694e">
+                        <use href="#i-foods" /></svg></span
+                    ><span
+                      ><div class="t">Oatmeal</div>
+                      <div class="s">grains · wheat</div></span
+                    ><span
+                      class="d-pill"
+                      style="background: #e3eddc; color: #4c6a43"
+                      >Safe</span
+                    >
+                  </div>
+                </div>
+                <div style="flex: 1"></div>
+                <div class="d-tabbar">
+                  <div>
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Timeline
+                  </div>
+                  <div class="on">
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Settings
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cap">
+              Foods: Bloom's pastel status pills on Ledger's ruled register —
+              dense, calm, scannable.
+            </div>
+          </div>
+        </div>
+
+        <div class="block-label">Why this merge works</div>
+        <div class="note sans">
+          Ledger supplied the skeleton (rules, grid, numbered-page calm, one
+          accent) and Bloom supplied the voice (serif italics, garden palette,
+          icon discs). The terracotta accent does double duty — the Watch band
+          and every "Log" pill — so the interface stays quiet until something
+          needs you.
+          <b>Watch-outs:</b> pastel discs still need AA contrast checks against
+          the paper background, and dark mode should dim Paper to deep umber
+          while keeping the discs muted rather than glowing.
+        </div>
+      </section>
+
+      <!-- ============================================================
            ICON SYSTEM
            ============================================================ -->
       <section class="direction" id="icons">
         <div class="doc-eyebrow">Shared asset</div>
-        <h2 class="direction-name">One icon set, three liveries</h2>
+        <h2 class="direction-name">One icon set, four liveries</h2>
         <p class="direction-tag" style="margin-top: 8px">
           All emoji are removed from the product UI. A single minimal
           stroke-icon set (1.7px, round caps, 24px grid) covers the eight Entry
@@ -2902,6 +3694,20 @@
         <div class="doc-eyebrow">Side-by-side</div>
         <h2 class="direction-name">Which direction when</h2>
         <div class="compare">
+          <div class="col" style="border: 2px solid #c96f4a">
+            <span class="fit" style="color: #c96f4a"
+              >D · Keepsake — the pick</span
+            >
+            <h4>Ledger's order, Bloom's warmth</h4>
+            The merged direction: ruled Ledger grid + garden palette and serif
+            voice.
+            <ul>
+              <li>Clean modern structure, warm personality</li>
+              <li>One terracotta accent = clear alerts</li>
+              <li>Icon discs give color without emoji</li>
+              <li>Risk: pastel-on-paper needs AA audit</li>
+            </ul>
+          </div>
           <div class="col">
             <span class="fit" style="color: #e4002b">A · Ledger</span>
             <h4>The archivist</h4>
@@ -2940,13 +3746,15 @@
           </div>
         </div>
         <div class="note sans">
-          <b>Recommendation:</b> as before, all three sit on the settled IA (Now
-          / Timeline / Foods / Settings, Watch Cards above the fold,
-          timestamp-above-Save sheets). If the brand should feel like a
-          keepsake, <b>Bloom</b> is the strongest candidate now that it carries
-          zero prototype DNA. If the brand should feel like a tool,
-          <b>Monolith's</b> night panel is the most differentiated option — and
-          its light "day mode" can borrow Ledger's typography wholesale.
+          <b>Recommendation:</b> all four sit on the settled IA (Now / Timeline
+          / Foods / Settings, Watch Cards above the fold, timestamp-above-Save
+          sheets). <b>D · Keepsake</b> is the recommended build target per your
+          pick — it keeps Ledger's clean ruled structure (your #2's strength)
+          and dresses it in Bloom's calm palette and serif voice (your #1's
+          strength), with terracotta as the single accent so Watch Periods and
+          log actions are the only raised voices. A and B remain as fallback
+          poles; C's night console stays on the table if the app ever wants a
+          power-user dark mode.
         </div>
       </section>
 
