@@ -1,14 +1,18 @@
 <!doctype html>
 <!--
-  DESIGN DIRECTIONS — Toddler Routine Tracker
-  Three polished visual directions for the app, based on the settled spec
-  (CONTEXT.md, ADR-0002) — not derived from the throwaway prototypes.
-  Built to be evaluated as PWA first, iOS (Expo) later: every direction notes
-  safe-area, dark-mode, and token handoff implications.
+  DESIGN DIRECTIONS v2 — Toddler Routine Tracker
+  Three genuinely divergent visual directions, derived from the settled spec
+  (CONTEXT.md, ADR-0002). v1 feedback: too close to the prototypes — emoji
+  icons and similar system fonts everywhere. This revision bans emoji from
+  the product UI entirely (a shared minimal SVG stroke-icon set instead) and
+  gives each direction its own type system and layout grammar:
 
-  Direction A — Golden Hour : warm editorial calm, designed for 3am use
-  Direction B — Playdate    : soft, rounded, per-tracker color identity
-  Direction C — First Light : crisp iOS-native minimal, clinical clarity
+  Direction A — Ledger    : Swiss typographic grid. Square corners, hairline
+                            rules, monospace data, one signal red.
+  Direction B — Bloom     : Soft organic editorial. Big serif display, pastel
+                            discs, pill geometry, warm paper canvas.
+  Direction C — Monolith  : Dark instrument panel. All-monospace, bordered
+                            modules, lime phosphor accent, data-terminal feel.
 -->
 <html lang="en">
   <head>
@@ -42,8 +46,8 @@
       }
       .sans {
         font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", sans-serif;
+          "Avenir Next", Avenir, "Segoe UI", Roboto, "Helvetica Neue",
+          sans-serif;
       }
       .doc-wrap {
         max-width: 1180px;
@@ -84,8 +88,7 @@
         flex-wrap: wrap;
       }
       .doc-nav a {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 13px;
         font-weight: 560;
         text-decoration: none;
@@ -139,8 +142,7 @@
         align-content: start;
       }
       .principles li {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 13.5px;
         padding: 10px 14px;
         background: var(--doc-card);
@@ -197,8 +199,7 @@
       }
       .swatch .chip-meta .nm {
         font-weight: 700;
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 12px;
       }
 
@@ -232,8 +233,7 @@
         justify-items: center;
       }
       .screen-cell .cap {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 12px;
         color: var(--doc-muted);
         text-align: center;
@@ -243,8 +243,7 @@
       .token-table {
         width: 100%;
         border-collapse: collapse;
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 13px;
         background: var(--doc-card);
         border: 1px solid var(--doc-line);
@@ -277,8 +276,7 @@
       }
 
       .note {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 13.5px;
         background: var(--doc-card);
         border: 1px solid var(--doc-line);
@@ -302,8 +300,7 @@
         border: 1px solid var(--doc-line);
         border-radius: 16px;
         padding: 20px;
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
         font-size: 13.5px;
       }
       .compare h4 {
@@ -324,8 +321,30 @@
         letter-spacing: 0.08em;
       }
 
+      .icon-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .icon-cell {
+        width: 62px;
+        text-align: center;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 9px;
+        color: var(--doc-muted);
+        display: grid;
+        gap: 6px;
+        justify-items: center;
+      }
+      .icon-cell svg {
+        width: 26px;
+        height: 26px;
+      }
+
       /* ============================================================
-         SHARED PHONE FRAME
+         SHARED PHONE FRAME + SHARED SVG ICON SYSTEM
+         Stroke icons, 1.7px, round caps — recolored per direction
+         via `currentColor`. No emoji anywhere in product UI.
          ============================================================ */
       .phone {
         width: 320px;
@@ -369,597 +388,596 @@
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
+      svg.ic {
+        width: 1em;
+        height: 1em;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        display: block;
+      }
 
       /* ============================================================
-         DIRECTION A — GOLDEN HOUR
-         Warm editorial calm, tuned for 3am one-handed use.
+         DIRECTION A — LEDGER
+         Swiss typographic grid · square corners · mono data ·
+         one signal red. Nothing rounded, nothing decorative.
          ============================================================ */
       .a-screen {
-        background: #faf6ef;
-        color: #221c14;
+        background: #ffffff;
+        color: #141414;
         font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      }
-      .a-screen.dark {
-        background: #171310;
-        color: #f3ead9;
+          "Avenir Next", Avenir, "Segoe UI", Roboto, "Helvetica Neue",
+          sans-serif;
       }
       .a-body {
         flex: 1;
         overflow: hidden;
-        padding: 6px 16px 0;
+        padding: 10px 0 0;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+      }
+      .a-pad {
+        padding: 0 18px;
+      }
+      .a-rule {
+        border-top: 1px solid #141414;
+      }
+      .a-rule-thin {
+        border-top: 1px solid #d9d9d9;
+      }
+      .a-masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 18px 12px;
       }
       .a-h1 {
-        font-family: ui-serif, "New York", Georgia, serif;
-        font-size: 27px;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+      }
+      .a-kicker {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6f6f6f;
+      }
+      .a-sleep {
+        padding: 14px 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 12px;
+        align-items: center;
+      }
+      .a-sleep .big {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        font-variant-numeric: tabular-nums;
+      }
+      .a-sleep .lbl {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #6f6f6f;
+      }
+      .a-sleep button {
+        grid-row: span 2;
+        align-self: center;
+        background: #141414;
+        color: #fff;
+        border: 0;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 12px 16px;
+      }
+      .a-index {
+        display: flex;
+        flex-direction: column;
+      }
+      .a-row {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 18px;
+        border-top: 1px solid #d9d9d9;
+      }
+      .a-row .idx {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        color: #9a9a9a;
+      }
+      .a-row .t {
+        font-size: 13px;
         font-weight: 600;
         letter-spacing: -0.01em;
       }
-      .a-sub {
-        font-size: 12px;
-        opacity: 0.62;
-        margin-top: 1px;
-      }
-      .a-hero {
-        border-radius: 22px;
-        padding: 16px 16px 14px;
-        position: relative;
-        overflow: hidden;
-        background: linear-gradient(
-          135deg,
-          #2b2118 0%,
-          #4a2f1d 60%,
-          #7a4b24 100%
-        );
-        color: #fdf4e3;
-      }
-      .a-hero:after {
-        content: "";
-        position: absolute;
-        width: 190px;
-        height: 190px;
-        border-radius: 50%;
-        right: -70px;
-        top: -90px;
-        background: radial-gradient(
-          circle,
-          rgba(255, 176, 92, 0.5),
-          transparent 70%
-        );
-      }
-      .a-hero .moon {
-        font-size: 20px;
-      }
-      .a-hero .t {
-        font-family: ui-serif, Georgia, serif;
-        font-size: 20px;
-        font-weight: 600;
+      .a-row .s {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        color: #6f6f6f;
         margin-top: 2px;
       }
-      .a-hero .s {
-        font-size: 11.5px;
-        opacity: 0.75;
-        margin-top: 2px;
+      .a-row .go {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #e4002b;
+        border: 1px solid #e4002b;
+        padding: 6px 10px;
+        background: none;
       }
-      .a-hero .timer-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(255, 244, 227, 0.16);
-        border: 1px solid rgba(255, 244, 227, 0.3);
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-top: 9px;
-      }
-      .a-hero .wake-btn {
-        position: absolute;
-        right: 12px;
-        bottom: 12px;
-        background: #ffb05c;
-        color: #2b1a08;
-        border: 0;
-        border-radius: 999px;
-        padding: 9px 16px;
-        font-size: 12.5px;
-        font-weight: 700;
-        z-index: 2;
-      }
-      .a-card {
-        background: #fffdf7;
-        border: 1px solid #ece3d2;
-        border-radius: 18px;
-        padding: 11px 14px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .a-screen.dark .a-card {
-        background: #211b15;
-        border-color: #332a1f;
-      }
-      .a-ico {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        font-size: 16px;
-        flex: none;
-      }
-      .a-card .tt {
-        font-size: 13px;
-        font-weight: 650;
-      }
-      .a-card .ss {
-        font-size: 11px;
-        opacity: 0.6;
-        margin-top: 1px;
-      }
-      .a-card .go {
-        margin-left: auto;
-        background: #f0e4cd;
-        color: #5c3d15;
-        font-size: 11.5px;
-        font-weight: 700;
-        padding: 8px 13px;
-        border-radius: 999px;
-        border: 0;
-      }
-      .a-screen.dark .a-card .go {
-        background: #3a2c1b;
-        color: #ffcf96;
+      .a-row .go.neutral {
+        color: #141414;
+        border-color: #141414;
       }
       .a-watch {
-        background: linear-gradient(135deg, #fdf0dc, #fbe3c2);
-        border: 1px solid #f0d3a6;
-        border-radius: 18px;
-        padding: 12px 14px;
+        border-top: 2px solid #e4002b;
+        background: #fff;
+        padding: 12px 18px;
       }
-      .a-screen.dark .a-watch {
-        background: linear-gradient(135deg, #2e2314, #241a0d);
-        border-color: #4a3517;
+      .a-watch .lbl {
+        color: #e4002b;
       }
-      .a-watch .tt {
-        font-size: 13px;
+      .a-watch .food {
+        font-size: 16px;
         font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-top: 3px;
+      }
+      .a-watch .meta {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        color: #6f6f6f;
+        margin-top: 3px;
+      }
+      .a-watch .ticks {
         display: flex;
-        align-items: center;
-        gap: 7px;
+        gap: 3px;
+        margin: 9px 0;
       }
-      .a-watch .dots {
+      .a-watch .ticks i {
+        width: 28px;
+        height: 6px;
+        background: #e9e9e9;
+      }
+      .a-watch .ticks i.on {
+        background: #e4002b;
+      }
+      .a-watch .acts {
         display: flex;
-        gap: 4px;
-        margin: 8px 0;
+        gap: 14px;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
-      .a-watch .dot {
-        width: 22px;
-        height: 5px;
-        border-radius: 99px;
-        background: #d9b988;
+      .a-watch .acts .u {
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
-      .a-watch .dot.on {
-        background: #d97e2b;
-      }
-      .a-watch .row {
-        display: flex;
-        gap: 6px;
-        margin-top: 4px;
-      }
-      .a-watch .row button {
-        flex: 1;
-        border-radius: 10px;
-        border: 1px solid #d9b988;
-        background: transparent;
-        color: inherit;
-        font-size: 10.5px;
-        font-weight: 650;
-        padding: 7px 4px;
-      }
-      .a-watch .row button.hot {
-        background: #d97e2b;
-        border-color: #d97e2b;
-        color: #fff7ec;
+      .a-watch .acts .red {
+        color: #e4002b;
       }
       .a-tabbar {
         display: flex;
-        border-top: 1px solid #e8ddc8;
-        background: #fffdf7;
-        padding: 8px 8px 14px;
-      }
-      .a-screen.dark .a-tabbar {
-        background: #171310;
-        border-color: #2c241a;
+        border-top: 1px solid #141414;
+        background: #fff;
+        padding: 9px 0 14px;
       }
       .a-tabbar div {
         flex: 1;
         text-align: center;
-        font-size: 9.5px;
-        font-weight: 600;
-        opacity: 0.5;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #9a9a9a;
         display: grid;
-        gap: 2px;
+        gap: 3px;
         justify-items: center;
       }
       .a-tabbar div.on {
-        opacity: 1;
-        color: #c96f1e;
-      }
-      .a-screen.dark .a-tabbar div.on {
-        color: #ffb05c;
-      }
-      .a-tabbar .ti {
-        font-size: 16px;
-      }
-      .a-fab {
-        position: absolute;
-        right: 16px;
-        bottom: 74px;
-        width: 52px;
-        height: 52px;
-        border-radius: 18px;
-        background: #d97e2b;
-        color: #fff7ec;
-        display: grid;
-        place-items: center;
-        font-size: 24px;
-        font-weight: 400;
-        box-shadow: 0 10px 22px rgba(217, 126, 43, 0.4);
-        z-index: 5;
-      }
-      .a-list-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 4px;
-        border-bottom: 1px solid rgba(120, 100, 70, 0.14);
-      }
-      .a-list-row .t {
-        font-size: 13px;
-        font-weight: 600;
-      }
-      .a-list-row .s {
-        font-size: 11px;
-        opacity: 0.55;
-      }
-      .a-list-row .time {
-        margin-left: auto;
-        font-size: 11px;
-        opacity: 0.55;
-        font-variant-numeric: tabular-nums;
-      }
-      .a-section {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        opacity: 0.5;
+        color: #141414;
         font-weight: 700;
-        margin-top: 6px;
+      }
+      .a-tabbar .sq {
+        width: 7px;
+        height: 7px;
+        background: #d9d9d9;
+      }
+      .a-tabbar div.on .sq {
+        background: #e4002b;
       }
       .a-sheet {
         position: absolute;
         inset: auto 0 0 0;
-        border-radius: 26px 26px 0 0;
-        background: #fffdf7;
-        color: #221c14;
-        padding: 10px 18px 18px;
-        box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.25);
+        background: #fff;
+        border-top: 2px solid #141414;
+        padding: 14px 18px 18px;
+        box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.18);
         z-index: 10;
       }
-      .a-grab {
-        width: 36px;
-        height: 4px;
-        border-radius: 99px;
-        background: #d8cbb2;
-        margin: 0 auto 10px;
-      }
       .a-sheet h4 {
-        font-family: ui-serif, Georgia, serif;
-        font-size: 19px;
-        font-weight: 600;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
       .a-stepper {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 22px;
-        margin: 14px 0 6px;
+        align-items: stretch;
+        border: 1px solid #141414;
+        margin: 12px 0 10px;
       }
       .a-stepper button {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: 1px solid #e2d5ba;
-        background: #faf3e4;
-        font-size: 20px;
-        color: #5c3d15;
+        width: 52px;
+        border: 0;
+        background: #fff;
+        font-size: 18px;
+      }
+      .a-stepper button:first-child {
+        border-right: 1px solid #141414;
+      }
+      .a-stepper button:last-child {
+        border-left: 1px solid #141414;
       }
       .a-stepper .n {
-        font-family: ui-serif, Georgia, serif;
-        font-size: 40px;
-        font-weight: 600;
-        min-width: 44px;
+        flex: 1;
         text-align: center;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 30px;
+        font-weight: 700;
+        padding: 8px 0;
+        font-variant-numeric: tabular-nums;
       }
-      .a-chips {
+      .a-opts {
         display: flex;
-        gap: 6px;
-        justify-content: center;
-        margin: 8px 0;
+        gap: 8px;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
-      .a-chips span {
-        font-size: 11px;
-        font-weight: 650;
-        padding: 7px 13px;
-        border-radius: 999px;
-        border: 1px solid #e2d5ba;
-        color: #6b5636;
+      .a-opts span {
+        border: 1px solid #d9d9d9;
+        padding: 7px 12px;
+        color: #6f6f6f;
       }
-      .a-chips span.sel {
-        background: #d97e2b;
-        border-color: #d97e2b;
-        color: #fff7ec;
+      .a-opts span.sel {
+        border-color: #141414;
+        color: #141414;
+        font-weight: 700;
       }
       .a-ts {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #f6efdf;
-        border-radius: 12px;
-        padding: 9px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #5c4a2a;
-        margin-top: 10px;
+        border-top: 1px solid #d9d9d9;
+        border-bottom: 1px solid #d9d9d9;
+        padding: 9px 0;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 10.5px;
+        margin-top: 12px;
+      }
+      .a-ts .e {
+        color: #e4002b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 9.5px;
       }
       .a-save {
         width: 100%;
-        margin-top: 10px;
-        background: #2b2118;
-        color: #f8ecd8;
+        margin-top: 12px;
+        background: #141414;
+        color: #fff;
         border: 0;
-        border-radius: 14px;
-        padding: 13px;
-        font-size: 13.5px;
+        padding: 14px;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .a-statusbar {
+        display: flex;
+        gap: 14px;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 10px 18px;
+      }
+      .a-statusbar b {
         font-weight: 700;
+      }
+      .a-foods .a-row {
+        grid-template-columns: 1fr auto;
+      }
+      .a-pill {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border: 1px solid;
+      }
+      .a-pill.safe {
+        color: #0f7a3d;
+        border-color: #0f7a3d;
+      }
+      .a-pill.trying {
+        color: #9a6a00;
+        border-color: #9a6a00;
+      }
+      .a-pill.avoid {
+        color: #e4002b;
+        border-color: #e4002b;
+      }
+      .a-pill.untried {
+        color: #9a9a9a;
+        border-color: #d9d9d9;
       }
 
       /* ============================================================
-         DIRECTION B — PLAYDATE
-         Soft, rounded, per-tracker color identity.
+         DIRECTION B — BLOOM
+         Soft organic editorial · big serif display · pastel discs ·
+         pill geometry · warm paper canvas.
          ============================================================ */
       .b-screen {
-        background: #f2f5fa;
-        color: #1c2333;
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #fbf6ee;
+        color: #33302a;
+        font-family: "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
       }
       .b-body {
         flex: 1;
         overflow: hidden;
-        padding: 8px 14px 0;
+        padding: 14px 16px 0;
         display: flex;
         flex-direction: column;
-        gap: 9px;
-      }
-      .b-greet {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 2px 4px 4px;
-      }
-      .b-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #ffb3c7, #ff8fab);
-        display: grid;
-        place-items: center;
-        font-size: 19px;
-        border: 2px solid #fff;
-        box-shadow: 0 3px 8px rgba(255, 143, 171, 0.4);
-        flex: none;
+        gap: 12px;
       }
       .b-h1 {
-        font-size: 20px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-family:
+          "Iowan Old Style", "Palatino", "Palatino Linotype", ui-serif, Georgia,
+          serif;
+        font-size: 30px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+      }
+      .b-h1 em {
+        font-style: italic;
+        color: #c96f4a;
       }
       .b-sub {
-        font-size: 11px;
-        color: #69718a;
+        font-size: 11.5px;
+        color: #8b8375;
+        margin-top: 3px;
+        letter-spacing: 0.02em;
       }
       .b-sleepcard {
-        border-radius: 24px;
-        padding: 14px 16px;
-        background: linear-gradient(120deg, #5b5fc7, #8b5fcf);
-        color: #eef0ff;
+        border-radius: 26px;
+        background: #d9e4d0;
+        padding: 16px 18px;
         position: relative;
         overflow: hidden;
       }
-      .b-sleepcard .stars {
+      .b-sleepcard .disc {
         position: absolute;
-        inset: 6px 10px auto;
-        font-size: 9px;
-        color: rgba(255, 255, 255, 0.55);
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        right: -40px;
+        top: -46px;
+        background: #b8cdb2;
+      }
+      .b-sleepcard .disc2 {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        right: 64px;
+        top: 22px;
+        background: #c9dabf;
+      }
+      .b-sleepcard .lbl {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #55694e;
+        position: relative;
       }
       .b-sleepcard .t {
-        font-size: 16px;
-        font-weight: 800;
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 23px;
+        margin-top: 4px;
         position: relative;
-        margin-top: 8px;
       }
       .b-sleepcard .s {
         font-size: 11px;
-        opacity: 0.8;
+        color: #55694e;
+        margin-top: 3px;
         position: relative;
-        margin-top: 2px;
       }
       .b-sleepcard button {
         position: relative;
-        margin-top: 10px;
-        background: #fff;
-        color: #5b5fc7;
+        margin-top: 11px;
+        background: #33302a;
+        color: #fbf6ee;
         border: 0;
         border-radius: 999px;
-        padding: 8px 18px;
+        padding: 9px 18px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
+        letter-spacing: 0.02em;
       }
-      .b-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 9px;
-      }
-      .b-tile {
-        border-radius: 20px;
-        padding: 12px;
-        background: #fff;
-        border: 1.5px solid #e6eaf3;
+      .b-cards {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        min-height: 84px;
+        gap: 8px;
       }
-      .b-tile .bub {
-        width: 30px;
-        height: 30px;
-        border-radius: 11px;
+      .b-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fffdf8;
+        border: 1px solid #eee4d3;
+        border-radius: 999px;
+        padding: 9px 9px 9px 10px;
+      }
+      .b-orb {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
         display: grid;
         place-items: center;
-        font-size: 15px;
-        margin-bottom: 5px;
+        flex: none;
       }
-      .b-tile .t {
-        font-size: 12.5px;
-        font-weight: 750;
+      .b-orb svg {
+        width: 18px;
+        height: 18px;
       }
-      .b-tile .s {
+      .b-card .t {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .b-card .s {
         font-size: 10.5px;
-        color: #69718a;
+        color: #8b8375;
+        margin-top: 1px;
+      }
+      .b-card .go {
+        margin-left: auto;
+        background: #33302a;
+        color: #fbf6ee;
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 11px;
+        font-weight: 600;
+        flex: none;
       }
       .b-watch {
-        border-radius: 20px;
-        padding: 12px 14px;
-        background: #fff8ec;
-        border: 1.5px solid #ffe1ad;
+        border-radius: 22px;
+        background: #fdeee4;
+        border: 1px solid #f6d9c3;
+        padding: 13px 15px;
       }
-      .b-watch .t {
-        font-size: 13px;
-        font-weight: 800;
+      .b-watch .lbl {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #c96f4a;
+      }
+      .b-watch .food {
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 18px;
+        margin-top: 3px;
+      }
+      .b-watch .ringrow {
         display: flex;
-        gap: 6px;
         align-items: center;
+        gap: 10px;
+        margin-top: 8px;
       }
-      .b-watch .prog {
-        height: 7px;
-        border-radius: 99px;
-        background: #ffe9c4;
-        margin: 9px 0 7px;
-        overflow: hidden;
-      }
-      .b-watch .prog i {
-        display: block;
-        height: 100%;
-        width: 66%;
-        border-radius: 99px;
-        background: linear-gradient(90deg, #ffb63d, #ff8f3d);
+      .b-watch .ring {
+        width: 34px;
+        height: 34px;
+        flex: none;
       }
       .b-watch .s {
         font-size: 10.5px;
-        color: #93703a;
+        color: #a5775c;
       }
-      .b-watch .row {
+      .b-watch .acts {
         display: flex;
-        gap: 6px;
-        margin-top: 9px;
+        gap: 7px;
+        margin-top: 10px;
       }
-      .b-watch .row button {
+      .b-watch .acts button {
         flex: 1;
-        border: 0;
-        border-radius: 12px;
-        font-size: 10.5px;
-        font-weight: 750;
-        padding: 8px 4px;
-        background: #fff;
-        color: #b07a1e;
-        box-shadow: 0 1px 3px rgba(176, 122, 30, 0.18);
+        border-radius: 999px;
+        border: 1px solid #e8c3aa;
+        background: transparent;
+        color: #8a5a3d;
+        font-size: 10px;
+        font-weight: 650;
+        padding: 8px 2px;
       }
-      .b-watch .row button.hot {
-        background: #ff9f43;
-        color: #fff;
+      .b-watch .acts button.hot {
+        background: #c96f4a;
+        border-color: #c96f4a;
+        color: #fff6ef;
       }
       .b-tabbar {
-        margin: 6px 12px 14px;
-        background: #fff;
-        border-radius: 22px;
-        box-shadow: 0 8px 24px rgba(28, 35, 51, 0.1);
         display: flex;
-        padding: 7px;
+        margin: 4px 14px 14px;
+        background: #33302a;
+        border-radius: 999px;
+        padding: 6px;
       }
       .b-tabbar div {
         flex: 1;
         text-align: center;
         font-size: 9.5px;
-        font-weight: 700;
-        color: #9aa3ba;
-        display: grid;
-        gap: 2px;
-        padding: 5px 0;
-        border-radius: 15px;
-      }
-      .b-tabbar div.on {
-        background: #eef1ff;
-        color: #5b5fc7;
-      }
-      .b-tabbar .ti {
-        font-size: 15px;
-      }
-      .b-pillrow {
-        display: flex;
-        gap: 6px;
-        overflow: hidden;
-      }
-      .b-pill {
-        flex: none;
-        font-size: 10.5px;
-        font-weight: 700;
-        padding: 6px 11px;
-        border-radius: 999px;
-        background: #fff;
-        border: 1.5px solid #e6eaf3;
-        color: #69718a;
-      }
-      .b-pill.on {
-        background: #5b5fc7;
-        border-color: #5b5fc7;
-        color: #fff;
-      }
-      .b-feedrow {
-        background: #fff;
-        border-radius: 16px;
-        padding: 10px 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: rgba(251, 246, 238, 0.5);
         display: flex;
         align-items: center;
-        gap: 10px;
-        border: 1.5px solid #e6eaf3;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 0;
+        border-radius: 999px;
       }
-      .b-feedrow .t {
-        font-size: 12.5px;
-        font-weight: 700;
+      .b-tabbar div.on {
+        background: #fbf6ee;
+        color: #33302a;
       }
-      .b-feedrow .s {
+      .b-tabbar svg {
+        width: 14px;
+        height: 14px;
+      }
+      .b-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .b-li {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 2px;
+        border-bottom: 1px solid #efe5d4;
+      }
+      .b-li .t {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .b-li .s {
         font-size: 10.5px;
-        color: #69718a;
+        color: #8b8375;
       }
-      .b-feedrow .badge {
+      .b-li .time {
         margin-left: auto;
-        font-size: 9.5px;
-        font-weight: 800;
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-style: italic;
+        font-size: 11.5px;
+        color: #8b8375;
+      }
+      .b-pill {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
         padding: 4px 9px;
         border-radius: 999px;
         flex: none;
@@ -967,371 +985,484 @@
       .b-sheet {
         position: absolute;
         inset: auto 0 0 0;
-        border-radius: 28px 28px 0 0;
-        background: #fff;
-        padding: 10px 18px 18px;
-        box-shadow: 0 -18px 40px rgba(28, 35, 51, 0.22);
+        border-radius: 30px 30px 0 0;
+        background: #fffdf8;
+        padding: 12px 20px 20px;
+        box-shadow: 0 -18px 44px rgba(51, 48, 42, 0.22);
         z-index: 10;
       }
       .b-grab {
-        width: 38px;
-        height: 5px;
+        width: 40px;
+        height: 4px;
         border-radius: 99px;
-        background: #dfe4ef;
+        background: #e5d9c4;
         margin: 0 auto 10px;
       }
       .b-sheet h4 {
-        font-size: 17px;
-        font-weight: 800;
-        letter-spacing: -0.01em;
+        font-family: "Iowan Old Style", Palatino, ui-serif, Georgia, serif;
+        font-size: 21px;
+        font-weight: 500;
+      }
+      .b-sheet h4 em {
+        font-style: italic;
+        color: #c96f4a;
       }
       .b-amount {
         display: flex;
-        gap: 7px;
+        gap: 8px;
         justify-content: center;
-        margin: 13px 0 4px;
+        margin: 14px 0 4px;
       }
-      .b-amount span {
-        width: 40px;
-        height: 40px;
-        border-radius: 14px;
+      .b-amount i {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1.5px solid #e5d9c4;
         display: grid;
         place-items: center;
-        font-size: 16px;
-        background: #f2f4fa;
-        border: 1.5px solid #e6eaf3;
       }
-      .b-amount span.on {
-        background: #e6f9ee;
-        border-color: #4ecb8d;
+      .b-amount i.on {
+        background: #d9e4d0;
+        border-color: #a9c19d;
+      }
+      .b-amount svg {
+        width: 16px;
+        height: 16px;
+        color: #55694e;
+      }
+      .b-amount i.off svg {
+        color: #cfc3ad;
+      }
+      .b-amountlbl {
+        text-align: center;
+        font-size: 10.5px;
+        color: #8b8375;
+        font-weight: 600;
       }
       .b-flags {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 10px;
+        gap: 7px;
+        margin-top: 12px;
       }
       .b-flags span {
         font-size: 10.5px;
-        font-weight: 700;
-        padding: 6px 11px;
+        font-weight: 600;
+        padding: 7px 13px;
         border-radius: 999px;
-        background: #f2f4fa;
-        color: #4a5570;
-        border: 1.5px solid transparent;
+        border: 1px solid #e5d9c4;
+        color: #8b8375;
+        background: #fffdf8;
       }
       .b-flags span.sel {
-        background: #e9edff;
-        border-color: #5b5fc7;
-        color: #5b5fc7;
+        background: #f3e3d3;
+        border-color: #d8b794;
+        color: #8a5a3d;
       }
       .b-ts {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #f2f4fa;
-        border-radius: 14px;
-        padding: 9px 12px;
+        background: #f6efe2;
+        border-radius: 999px;
+        padding: 10px 15px;
         font-size: 11.5px;
-        font-weight: 700;
-        color: #4a5570;
-        margin-top: 12px;
+        font-weight: 600;
+        color: #6f675a;
+        margin-top: 13px;
+      }
+      .b-ts .e {
+        color: #c96f4a;
       }
       .b-save {
         width: 100%;
-        margin-top: 10px;
-        background: linear-gradient(120deg, #5b5fc7, #8b5fcf);
-        color: #fff;
+        margin-top: 11px;
+        background: #33302a;
+        color: #fbf6ee;
         border: 0;
-        border-radius: 16px;
-        padding: 13px;
-        font-size: 13.5px;
-        font-weight: 800;
-        box-shadow: 0 8px 18px rgba(91, 95, 199, 0.35);
+        border-radius: 999px;
+        padding: 14px;
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
       }
 
       /* ============================================================
-         DIRECTION C — FIRST LIGHT
-         Crisp iOS-native minimal, clinical clarity.
+         DIRECTION C — MONOLITH
+         Dark instrument panel · all-monospace · bordered modules ·
+         lime phosphor accent. A mission-control console for the night shift.
          ============================================================ */
       .c-screen {
-        background: #ffffff;
-        color: #111111;
+        background: #0b0e11;
+        color: #d7dde3;
         font-family:
-          -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
-          sans-serif;
-      }
-      .c-screen.tinted {
-        background: #f6f6f8;
+          ui-monospace, SFMono-Regular, Menlo, "Cascadia Mono", monospace;
       }
       .c-body {
         flex: 1;
         overflow: hidden;
-        padding: 4px 16px 0;
+        padding: 10px 12px 0;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
-      .c-nav {
+      .c-top {
         display: flex;
-        align-items: baseline;
         justify-content: space-between;
-        padding: 2px 2px 4px;
+        align-items: baseline;
+        padding: 2px 4px 2px;
       }
       .c-h1 {
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: -0.03em;
-      }
-      .c-nav .date {
-        font-size: 12px;
-        color: #8e8e93;
-        font-weight: 500;
-      }
-      .c-hero {
-        background: #1c1c1e;
-        border-radius: 16px;
-        padding: 14px 16px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .c-hero .ring {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: 3px solid #30d158;
-        display: grid;
-        place-items: center;
-        font-size: 17px;
-        flex: none;
-      }
-      .c-hero .t {
-        font-size: 15px;
-        font-weight: 600;
-      }
-      .c-hero .s {
-        font-size: 11.5px;
-        color: rgba(255, 255, 255, 0.65);
-        font-variant-numeric: tabular-nums;
-      }
-      .c-hero button {
-        margin-left: auto;
-        background: #30d158;
-        color: #062b12;
-        border: 0;
-        border-radius: 999px;
-        padding: 8px 15px;
-        font-size: 12px;
-        font-weight: 700;
-        flex: none;
-      }
-      .c-group {
-        background: #fff;
-        border-radius: 14px;
-        overflow: hidden;
-        border: 1px solid #ececf0;
-      }
-      .c-screen.tinted .c-group {
-        border: 0;
-      }
-      .c-row {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 10px 14px;
         font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
       }
-      .c-row + .c-row {
-        border-top: 0.5px solid #ececf0;
+      .c-h1 .cur {
+        color: #b7f04a;
       }
-      .c-glyph {
-        width: 29px;
-        height: 29px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        font-size: 14px;
-        flex: none;
-      }
-      .c-row .t {
-        font-weight: 550;
-      }
-      .c-row .s {
+      .c-clock {
         font-size: 11px;
-        color: #8e8e93;
-        margin-top: 1px;
-      }
-      .c-row .val {
-        margin-left: auto;
-        color: #8e8e93;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+        color: #5c6670;
         font-variant-numeric: tabular-nums;
-        text-align: right;
-        flex: none;
+      }
+      .c-panel {
+        border: 1px solid #232a31;
+        border-radius: 6px;
+        background: #0f1317;
+      }
+      .c-panel .ph {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #232a31;
+        padding: 7px 10px;
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #5c6670;
+      }
+      .c-panel .ph .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #b7f04a;
+        box-shadow: 0 0 6px #b7f04a;
+      }
+      .c-sleepbig {
+        padding: 10px 12px 12px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .c-sleepbig .n {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #f2f6f8;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      .c-sleepbig .u {
+        font-size: 10px;
+        color: #5c6670;
+      }
+      .c-sleepbig button {
+        background: #b7f04a;
+        color: #10130a;
+        border: 0;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 10px 14px;
+      }
+      .c-spark {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 26px;
+        padding: 0 12px 10px;
+      }
+      .c-spark i {
+        flex: 1;
+        background: #1c232a;
+        border-radius: 1px;
+      }
+      .c-spark i.on {
+        background: #2f4d12;
+      }
+      .c-spark i.hot {
+        background: #b7f04a;
+      }
+      .c-rows {
+        display: flex;
+        flex-direction: column;
+      }
+      .c-row2 {
+        display: grid;
+        grid-template-columns: 16px 1fr auto auto;
+        gap: 9px;
+        align-items: center;
+        padding: 9px 10px;
+        border-top: 1px solid #1a2026;
+        font-size: 11px;
+      }
+      .c-row2:first-child {
+        border-top: 0;
+      }
+      .c-row2 svg {
+        width: 13px;
+        height: 13px;
+        color: #5c6670;
+      }
+      .c-row2 .t {
+        font-weight: 600;
+        color: #d7dde3;
+      }
+      .c-row2 .s {
+        font-size: 9.5px;
+        color: #5c6670;
+      }
+      .c-row2 .cmd {
+        color: #b7f04a;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
       }
       .c-watch {
-        background: #fff9ec;
-        border: 1px solid #f5e3b8;
-        border-radius: 14px;
-        padding: 11px 14px;
+        border: 1px solid #4a3517;
+        border-radius: 6px;
+        background: #14100a;
       }
-      .c-watch .t {
-        font-size: 13px;
-        font-weight: 650;
-        display: flex;
-        align-items: center;
-        gap: 7px;
+      .c-watch .ph {
+        border-bottom-color: #4a3517;
+        color: #c98f3d;
       }
-      .c-watch .seg {
-        display: flex;
-        gap: 4px;
-        margin: 8px 0;
+      .c-watch .inner {
+        padding: 10px 12px 12px;
       }
-      .c-watch .seg i {
-        flex: 1;
-        height: 4px;
-        border-radius: 99px;
-        background: #efe0bd;
+      .c-watch .food {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f2e8d5;
       }
-      .c-watch .seg i.on {
-        background: #ff9f0a;
+      .c-watch .meta {
+        font-size: 9.5px;
+        color: #c98f3d;
+        margin-top: 2px;
+      }
+      .c-watch .bar {
+        height: 5px;
+        background: #2a2114;
+        border-radius: 2px;
+        margin: 9px 0;
+        overflow: hidden;
+      }
+      .c-watch .bar i {
+        display: block;
+        height: 100%;
+        width: 66%;
+        background: repeating-linear-gradient(
+          90deg,
+          #c98f3d 0 6px,
+          transparent 6px 8px
+        );
       }
       .c-watch .acts {
         display: flex;
-        gap: 14px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #0a84ff;
+        gap: 12px;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
       }
-      .c-watch .acts .warn {
-        color: #ff453a;
+      .c-watch .acts .y {
+        color: #c98f3d;
+      }
+      .c-watch .acts .r {
+        color: #ff6b5e;
+      }
+      .c-watch .acts .g {
+        color: #b7f04a;
       }
       .c-tabbar {
         display: flex;
-        border-top: 0.5px solid #d8d8de;
-        background: rgba(255, 255, 255, 0.92);
-        padding: 7px 8px 16px;
-      }
-      .c-screen.tinted .c-tabbar {
-        background: rgba(246, 246, 248, 0.92);
+        border-top: 1px solid #232a31;
+        background: #0b0e11;
+        padding: 8px 4px 14px;
       }
       .c-tabbar div {
         flex: 1;
         text-align: center;
-        font-size: 9.5px;
-        font-weight: 550;
-        color: #8e8e93;
+        font-size: 8.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #5c6670;
         display: grid;
-        gap: 2px;
+        gap: 3px;
+        justify-items: center;
       }
       .c-tabbar div.on {
-        color: #0a84ff;
+        color: #b7f04a;
       }
-      .c-tabbar .ti {
-        font-size: 17px;
+      .c-tabbar svg {
+        width: 15px;
+        height: 15px;
+      }
+      .c-kv {
+        display: flex;
+        gap: 8px;
+        padding: 2px 4px;
+        font-size: 9px;
+        color: #5c6670;
+      }
+      .c-kv b {
+        color: #d7dde3;
+        font-weight: 700;
+      }
+      .c-statusline {
+        font-size: 9.5px;
+        color: #5c6670;
+        padding: 8px 4px 0;
+      }
+      .c-statusline .ok {
+        color: #b7f04a;
       }
       .c-sheet {
         position: absolute;
         inset: auto 0 0 0;
-        border-radius: 18px 18px 0 0;
-        background: #f6f6f8;
-        padding: 8px 16px 18px;
-        box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.2);
+        border-top: 1px solid #2c353e;
+        background: #0f1317;
+        padding: 12px 14px 16px;
+        box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.5);
         z-index: 10;
       }
-      .c-grab {
-        width: 36px;
-        height: 5px;
-        border-radius: 99px;
-        background: #d1d1d6;
-        margin: 0 auto 10px;
-      }
       .c-sheet h4 {
-        font-size: 16px;
-        font-weight: 700;
-        text-align: center;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #d7dde3;
       }
-      .c-wheel {
+      .c-sheet .warnline {
+        font-size: 9px;
+        color: #ff6b5e;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 3px;
+      }
+      .c-seg {
         display: flex;
-        justify-content: center;
-        gap: 8px;
-        margin: 14px 0 10px;
-        flex-wrap: wrap;
+        border: 1px solid #232a31;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 12px;
       }
-      .c-wheel span {
-        height: 34px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid #d1d1d6;
-        background: #fff;
-        display: grid;
-        place-items: center;
-        font-size: 12px;
-        font-weight: 600;
-        color: #3a3a3c;
-      }
-      .c-wheel span.on {
-        background: #0a84ff;
-        border-color: #0a84ff;
-        color: #fff;
-      }
-      .c-segctrl {
-        display: flex;
-        background: #e5e5ea;
-        border-radius: 9px;
-        padding: 2px;
-        margin-top: 10px;
-      }
-      .c-segctrl span {
+      .c-seg span {
         flex: 1;
         text-align: center;
-        font-size: 11.5px;
-        font-weight: 600;
-        padding: 6px 0;
-        border-radius: 7px;
-        color: #3a3a3c;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 9px 0;
+        color: #5c6670;
+        border-left: 1px solid #232a31;
       }
-      .c-segctrl span.on {
-        background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      .c-seg span:first-child {
+        border-left: 0;
+      }
+      .c-seg span.on {
+        background: #b7f04a;
+        color: #10130a;
+      }
+      .c-seg.red span.on {
+        background: #ff6b5e;
+        color: #1a0a08;
+      }
+      .c-symp {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .c-symp span {
+        font-size: 9.5px;
+        letter-spacing: 0.06em;
+        border: 1px solid #232a31;
+        border-radius: 4px;
+        padding: 6px 9px;
+        color: #5c6670;
+      }
+      .c-symp span.on {
+        border-color: #ff6b5e;
+        color: #ff6b5e;
       }
       .c-ts {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        background: #fff;
-        border-radius: 10px;
-        padding: 10px 12px;
-        font-size: 12px;
-        font-weight: 550;
-        margin-top: 10px;
-        border: 1px solid #ececf0;
+        align-items: center;
+        border: 1px solid #232a31;
+        border-radius: 5px;
+        padding: 9px 11px;
+        font-size: 10px;
+        margin-top: 12px;
+        color: #d7dde3;
       }
-      .c-ts .edit {
-        color: #0a84ff;
-        font-weight: 600;
+      .c-ts .e {
+        color: #b7f04a;
+        font-weight: 700;
+        letter-spacing: 0.1em;
       }
       .c-save {
         width: 100%;
         margin-top: 12px;
-        background: #0a84ff;
-        color: #fff;
+        background: #b7f04a;
+        color: #10130a;
         border: 0;
-        border-radius: 12px;
-        padding: 12px;
-        font-size: 13.5px;
-        font-weight: 650;
-      }
-      .c-statuspill {
-        font-size: 10px;
+        border-radius: 5px;
+        padding: 13px;
+        font-family: inherit;
+        font-size: 11px;
         font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 999px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .c-save.red {
+        background: #ff6b5e;
+        color: #1a0a08;
+      }
+      .c-foodrow {
+        display: grid;
+        grid-template-columns: 8px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 10px;
+        border-top: 1px solid #1a2026;
+        font-size: 11px;
+      }
+      .c-foodrow:first-child {
+        border-top: 0;
+      }
+      .c-foodrow .led {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+      .c-foodrow .t {
+        color: #d7dde3;
+        font-weight: 600;
+      }
+      .c-foodrow .s {
+        font-size: 9px;
+        color: #5c6670;
+      }
+      .c-foodrow .st {
+        font-size: 8.5px;
+        letter-spacing: 0.12em;
+        font-weight: 700;
       }
 
       @media print {
@@ -1345,60 +1476,120 @@
     </style>
   </head>
   <body>
+    <!-- Shared SVG icon set (stroke, currentColor) — used by all directions.
+         Zero emoji in product UI. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <g id="i-feed">
+          <path
+            d="M12 3c-4 3.5-6 6.5-6 9.5a6 6 0 0 0 12 0C18 9.5 16 6.5 12 3z"
+          />
+          <path d="M9.5 13.5a2.5 2.5 0 0 0 2.5 2.5" />
+        </g>
+        <g id="i-diaper">
+          <path d="M4 5h16v5a8 8 0 0 1-16 0V5z" />
+          <path d="M4 10h16" />
+          <path d="M9 14l1.5 2M15 14l-1.5 2" />
+        </g>
+        <g id="i-sleep">
+          <path d="M19 13.5A7.5 7.5 0 1 1 10.5 5 6 6 0 0 0 19 13.5z" />
+        </g>
+        <g id="i-meal">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </g>
+        <g id="i-intro">
+          <path d="M12 4v16M12 4l-4 4M12 4l4 4" />
+          <path d="M5 20h14" />
+        </g>
+        <g id="i-medical">
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <path d="M12 8.5v7M8.5 12h7" />
+        </g>
+        <g id="i-reaction">
+          <path d="M12 4L21 19H3L12 4z" />
+          <path d="M12 10v4M12 16.8v.2" />
+        </g>
+        <g id="i-growth">
+          <path d="M4 20V8M4 20h16" />
+          <path d="M8 16v-4M12 16V7M16 16v-6M20 16V5" />
+        </g>
+        <g id="i-now"><rect x="5" y="5" width="14" height="14" rx="2" /></g>
+        <g id="i-timeline">
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 7.5V12l3 2" />
+        </g>
+        <g id="i-foods">
+          <path
+            d="M12 20c-4.5 0-7-3-7-7 3.5 0 5 1 7 3 2-2 3.5-3 7-3 0 4-2.5 7-7 7z"
+          />
+          <path d="M12 16c0-5 1-9 6-12" />
+        </g>
+        <g id="i-settings">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M17.7 6.3l-1.8 1.8M8.1 15.9l-1.8 1.8"
+          />
+        </g>
+        <g id="i-check"><path d="M5 12.5l4.5 4.5L19 7.5" /></g>
+      </defs>
+    </svg>
+
     <div class="doc-wrap">
       <div class="doc-eyebrow">
-        Toddler Routine Tracker · Visual Design Exploration · October 2026
+        Toddler Routine Tracker · Visual Design Exploration v2 · October 2026
       </div>
       <h1 class="doc-title">Three design directions</h1>
       <p class="doc-lede">
-        Three polished, mutually exclusive visual directions for the tracker,
-        derived from the settled spec (eight Entry kinds, Watch Periods,
-        confirm-and-scrub delete, Meal/Introduction split) rather than from the
-        throwaway prototypes. Each is presented as a token set plus the four
-        highest-stakes screens:
-        <b>Home</b> (one-handed, half-asleep logging), an
-        <b>active Watch Card</b>, a <b>logging sheet</b>, and a
-        <b>timeline/foods</b> surface. All three are designed PWA-first with a
-        clean path to a native iOS build.
+        v2, regenerated after feedback that v1 sat too close to the prototypes
+        (emoji icons, similar system fonts). These three directions share
+        <b>no emoji in the product UI</b> — a single minimal stroke-icon set
+        instead — and deliberately diverge in type system, geometry, and mood: a
+        Swiss grid, an organic editorial, and a dark instrument panel. All keep
+        the settled features: eight Entry kinds, Watch Cards with quick actions,
+        timestamp-above-Save logging sheets, and consistent Food Status colors.
       </p>
 
       <nav class="doc-nav sans">
-        <a href="#dir-a"><span class="num">A</span>Golden Hour</a>
-        <a href="#dir-b"><span class="num">B</span>Playdate</a>
-        <a href="#dir-c"><span class="num">C</span>First Light</a>
+        <a href="#dir-a"><span class="num">A</span>Ledger</a>
+        <a href="#dir-b"><span class="num">B</span>Bloom</a>
+        <a href="#dir-c"><span class="num">C</span>Monolith</a>
+        <a href="#icons"><span class="num">→</span>Icon system</a>
         <a href="#compare"><span class="num">→</span>Side-by-side</a>
         <a href="#handoff"><span class="num">→</span>PWA / iOS handoff</a>
       </nav>
 
       <!-- ============================================================
-           DIRECTION A — GOLDEN HOUR
+           DIRECTION A — LEDGER
            ============================================================ -->
       <section class="direction" id="dir-a">
         <div class="direction-head">
           <div>
             <div class="doc-eyebrow">Direction A</div>
-            <h2 class="direction-name">Golden Hour</h2>
+            <h2 class="direction-name">Ledger</h2>
             <p class="direction-tag">
-              A warm, editorial, lamp-lit interface built around the app's real
-              usage context: one hand, dim room, 3am. Serif display type gives
-              it the feel of a kept baby journal rather than a medical tool;
-              dark mode is the primary designed surface, not an inversion. The
-              sleep timer is the emotional center of Home — a glowing "night
-              card" — and everything else recedes.
+              A Swiss typographic register — the app as a well-kept record book.
+              Square corners only, hairline rules instead of cards, entries set
+              in monospace tabular figures like columns in a ledger. One signal
+              color (a print-maker's red) marks every actionable element;
+              everything else is black on white. The most restrained and the
+              most typography-driven of the three.
             </p>
           </div>
           <ul class="principles">
             <li>
-              <b>Voice</b>A kept journal, not a dashboard. Serif headlines,
-              generous whitespace, no chrome that doesn't earn its place.
+              <b>Type is the interface</b>Uppercase grotesk headlines +
+              monospace data. Hierarchy through weight and rules, never
+              decoration.
             </li>
             <li>
-              <b>Dark-first</b>Designed in the dark and lifted into light — warm
-              ambers instead of pure blacks, so a 3am screen never glares.
+              <b>One color, spent carefully</b>Signal red for actions and the
+              Watch state only. Destructive flows inherit the same red — its
+              restraint is what makes the Reaction moment loud.
             </li>
             <li>
-              <b>One action per card</b>Every Home card has exactly one primary
-              verb (Sleep, Feed, Change, Log). No icon grids to aim at.
+              <b>Zero radius</b>Square edges everywhere. Feels deliberate,
+              printed, archival — the anti-candy direction.
             </li>
           </ul>
         </div>
@@ -1406,52 +1597,55 @@
         <div class="block-label">Palette</div>
         <div class="swatch-grid sans">
           <div class="swatch">
-            <div class="chip-color" style="background: #faf6ef"></div>
+            <div
+              class="chip-color"
+              style="background: #ffffff; border-bottom: 1px solid #eee"
+            ></div>
             <div class="chip-meta">
-              <span class="nm">Cream</span><br />#FAF6EF<br />bg · light
+              <span class="nm">Paper</span><br />#FFFFFF<br />bg
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #171310"></div>
+            <div class="chip-color" style="background: #141414"></div>
             <div class="chip-meta">
-              <span class="nm">Ember Black</span><br />#171310<br />bg · dark
+              <span class="nm">Ink</span><br />#141414<br />text / fills
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #d97e2b"></div>
+            <div class="chip-color" style="background: #e4002b"></div>
             <div class="chip-meta">
-              <span class="nm">Amber</span><br />#D97E2B<br />primary action
+              <span class="nm">Signal Red</span><br />#E4002B<br />actions /
+              watch
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ffb05c"></div>
+            <div class="chip-color" style="background: #d9d9d9"></div>
             <div class="chip-meta">
-              <span class="nm">Candlelight</span><br />#FFB05C<br />dark-mode
-              accent
+              <span class="nm">Hairline</span><br />#D9D9D9<br />rules
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #2f7c4f"></div>
+            <div class="chip-color" style="background: #6f6f6f"></div>
             <div class="chip-meta">
-              <span class="nm">Sage</span><br />#2F7C4F<br />safe / ok
+              <span class="nm">Meta Grey</span><br />#6F6F6F<br />secondary
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #c0492f"></div>
+            <div class="chip-color" style="background: #0f7a3d"></div>
             <div class="chip-meta">
-              <span class="nm">Brick</span><br />#C0492F<br />reaction / delete
+              <span class="nm">Safe Green</span><br />#0F7A3D<br />food status
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #7a5a8a"></div>
+            <div class="chip-color" style="background: #9a6a00"></div>
             <div class="chip-meta">
-              <span class="nm">Dusk Plum</span><br />#7A5A8A<br />sleep tracker
+              <span class="nm">Trying Ochre</span><br />#9A6A00<br />food status
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #4a6a8a"></div>
+            <div class="chip-color" style="background: #f4f2ee"></div>
             <div class="chip-meta">
-              <span class="nm">Twilight</span><br />#4A6A8A<br />medical
+              <span class="nm">Bone</span><br />#F4F2EE<br />dark-mode alt paper
             </div>
           </div>
         </div>
@@ -1459,97 +1653,54 @@
         <div class="block-label">Type &amp; shape</div>
         <div class="type-spec">
           <div class="type-row">
-            <span class="spec">Display · Serif 27/600</span
+            <span class="spec">Headline · Sans 26/700 caps</span
+            ><span
+              class="sans"
+              style="
+                font-size: 22px;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                text-transform: uppercase;
+              "
+              >Friday, Oct 16</span
+            >
+          </div>
+          <div class="type-row">
+            <span class="spec">Data · Mono 34/700</span
             ><span
               style="
-                font-family: ui-serif, Georgia, serif;
-                font-size: 24px;
-                font-weight: 600;
+                font-family: ui-monospace, Menlo, monospace;
+                font-size: 26px;
+                font-weight: 700;
+                letter-spacing: -0.04em;
               "
-              >Milo's evening</span
+              >6h 42m</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Card title · Sans 13/650</span
-            ><span class="sans" style="font-size: 14px; font-weight: 650"
-              >Last feed · 2h ago</span
+            <span class="spec">Meta · Mono 10/400 caps</span
+            ><span
+              style="
+                font-family: ui-monospace, Menlo, monospace;
+                font-size: 11px;
+                letter-spacing: 0.1em;
+                color: #6f6f6f;
+              "
+              >DAY 2 OF 3 · WATCH PERIOD</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Meta · Sans 11/400</span
-            ><span class="sans" style="font-size: 12px; color: #74706a"
-              >day 2 of 3 · offer it again, or log a reaction</span
-            >
-          </div>
-          <div class="type-row">
-            <span class="spec">Radius / Borders</span
+            <span class="spec">Shape</span
             ><span class="sans" style="font-size: 13px"
-              >18–22px cards · 1px hairline borders in warm greige, never pure
-              grey · in dark mode, shadows replaced by warm glows</span
+              >0px radius everywhere · 1–2px solid rules · no shadows ·
+              hierarchy by weight, case, and spacing</span
             >
           </div>
         </div>
 
-        <div class="block-label">
-          Key screens — Home (dark), Home (light) + watch card, logging sheet
-        </div>
+        <div class="block-label">Key screens — Now, logging sheet, Foods</div>
         <div class="screens-row">
-          <!-- A1: dark home -->
-          <div class="screen-cell">
-            <div class="phone">
-              <div class="phone-screen a-screen dark">
-                <div class="phone-notch"></div>
-                <div class="phone-status">
-                  <span>3:12</span><span>●●●</span>
-                </div>
-                <div class="a-body">
-                  <div style="padding-top: 4px">
-                    <div class="a-h1">Milo</div>
-                    <div class="a-sub">Saturday, Oct 17 · night</div>
-                  </div>
-                  <div class="a-hero">
-                    <span class="moon">🌙</span>
-                    <div class="t">Asleep</div>
-                    <div class="s">went down 8:42 PM · quality unrated</div>
-                    <span class="timer-pill">● 6h 30m</span>
-                    <button class="wake-btn">Wake</button>
-                  </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #3a2c1b">🤱</span
-                    ><span
-                      ><div class="tt">Last feed · 4h ago</div>
-                      <div class="ss">last side: left</div></span
-                    ><button class="go">Feed</button>
-                  </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #26312a">🧷</span
-                    ><span
-                      ><div class="tt">Diaper · 5h ago</div>
-                      <div class="ss">wet</div></span
-                    ><button class="go">Change</button>
-                  </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #33261d">🥣</span
-                    ><span
-                      ><div class="tt">Dinner · 7h ago</div>
-                      <div class="ss">ate most · veggies, dairy</div></span
-                    ><button class="go">Log meal</button>
-                  </div>
-                </div>
-                <div class="a-tabbar">
-                  <div class="on"><span class="ti">✦</span>Now</div>
-                  <div><span class="ti">◷</span>Timeline</div>
-                  <div><span class="ti">❋</span>Foods</div>
-                  <div><span class="ti">⚙</span>Settings</div>
-                </div>
-              </div>
-            </div>
-            <div class="cap">
-              Dark mode is the primary surface — warm ember blacks, one glowing
-              sleep card, every other card quiet.
-            </div>
-          </div>
-          <!-- A2: light home with watch card -->
+          <!-- A1: now -->
           <div class="screen-cell">
             <div class="phone">
               <div class="phone-screen a-screen">
@@ -1557,74 +1708,79 @@
                 <div class="phone-status">
                   <span>9:41</span><span>●●●</span>
                 </div>
-                <div class="a-body">
-                  <div style="padding-top: 4px">
-                    <div class="a-h1">Good morning</div>
-                    <div class="a-sub">Milo · Friday, Oct 16</div>
+                <div class="a-masthead">
+                  <span class="a-h1">Now</span
+                  ><span class="a-kicker">Fri 16 Oct · Milo</span>
+                </div>
+                <div class="a-rule"></div>
+                <div class="a-sleep">
+                  <div>
+                    <div class="a-lbl a-kicker">Sleep · last session</div>
+                    <div class="big">6h 42m</div>
                   </div>
-                  <div class="a-watch">
-                    <div class="tt">👀 Watching: peanut butter</div>
-                    <div class="dots">
-                      <span class="dot on"></span><span class="dot on"></span
-                      ><span class="dot"></span>
-                    </div>
-                    <div class="row">
-                      <button class="hot">Try again</button
-                      ><button>Log reaction</button><button>Mark safe</button>
-                    </div>
+                  <button>Start<br />sleep</button>
+                  <div class="a-kicker" style="grid-column: 1/3">
+                    rated great · woke 06:58
                   </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #efe3cb">😴</span
+                </div>
+                <div class="a-watch">
+                  <div class="a-kicker lbl">Watching · day 2 of 3</div>
+                  <div class="food">Peanut butter</div>
+                  <div class="meta">ends Sun 09:14 · no reactions logged</div>
+                  <div class="ticks">
+                    <i class="on"></i><i class="on"></i><i></i>
+                  </div>
+                  <div class="acts">
+                    <span class="u">Try again</span
+                    ><span class="u red">Log reaction</span
+                    ><span class="u">Mark safe</span>
+                  </div>
+                </div>
+                <div class="a-body" style="flex: none">
+                  <div class="a-row">
+                    <span class="idx">01</span
                     ><span
-                      ><div class="tt">Awake</div>
-                      <div class="ss">slept 6h 42m · great</div></span
-                    ><button class="go">Sleep</button>
-                  </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #efe3cb">🆕</span
-                    ><span
-                      ><div class="tt">First taste</div>
-                      <div class="ss">start a Watch Period</div></span
-                    ><button class="go">Log intro</button>
-                  </div>
-                  <div class="a-card">
-                    <span class="a-ico" style="background: #e8ecf0">💊</span
-                    ><span
-                      ><div class="tt">Medical</div>
-                      <div class="ss">
-                        medication · vaccine · symptom · temp
-                      </div></span
+                      ><div class="t">Feed</div>
+                      <div class="s">45M AGO · LEFT</div></span
                     ><button class="go">Log</button>
                   </div>
-                  <div class="a-section">Latest</div>
-                  <div class="a-list-row">
-                    <span>🥣</span
+                  <div class="a-row">
+                    <span class="idx">02</span
                     ><span
-                      ><div class="t">Breakfast</div>
-                      <div class="s">ate all · fruit, grains</div></span
-                    ><span class="time">8:10a</span>
+                      ><div class="t">Diaper</div>
+                      <div class="s">1H AGO · WET</div></span
+                    ><button class="go">Log</button>
                   </div>
-                  <div class="a-list-row">
-                    <span>🧷</span
-                    ><span><div class="t">Diaper · both</div></span
-                    ><span class="time">7:45a</span>
+                  <div class="a-row">
+                    <span class="idx">03</span
+                    ><span
+                      ><div class="t">Meal</div>
+                      <div class="s">BREAKFAST · 5/5</div></span
+                    ><button class="go">Log</button>
+                  </div>
+                  <div class="a-row">
+                    <span class="idx">04</span
+                    ><span
+                      ><div class="t">Medical</div>
+                      <div class="s">MED · VAX · SYMPTOM · TEMP</div></span
+                    ><button class="go">Log</button>
                   </div>
                 </div>
-                <div class="a-fab">+</div>
+                <div style="flex: 1"></div>
                 <div class="a-tabbar">
-                  <div class="on"><span class="ti">✦</span>Now</div>
-                  <div><span class="ti">◷</span>Timeline</div>
-                  <div><span class="ti">❋</span>Foods</div>
-                  <div><span class="ti">⚙</span>Settings</div>
+                  <div class="on"><span class="sq"></span>Now</div>
+                  <div><span class="sq"></span>Timeline</div>
+                  <div><span class="sq"></span>Foods</div>
+                  <div><span class="sq"></span>Settings</div>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Light mode keeps the warmth — cream, not white. Watch Cards use
-              segmented day-dots; the FAB catches the remaining Entry kinds.
+              Now as a ledger page: numbered rows, mono metadata, the sleep
+              total set like a balance figure.
             </div>
           </div>
-          <!-- A3: logging sheet -->
+          <!-- A2: feed sheet -->
           <div class="screen-cell">
             <div class="phone">
               <div class="phone-screen a-screen">
@@ -1632,159 +1788,225 @@
                 <div class="phone-status">
                   <span>9:41</span><span>●●●</span>
                 </div>
-                <div class="a-body">
-                  <div style="padding-top: 4px">
-                    <div class="a-h1">Timeline</div>
-                    <div class="a-sub">Friday, Oct 16</div>
-                  </div>
-                  <div class="a-list-row">
-                    <span>🥣</span
-                    ><span
-                      ><div class="t">Breakfast</div>
-                      <div class="s">ate all</div></span
-                    ><span class="time">8:10a</span>
-                  </div>
-                  <div class="a-list-row">
-                    <span>🤱</span
-                    ><span><div class="t">Feed · right · 12 min</div></span
-                    ><span class="time">7:58a</span>
-                  </div>
-                  <div class="a-list-row">
-                    <span>🧷</span
-                    ><span><div class="t">Diaper · both</div></span
-                    ><span class="time">7:45a</span>
-                  </div>
-                  <div class="a-list-row">
-                    <span>😴</span
-                    ><span
-                      ><div class="t">Slept 6h 42m · great</div>
-                      <div class="s">woke 6:58 AM</div></span
-                    ><span class="time">night</span>
-                  </div>
+                <div class="a-masthead">
+                  <span class="a-h1">Timeline</span
+                  ><span class="a-kicker">Fri 16 Oct</span>
+                </div>
+                <div class="a-rule"></div>
+                <div class="a-row">
+                  <span class="idx">08:10</span
+                  ><span
+                    ><div class="t">Meal · Breakfast</div>
+                    <div class="s">ATE ALL · FRUIT, GRAINS</div></span
+                  >
+                </div>
+                <div class="a-row">
+                  <span class="idx">07:58</span
+                  ><span
+                    ><div class="t">Feed</div>
+                    <div class="s">RIGHT · 12 MIN</div></span
+                  >
+                </div>
+                <div class="a-row">
+                  <span class="idx">06:58</span
+                  ><span
+                    ><div class="t">Sleep · 6h 42m</div>
+                    <div class="s">GREAT</div></span
+                  >
                 </div>
                 <div class="a-sheet">
-                  <div class="a-grab"></div>
-                  <h4>Log feed</h4>
+                  <div class="a-kicker">New entry</div>
+                  <h4 style="margin-top: 4px">Log feed</h4>
                   <div class="a-stepper">
                     <button>−</button><span class="n">3</span><button>+</button>
                   </div>
-                  <div class="a-chips">
-                    <span>L</span><span class="sel">R</span
-                    ><span style="opacity: 0.6">15 min</span>
+                  <div class="a-opts">
+                    <span>Left</span><span class="sel">Right</span
+                    ><span>15 min</span>
                   </div>
                   <div class="a-ts">
-                    <span>🕘 Today, 9:41 AM</span
-                    ><span style="opacity: 0.6">edit</span>
+                    <span>TODAY · 09:41</span><span class="e">Edit</span>
                   </div>
                   <button class="a-save">Save feed</button>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Logging sheets keep the spec's rule: editable timestamp sits
-              directly above Save on all eight forms.
+              Logging sheet: the counter is a bordered mono instrument;
+              timestamp row pinned directly above Save, per spec.
+            </div>
+          </div>
+          <!-- A3: foods -->
+          <div class="screen-cell">
+            <div class="phone">
+              <div class="phone-screen a-screen">
+                <div class="phone-notch"></div>
+                <div class="phone-status">
+                  <span>9:41</span><span>●●●</span>
+                </div>
+                <div class="a-masthead">
+                  <span class="a-h1">Foods</span
+                  ><span class="a-kicker">174 entries</span>
+                </div>
+                <div class="a-rule"></div>
+                <div class="a-statusbar">
+                  <span>SAFE <b>41</b></span
+                  ><span>TRYING <b>2</b></span
+                  ><span>UNTRIED <b>130</b></span
+                  ><span style="color: #e4002b">AVOID <b>1</b></span>
+                </div>
+                <div class="a-rule-thin"></div>
+                <div class="a-body a-foods" style="flex: none">
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Banana</div>
+                      <div class="s">FRUIT</div></span
+                    ><span class="a-pill safe">Safe</span>
+                  </div>
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Peanut butter</div>
+                      <div class="s">NUTS &amp; SEEDS · PEANUT</div></span
+                    ><span class="a-pill trying">Day 2</span>
+                  </div>
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Shrimp</div>
+                      <div class="s">FISH &amp; SHELLFISH</div></span
+                    ><span class="a-pill avoid">Avoid</span>
+                  </div>
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Avocado</div>
+                      <div class="s">FRUIT</div></span
+                    ><span class="a-pill untried">Untried</span>
+                  </div>
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Oatmeal</div>
+                      <div class="s">GRAINS &amp; CEREALS · WHEAT</div></span
+                    ><span class="a-pill safe">Safe</span>
+                  </div>
+                  <div class="a-row">
+                    <span
+                      ><div class="t">Sweet potato</div>
+                      <div class="s">VEGETABLES</div></span
+                    ><span class="a-pill safe">Safe</span>
+                  </div>
+                </div>
+                <div style="flex: 1"></div>
+                <div class="a-tabbar">
+                  <div><span class="sq"></span>Now</div>
+                  <div><span class="sq"></span>Timeline</div>
+                  <div class="on"><span class="sq"></span>Foods</div>
+                  <div><span class="sq"></span>Settings</div>
+                </div>
+              </div>
+            </div>
+            <div class="cap">
+              Foods as a register: status reads as outlined stamps; counts run
+              in a mono header line.
             </div>
           </div>
         </div>
 
         <div class="block-label">Where it shines / watch-outs</div>
         <div class="note sans">
-          <b>Shines:</b> night feeds (the actual worst-case context), emotional
-          resonance for a keepsake-feeling app, strong differentiation from
-          clinical competitors. <b>Watch-outs:</b> serif display type needs
-          discipline at small sizes; the FAB must not fight the bottom-sheet
-          model — it only opens the full eight-kind picker, never duplicating
-          card actions.
+          <b>Shines:</b> scannability (tabular mono numbers align perfectly),
+          timelessness, and the strongest possible Reaction moment — when the
+          interface's single color is also the alarm. <b>Watch-outs:</b>
+          dark mode needs a full rethink (true inverse reads harsh — use the
+          warm Bone paper instead of pure white-on-black); all-caps mono meta
+          text must stay short or it fatigues; may feel austere for caregivers
+          expecting warmth.
         </div>
       </section>
 
       <!-- ============================================================
-           DIRECTION B — PLAYDATE
+           DIRECTION B — BLOOM
            ============================================================ -->
       <section class="direction" id="dir-b">
         <div class="direction-head">
           <div>
             <div class="doc-eyebrow">Direction B</div>
-            <h2 class="direction-name">Playdate</h2>
+            <h2 class="direction-name">Bloom</h2>
             <p class="direction-tag">
-              Soft, rounded, and upbeat — the "friendly co-parent." Each of the
-              eight Entry kinds owns a color and a bubble icon, so caregivers
-              build muscle memory by color alone (purple = sleep, pink = feed,
-              blue = diaper) without reading a word. Home is a two-column tile
-              grid tuned for thumbs; delight comes from progress bars, a "marked
-              safe" moment, and chunky, forgiving touch targets.
+              A soft organic editorial — the app as a beautifully typeset
+              parenting journal. A large serif with italic accents, a warm paper
+              canvas, and tracker icons set as line glyphs inside pastel discs.
+              Pills and circles are the only geometry; nothing is a box. The
+              sleep card is a sage "garden" panel; the Watch Period shows a real
+              progress ring. This is the warmth of v1's Golden Hour, rebuilt on
+              a completely different skeleton.
             </p>
           </div>
           <ul class="principles">
             <li>
-              <b>Color is the interface</b>Eight tracker colors used
-              consistently everywhere — tiles, timeline rows, charts, and
-              food-status pills.
+              <b>Editorial voice</b>Serif headlines with italic emphasis
+              ("Milo's Friday"), italic serif timestamps in lists. Reads like a
+              kept journal.
             </li>
             <li>
-              <b>Chunky &amp; forgiving</b>Minimum 44pt targets, 20–24px radii,
-              big type. Designed for a parent holding a toddler.
+              <b>Circle grammar</b>Orbs, pills, rings. Rows are capsule-shaped,
+              the tab bar is a floating dark pill, icons live in pastel discs.
             </li>
             <li>
-              <b>Reward the routine</b>Micro-celebrations when a Watch Period
-              clears; gentle, never gamified-pressure.
+              <b>Garden palette</b>Sage, terracotta, oat, butter — soft
+              naturals. Status colors stay semantic: sage = safe, butter =
+              watching, clay = avoid.
             </li>
           </ul>
         </div>
 
-        <div class="block-label">
-          Palette — per-tracker identity on a calm canvas
-        </div>
+        <div class="block-label">Palette</div>
         <div class="swatch-grid sans">
           <div class="swatch">
-            <div class="chip-color" style="background: #f2f5fa"></div>
+            <div class="chip-color" style="background: #fbf6ee"></div>
             <div class="chip-meta">
-              <span class="nm">Cloud</span><br />#F2F5FA<br />bg
+              <span class="nm">Paper</span><br />#FBF6EE<br />bg
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #5b5fc7"></div>
+            <div class="chip-color" style="background: #33302a"></div>
             <div class="chip-meta">
-              <span class="nm">Sleep Indigo</span><br />#5B5FC7<br />sleep
+              <span class="nm">Umber</span><br />#33302A<br />ink / pill bar
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ff8fab"></div>
+            <div class="chip-color" style="background: #d9e4d0"></div>
             <div class="chip-meta">
-              <span class="nm">Feed Pink</span><br />#FF8FAB<br />feed
+              <span class="nm">Sage</span><br />#D9E4D0<br />sleep / safe
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #4ea8de"></div>
+            <div class="chip-color" style="background: #c96f4a"></div>
             <div class="chip-meta">
-              <span class="nm">Diaper Blue</span><br />#4EA8DE<br />diaper
+              <span class="nm">Terracotta</span><br />#C96F4A<br />watch /
+              accent
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #4ecb8d"></div>
+            <div class="chip-color" style="background: #f6e3c2"></div>
             <div class="chip-meta">
-              <span class="nm">Meal Green</span><br />#4ECB8D<br />meal
+              <span class="nm">Butter</span><br />#F6E3C2<br />feed disc
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ff9f43"></div>
+            <div class="chip-color" style="background: #dcebf2"></div>
             <div class="chip-meta">
-              <span class="nm">Watch Orange</span><br />#FF9F43<br />intro /
-              watch
+              <span class="nm">Rain</span><br />#DCEBF2<br />diaper / medical
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ef476f"></div>
+            <div class="chip-color" style="background: #eedde8"></div>
             <div class="chip-meta">
-              <span class="nm">Reaction Coral</span><br />#EF476F<br />reaction
-              / delete
+              <span class="nm">Petal</span><br />#EEDDE8<br />meal disc
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #8b5fbf"></div>
+            <div class="chip-color" style="background: #b4552e"></div>
             <div class="chip-meta">
-              <span class="nm">Medical Violet</span><br />#8B5FBF<br />medical /
-              growth
+              <span class="nm">Clay</span><br />#B4552E<br />avoid / delete
             </div>
           </div>
         </div>
@@ -1792,39 +2014,50 @@
         <div class="block-label">Type &amp; shape</div>
         <div class="type-spec">
           <div class="type-row">
-            <span class="spec">Display · Sans 20/800</span
+            <span class="spec">Display · Serif 30/500</span
             ><span
-              class="sans"
-              style="font-size: 21px; font-weight: 800; letter-spacing: -0.02em"
-              >Good morning, Milo ☀️</span
+              style="
+                font-family:
+                  &quot;Iowan Old Style&quot;, Palatino, ui-serif, Georgia,
+                  serif;
+                font-size: 25px;
+              "
+              >Milo's <em style="color: #c96f4a">Friday</em></span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Tile title · Sans 12.5/750</span
-            ><span class="sans" style="font-size: 13px; font-weight: 750"
-              >Feed · 45m ago</span
+            <span class="spec">Row title · Sans 13/650</span
+            ><span class="sans" style="font-size: 14px; font-weight: 650"
+              >Peanut butter</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Meta · Sans 10.5/500</span
-            ><span class="sans" style="font-size: 11px; color: #69718a"
-              >day 2 of 3 · going great</span
+            <span class="spec">Timestamp · Serif italic</span
+            ><span
+              style="
+                font-family:
+                  &quot;Iowan Old Style&quot;, Palatino, ui-serif, Georgia,
+                  serif;
+                font-style: italic;
+                font-size: 14px;
+                color: #8b8375;
+              "
+              >8:10 this morning</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Radius / Borders</span
+            <span class="spec">Shape</span
             ><span class="sans" style="font-size: 13px"
-              >20–28px everywhere · 1.5px soft borders · floating pill tab bar ·
-              colored bubble icons on 11px-radius squircles</span
+              >Circles and pills only — capsule rows, ring progress, floating
+              pill tab bar · 1px oat borders · soft paper texture via layered
+              tints</span
             >
           </div>
         </div>
 
-        <div class="block-label">
-          Key screens — Home grid, foods browser, meal sheet
-        </div>
+        <div class="block-label">Key screens — Now, meal sheet, Foods</div>
         <div class="screens-row">
-          <!-- B1: home grid -->
+          <!-- B1: now -->
           <div class="screen-cell">
             <div class="phone">
               <div class="phone-screen b-screen">
@@ -1833,70 +2066,105 @@
                   <span>9:41</span><span>●●●</span>
                 </div>
                 <div class="b-body">
-                  <div class="b-greet">
-                    <span class="b-avatar">👶</span
-                    ><span
-                      ><div class="b-h1">Milo ☀️</div>
-                      <div class="b-sub">Friday, Oct 16</div></span
-                    >
+                  <div>
+                    <div class="b-h1">Milo's <em>Friday</em></div>
+                    <div class="b-sub">October 16 · a good morning so far</div>
                   </div>
                   <div class="b-sleepcard">
-                    <div class="stars">
-                      ✦ &nbsp;&nbsp;&nbsp; ✧ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✦
-                      &nbsp;&nbsp; ✧
-                    </div>
+                    <div class="disc"></div>
+                    <div class="disc2"></div>
+                    <div class="lbl">Sleep</div>
                     <div class="t">Awake for 2h 43m</div>
-                    <div class="s">last sleep 6h 42m · great 😴</div>
+                    <div class="s">last night 6h 42m · rated great</div>
                     <button>Start sleep</button>
                   </div>
-                  <div class="b-grid">
-                    <div class="b-tile">
-                      <span class="bub" style="background: #ffe4ec">🤱</span
-                      ><span class="t">Feed</span
-                      ><span class="s">45m ago · left</span>
-                    </div>
-                    <div class="b-tile">
-                      <span class="bub" style="background: #e0f2fd">🧷</span
-                      ><span class="t">Diaper</span
-                      ><span class="s">1h ago · wet</span>
-                    </div>
-                    <div class="b-tile">
-                      <span class="bub" style="background: #e2f8ec">🥣</span
-                      ><span class="t">Meal</span
-                      ><span class="s">breakfast · ate all</span>
-                    </div>
-                    <div class="b-tile">
-                      <span class="bub" style="background: #efe6fb">💊</span
-                      ><span class="t">Medical</span
-                      ><span class="s">med, vax, temp</span>
-                    </div>
-                  </div>
                   <div class="b-watch">
-                    <div class="t">👀 Peanut butter</div>
-                    <div class="prog"><i></i></div>
-                    <div class="s">
-                      Day 2 of 3 — offer it again, or log a reaction
+                    <div class="lbl">Watching · day 2 of 3</div>
+                    <div class="food">Peanut butter</div>
+                    <div class="ringrow">
+                      <svg class="ring" viewBox="0 0 36 36">
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15.5"
+                          fill="none"
+                          stroke="#f0d7c0"
+                          stroke-width="4"
+                        />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15.5"
+                          fill="none"
+                          stroke="#c96f4a"
+                          stroke-width="4"
+                          stroke-linecap="round"
+                          stroke-dasharray="64.5 97.4"
+                          transform="rotate(-90 18 18)"
+                        />
+                      </svg>
+                      <span class="s"
+                        >Two calm days in.<br />Offer again today, or log a
+                        reaction.</span
+                      >
                     </div>
-                    <div class="row">
+                    <div class="acts">
                       <button class="hot">Try again</button
-                      ><button>Reaction</button><button>Mark safe ✓</button>
+                      ><button>Reaction</button><button>Mark safe</button>
+                    </div>
+                  </div>
+                  <div class="b-cards">
+                    <div class="b-card">
+                      <span class="b-orb" style="background: #f6e3c2"
+                        ><svg class="ic" style="color: #a4741f">
+                          <use href="#i-feed" /></svg></span
+                      ><span
+                        ><div class="t">Feed</div>
+                        <div class="s">45m ago · left side</div></span
+                      ><button class="go">Log</button>
+                    </div>
+                    <div class="b-card">
+                      <span class="b-orb" style="background: #dcebf2"
+                        ><svg class="ic" style="color: #4a7b96">
+                          <use href="#i-diaper" /></svg></span
+                      ><span
+                        ><div class="t">Diaper</div>
+                        <div class="s">1h ago · wet</div></span
+                      ><button class="go">Log</button>
+                    </div>
+                    <div class="b-card">
+                      <span class="b-orb" style="background: #eedde8"
+                        ><svg class="ic" style="color: #9a5c80">
+                          <use href="#i-meal" /></svg></span
+                      ><span
+                        ><div class="t">Meal</div>
+                        <div class="s">breakfast · ate all</div></span
+                      ><button class="go">Log</button>
                     </div>
                   </div>
                 </div>
                 <div class="b-tabbar">
-                  <div class="on"><span class="ti">🏠</span>Now</div>
-                  <div><span class="ti">🗓</span>Timeline</div>
-                  <div><span class="ti">🥕</span>Foods</div>
-                  <div><span class="ti">⚙️</span>Settings</div>
+                  <div class="on">
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Timeline
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Settings
+                  </div>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Home as a tile grid: color-coded trackers, floating pill tab bar,
-              Watch Card with a real progress bar.
+              Now: serif greeting, sage sleep panel, capsule rows with line-icon
+              orbs, and a dark floating pill tab bar.
             </div>
           </div>
-          <!-- B2: foods browser -->
+          <!-- B2: meal sheet -->
           <div class="screen-cell">
             <div class="phone">
               <div class="phone-screen b-screen">
@@ -1905,320 +2173,322 @@
                   <span>9:41</span><span>●●●</span>
                 </div>
                 <div class="b-body">
-                  <div style="padding: 2px 4px">
-                    <div class="b-h1">Foods</div>
-                    <div class="b-sub">
-                      🟢 41 safe · 🟡 2 trying · ⚪ 130 untried · 🔴 1 avoid
+                  <div>
+                    <div class="b-h1">Friday's <em>entries</em></div>
+                    <div class="b-sub">October 16</div>
+                  </div>
+                  <div class="b-list">
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 30px; height: 30px; background: #eedde8"
+                        ><svg
+                          class="ic"
+                          style="color: #9a5c80; width: 15px; height: 15px"
+                        >
+                          <use href="#i-meal" /></svg></span
+                      ><span
+                        ><div class="t">Breakfast</div>
+                        <div class="s">ate all · fruit, grains</div></span
+                      ><span class="time">8:10 am</span>
                     </div>
-                  </div>
-                  <div class="b-pillrow">
-                    <span class="b-pill on">All</span
-                    ><span class="b-pill">🍎 Fruit</span
-                    ><span class="b-pill">🥦 Veggies</span
-                    ><span class="b-pill">🌾 Grains</span
-                    ><span class="b-pill">🥜 Nuts</span>
-                  </div>
-                  <div class="b-feedrow">
-                    <span
-                      class="bub"
-                      style="
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 11px;
-                        display: grid;
-                        place-items: center;
-                        background: #e2f8ec;
-                        flex: none;
-                      "
-                      >🍌</span
-                    ><span
-                      ><div class="t">Banana</div>
-                      <div class="s">fruit</div></span
-                    ><span
-                      class="badge"
-                      style="background: #e2f8ec; color: #1e7a4c"
-                      >SAFE</span
-                    >
-                  </div>
-                  <div class="b-feedrow">
-                    <span
-                      class="bub"
-                      style="
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 11px;
-                        display: grid;
-                        place-items: center;
-                        background: #fff3e2;
-                        flex: none;
-                      "
-                      >🥜</span
-                    ><span
-                      ><div class="t">Peanut butter</div>
-                      <div class="s">nuts &amp; seeds · peanut</div></span
-                    ><span
-                      class="badge"
-                      style="background: #ffedd6; color: #b0620a"
-                      >DAY 2</span
-                    >
-                  </div>
-                  <div class="b-feedrow">
-                    <span
-                      class="bub"
-                      style="
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 11px;
-                        display: grid;
-                        place-items: center;
-                        background: #fde3ea;
-                        flex: none;
-                      "
-                      >🦐</span
-                    ><span
-                      ><div class="t">Shrimp</div>
-                      <div class="s">fish &amp; shellfish</div></span
-                    ><span
-                      class="badge"
-                      style="background: #fde3ea; color: #b42348"
-                      >AVOID</span
-                    >
-                  </div>
-                  <div class="b-feedrow">
-                    <span
-                      class="bub"
-                      style="
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 11px;
-                        display: grid;
-                        place-items: center;
-                        background: #eef1f7;
-                        flex: none;
-                      "
-                      >🥑</span
-                    ><span
-                      ><div class="t">Avocado</div>
-                      <div class="s">fruit</div></span
-                    ><span
-                      class="badge"
-                      style="background: #eef1f7; color: #69718a"
-                      >UNTRIED</span
-                    >
-                  </div>
-                  <div class="b-feedrow">
-                    <span
-                      class="bub"
-                      style="
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 11px;
-                        display: grid;
-                        place-items: center;
-                        background: #e2f8ec;
-                        flex: none;
-                      "
-                      >🍠</span
-                    ><span
-                      ><div class="t">Sweet potato</div>
-                      <div class="s">veggies</div></span
-                    ><span
-                      class="badge"
-                      style="background: #e2f8ec; color: #1e7a4c"
-                      >SAFE</span
-                    >
-                  </div>
-                </div>
-                <div class="b-tabbar">
-                  <div><span class="ti">🏠</span>Now</div>
-                  <div><span class="ti">🗓</span>Timeline</div>
-                  <div class="on"><span class="ti">🥕</span>Foods</div>
-                  <div><span class="ti">⚙️</span>Settings</div>
-                </div>
-              </div>
-            </div>
-            <div class="cap">
-              Foods browser: status is a colored badge, filters are emoji chips
-              — the four Food Statuses read at a glance.
-            </div>
-          </div>
-          <!-- B3: meal sheet -->
-          <div class="screen-cell">
-            <div class="phone">
-              <div class="phone-screen b-screen">
-                <div class="phone-notch"></div>
-                <div class="phone-status">
-                  <span>9:41</span><span>●●●</span>
-                </div>
-                <div class="b-body">
-                  <div style="padding: 2px 4px">
-                    <div class="b-h1">Timeline</div>
-                    <div class="b-sub">Friday, Oct 16</div>
-                  </div>
-                  <div class="b-feedrow">
-                    <span>🥣</span
-                    ><span
-                      ><div class="t">Breakfast</div>
-                      <div class="s">ate all · fruit, grains</div></span
-                    ><span class="s" style="margin-left: auto">8:10a</span>
-                  </div>
-                  <div class="b-feedrow">
-                    <span>🤱</span
-                    ><span
-                      ><div class="t">Feed</div>
-                      <div class="s">right · 12 min</div></span
-                    ><span class="s" style="margin-left: auto">7:58a</span>
-                  </div>
-                  <div class="b-feedrow">
-                    <span>😴</span
-                    ><span
-                      ><div class="t">Sleep</div>
-                      <div class="s">6h 42m · great</div></span
-                    ><span class="s" style="margin-left: auto">night</span>
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 30px; height: 30px; background: #f6e3c2"
+                        ><svg
+                          class="ic"
+                          style="color: #a4741f; width: 15px; height: 15px"
+                        >
+                          <use href="#i-feed" /></svg></span
+                      ><span
+                        ><div class="t">Feed · right</div>
+                        <div class="s">12 min</div></span
+                      ><span class="time">7:58 am</span>
+                    </div>
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 30px; height: 30px; background: #d9e4d0"
+                        ><svg
+                          class="ic"
+                          style="color: #55694e; width: 15px; height: 15px"
+                        >
+                          <use href="#i-sleep" /></svg></span
+                      ><span
+                        ><div class="t">Sleep · 6h 42m</div>
+                        <div class="s">rated great</div></span
+                      ><span class="time">overnight</span>
+                    </div>
                   </div>
                 </div>
                 <div class="b-sheet">
                   <div class="b-grab"></div>
-                  <h4>🥣 Log meal</h4>
+                  <h4>Log a <em>meal</em></h4>
                   <div class="b-amount">
-                    <span class="on">😋</span><span class="on">😋</span
-                    ><span class="on">😋</span><span class="on">😋</span
-                    ><span>😋</span>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="on"
+                      ><svg class="ic"><use href="#i-check" /></svg
+                    ></i>
+                    <i class="off"
+                      ><svg class="ic" style="color: #cfc3ad">
+                        <use href="#i-check" /></svg
+                    ></i>
                   </div>
-                  <div
-                    style="
-                      text-align: center;
-                      font-size: 10.5px;
-                      color: #69718a;
-                      font-weight: 700;
-                    "
-                  >
-                    4 of 5 · ate most
-                  </div>
+                  <div class="b-amountlbl">4 of 5 · ate most</div>
                   <div class="b-flags">
-                    <span class="sel">🍎 fruit</span
-                    ><span class="sel">🌾 grains</span><span>🥦 veggies</span
-                    ><span>🥛 dairy</span><span>🥜 nuts</span>
+                    <span class="sel">Fruit</span><span class="sel">Grains</span
+                    ><span>Vegetables</span><span>Dairy</span
+                    ><span>Nuts &amp; seeds</span><span>Fish</span>
                   </div>
                   <div class="b-ts">
-                    <span>🕘 Today, 9:41 AM</span
-                    ><span style="color: #5b5fc7">edit</span>
+                    <span>This morning · 9:41</span
+                    ><span class="e">Change</span>
                   </div>
                   <button class="b-save">Save meal</button>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Meal sheet: the 5-point amount becomes a tappable scale; category
-              flags are chunky emoji chips; timestamp above Save per spec.
+              Meal sheet: the 5-point amount is a row of sage check-discs; flags
+              are oat pills; timestamp pill sits above Save.
+            </div>
+          </div>
+          <!-- B3: foods -->
+          <div class="screen-cell">
+            <div class="phone">
+              <div class="phone-screen b-screen">
+                <div class="phone-notch"></div>
+                <div class="phone-status">
+                  <span>9:41</span><span>●●●</span>
+                </div>
+                <div class="b-body">
+                  <div>
+                    <div class="b-h1">The <em>food</em> journal</div>
+                    <div class="b-sub">
+                      41 safe · 2 trying · 130 untried · 1 avoid
+                    </div>
+                  </div>
+                  <div class="b-flags" style="margin-top: 0">
+                    <span class="sel">All</span><span>Fruit</span
+                    ><span>Vegetables</span><span>Grains</span
+                    ><span>Proteins</span><span>Dairy</span>
+                  </div>
+                  <div class="b-list">
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 32px; height: 32px; background: #d9e4d0"
+                        ><svg
+                          class="ic"
+                          style="color: #55694e; width: 16px; height: 16px"
+                        >
+                          <use href="#i-foods" /></svg></span
+                      ><span
+                        ><div class="t">Banana</div>
+                        <div class="s">fruit</div></span
+                      ><span
+                        class="b-pill"
+                        style="
+                          background: #e3eddc;
+                          color: #4c6a43;
+                          margin-left: auto;
+                        "
+                        >Safe</span
+                      >
+                    </div>
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 32px; height: 32px; background: #f6e3c2"
+                        ><svg
+                          class="ic"
+                          style="color: #a4741f; width: 16px; height: 16px"
+                        >
+                          <use href="#i-foods" /></svg></span
+                      ><span
+                        ><div class="t">Peanut butter</div>
+                        <div class="s">nuts &amp; seeds · peanut</div></span
+                      ><span
+                        class="b-pill"
+                        style="
+                          background: #fdeee4;
+                          color: #c96f4a;
+                          margin-left: auto;
+                        "
+                        >Day 2</span
+                      >
+                    </div>
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 32px; height: 32px; background: #f3ddd4"
+                        ><svg
+                          class="ic"
+                          style="color: #b4552e; width: 16px; height: 16px"
+                        >
+                          <use href="#i-foods" /></svg></span
+                      ><span
+                        ><div class="t">Shrimp</div>
+                        <div class="s">fish &amp; shellfish</div></span
+                      ><span
+                        class="b-pill"
+                        style="
+                          background: #f3ddd4;
+                          color: #b4552e;
+                          margin-left: auto;
+                        "
+                        >Avoid</span
+                      >
+                    </div>
+                    <div class="b-li">
+                      <span
+                        class="b-orb"
+                        style="width: 32px; height: 32px; background: #efe9dc"
+                        ><svg
+                          class="ic"
+                          style="color: #9a917e; width: 16px; height: 16px"
+                        >
+                          <use href="#i-foods" /></svg></span
+                      ><span
+                        ><div class="t">Avocado</div>
+                        <div class="s">fruit</div></span
+                      ><span
+                        class="b-pill"
+                        style="
+                          background: #efe9dc;
+                          color: #9a917e;
+                          margin-left: auto;
+                        "
+                        >Untried</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="b-tabbar">
+                  <div>
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Timeline
+                  </div>
+                  <div class="on">
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Settings
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cap">
+              Foods as a journal index: pastel status pills, category filters as
+              oat chips, italic serif counts.
             </div>
           </div>
         </div>
 
         <div class="block-label">Where it shines / watch-outs</div>
         <div class="note sans">
-          <b>Shines:</b> learnability (color = tracker), approachability for
-          less tech-confident caregivers, App-Store-friendly personality.
-          <b>Watch-outs:</b> eight hues must be tamed in dark mode (desaturate
-          to pastel-on-dark, never full saturation); emoji chips risk feeling
-          juvenile for the medical tracker — keep Medical/Growth in the calmer
-          violet family; confirm-and-scrub delete keeps its serious tone and
-          never inherits the playful voice.
+          <b>Shines:</b> emotional warmth without emoji or illustration; the
+          Watch ring is the clearest progress signal of the three; serif italics
+          give timestamps a human voice. <b>Watch-outs:</b>
+          capsule rows cost vertical space on dense logging days; serif + pastel
+          needs contrast auditing (AA on every pastel pairing); dark mode must
+          darken the paper to deep umber, keeping discs muted.
         </div>
       </section>
 
       <!-- ============================================================
-           DIRECTION C — FIRST LIGHT
+           DIRECTION C — MONOLITH
            ============================================================ -->
       <section class="direction" id="dir-c">
         <div class="direction-head">
           <div>
             <div class="doc-eyebrow">Direction C</div>
-            <h2 class="direction-name">First Light</h2>
+            <h2 class="direction-name">Monolith</h2>
             <p class="direction-tag">
-              Crisp, quiet, iOS-native minimalism. It leans entirely on platform
-              vocabulary — grouped lists, segmented controls, sheet detents,
-              SF-style type — so it feels like it shipped with the phone. Color
-              is rationed: system blue for actions, green for safe, orange for
-              watching, red only for Reaction and Delete. This is the fastest
-              path from PWA to a native-feeling iOS build and the most
-              accessible direction by default.
+              A dark instrument panel — mission control for the night shift.
+              Everything is monospace, uppercase, and phosphor-lime on
+              near-black; screens are bordered modules with status LEDs and
+              labeled headers. Data density is the highest of the three, and
+              nothing pretends to be friendly — it pretends to be
+              <i>reliable</i>. Dark-first; the light theme is a secondary "day
+              mode."
             </p>
           </div>
           <ul class="principles">
             <li>
-              <b>Native before novel</b>Platform patterns (grouped lists,
-              sheets, segmented controls) mean zero learning curve on iOS.
+              <b>Console honesty</b>Labeled panels, visible states, tabular
+              data. Every screen answers "what's the status" in under a second.
             </li>
             <li>
-              <b>Color is semantic only</b>Blue = action, green = safe, orange =
-              watch, red = reaction/delete. Nothing decorative.
+              <b>One phosphor accent</b>Lime = go/ok/action. Amber = watch. Red
+              = reaction/delete. Nothing else is colored.
             </li>
             <li>
-              <b>Data density, calmly</b>The timeline and foods list carry more
-              rows per screen — this is the power-user direction.
+              <b>Monospace everywhere</b>One typeface, sized by rank. Commands
+              read like terminal verbs: LOG, WAKE, MARK SAFE.
             </li>
           </ul>
         </div>
 
-        <div class="block-label">Palette — semantic tokens only</div>
+        <div class="block-label">Palette</div>
         <div class="swatch-grid sans">
           <div class="swatch">
-            <div
-              class="chip-color"
-              style="background: #ffffff; border-bottom: 1px solid #eee"
-            ></div>
+            <div class="chip-color" style="background: #0b0e11"></div>
             <div class="chip-meta">
-              <span class="nm">System White</span><br />#FFFFFF<br />bg /
-              grouped
+              <span class="nm">Void</span><br />#0B0E11<br />bg
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #f6f6f8"></div>
+            <div class="chip-color" style="background: #0f1317"></div>
             <div class="chip-meta">
-              <span class="nm">Grouped Grey</span><br />#F6F6F8<br />bg
+              <span class="nm">Panel</span><br />#0F1317<br />module bg
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #0a84ff"></div>
+            <div class="chip-color" style="background: #232a31"></div>
             <div class="chip-meta">
-              <span class="nm">System Blue</span><br />#0A84FF<br />actions /
-              links
+              <span class="nm">Gridline</span><br />#232A31<br />borders
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #30d158"></div>
+            <div class="chip-color" style="background: #b7f04a"></div>
             <div class="chip-meta">
-              <span class="nm">System Green</span><br />#30D158<br />safe /
-              sleep ok
+              <span class="nm">Phosphor</span><br />#B7F04A<br />action / ok
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ff9f0a"></div>
+            <div class="chip-color" style="background: #c98f3d"></div>
             <div class="chip-meta">
-              <span class="nm">System Orange</span><br />#FF9F0A<br />watch
-              period
+              <span class="nm">Amber</span><br />#C98F3D<br />watch period
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #ff453a"></div>
+            <div class="chip-color" style="background: #ff6b5e"></div>
             <div class="chip-meta">
-              <span class="nm">System Red</span><br />#FF453A<br />reaction /
-              delete
+              <span class="nm">Alarm</span><br />#FF6B5E<br />reaction / delete
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #8e8e93"></div>
+            <div class="chip-color" style="background: #d7dde3"></div>
             <div class="chip-meta">
-              <span class="nm">System Grey</span><br />#8E8E93<br />secondary
-              text
+              <span class="nm">Readout</span><br />#D7DDE3<br />primary text
             </div>
           </div>
           <div class="swatch">
-            <div class="chip-color" style="background: #1c1c1e"></div>
+            <div class="chip-color" style="background: #5c6670"></div>
             <div class="chip-meta">
-              <span class="nm">Dark Surface</span><br />#1C1C1E<br />dark mode
-              bg
+              <span class="nm">Dim</span><br />#5C6670<br />secondary text
             </div>
           </div>
         </div>
@@ -2226,232 +2496,258 @@
         <div class="block-label">Type &amp; shape</div>
         <div class="type-spec">
           <div class="type-row">
-            <span class="spec">Large title · 28/700</span
+            <span class="spec">Readout · Mono 30/700</span
             ><span
-              class="sans"
-              style="font-size: 24px; font-weight: 700; letter-spacing: -0.03em"
-              >Now</span
+              style="
+                font-family: ui-monospace, Menlo, monospace;
+                font-size: 24px;
+                font-weight: 700;
+                background: #0b0e11;
+                color: #f2f6f8;
+                padding: 2px 10px;
+              "
+              >06:42</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Row title · 13/550</span
-            ><span class="sans" style="font-size: 13.5px; font-weight: 550"
-              >Peanut butter</span
+            <span class="spec">Label · Mono 9/400 caps</span
+            ><span
+              style="
+                font-family: ui-monospace, Menlo, monospace;
+                font-size: 11px;
+                letter-spacing: 0.14em;
+                color: #5c6670;
+              "
+              >SLEEP · LAST SESSION</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Row meta · 11/400</span
-            ><span class="sans" style="font-size: 11.5px; color: #8e8e93"
-              >Day 2 of 3 · Watch Period</span
+            <span class="spec">Command · Mono 10/700 caps</span
+            ><span
+              style="
+                font-family: ui-monospace, Menlo, monospace;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                background: #0b0e11;
+                color: #b7f04a;
+                padding: 2px 10px;
+              "
+              >LOG REACTION</span
             >
           </div>
           <div class="type-row">
-            <span class="spec">Radius / Borders</span
+            <span class="spec">Shape</span
             ><span class="sans" style="font-size: 13px"
-              >10–16px radii · 0.5px hairline separators, no cards-in-cards ·
-              grouped-list insets · blurred tab bar, no FAB</span
+              >4–6px radii (softened terminal) · 1px gridline borders · status
+              LEDs · striped progress bars · glow reserved for live timers
+              only</span
             >
           </div>
         </div>
 
-        <div class="block-label">
-          Key screens — Now, foods list, reaction sheet
-        </div>
+        <div class="block-label">Key screens — Now, Foods, reaction sheet</div>
         <div class="screens-row">
           <!-- C1: now -->
           <div class="screen-cell">
             <div class="phone">
-              <div class="phone-screen c-screen tinted">
+              <div class="phone-screen c-screen">
                 <div class="phone-notch"></div>
                 <div class="phone-status">
-                  <span>9:41</span><span>●●●</span>
+                  <span style="color: #d7dde3">03:12</span
+                  ><span style="color: #5c6670">●●●</span>
                 </div>
                 <div class="c-body">
-                  <div class="c-nav">
-                    <span class="c-h1">Now</span
-                    ><span class="date">Fri, Oct 16</span>
+                  <div class="c-top">
+                    <span class="c-h1">NOW<span class="cur">_</span></span
+                    ><span class="c-clock">SAT 17 OCT · MILO</span>
                   </div>
-                  <div class="c-hero">
-                    <span class="ring">😴</span
-                    ><span
-                      ><div class="t">Awake</div>
-                      <div class="s">slept 6h 42m · rated great</div></span
-                    ><button>Start sleep</button>
-                  </div>
-                  <div class="c-group">
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #ff9f0a">🤱</span
-                      ><span
-                        ><div class="t">Feed</div>
-                        <div class="s">45m ago · left side</div></span
-                      ><span class="val">Log ›</span>
+                  <div class="c-panel">
+                    <div class="ph">
+                      <span>SLEEP · TIMER RUNNING</span
+                      ><span class="dot"></span>
                     </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #0a84ff">🧷</span
-                      ><span
-                        ><div class="t">Diaper</div>
-                        <div class="s">1h ago · wet</div></span
-                      ><span class="val">Log ›</span>
+                    <div class="c-sleepbig">
+                      <span
+                        ><span class="n">06:30</span>
+                        <span class="u">HRS MIN</span><br /><span class="u"
+                          >DOWN 20:42 · UNRATED</span
+                        ></span
+                      >
+                      <button>Wake</button>
                     </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #30d158">🥣</span
-                      ><span
-                        ><div class="t">Meal</div>
-                        <div class="s">breakfast · ate all</div></span
-                      ><span class="val">Log ›</span>
-                    </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #5e5ce6">💊</span
-                      ><span
-                        ><div class="t">Medical</div>
-                        <div class="s">medication · vaccine · temp</div></span
-                      ><span class="val">Log ›</span>
+                    <div class="c-spark">
+                      <i class="on" style="height: 30%"></i
+                      ><i class="on" style="height: 55%"></i
+                      ><i class="hot" style="height: 80%"></i
+                      ><i class="hot" style="height: 65%"></i
+                      ><i class="hot" style="height: 90%"></i
+                      ><i style="height: 40%"></i><i style="height: 20%"></i
+                      ><i style="height: 12%"></i><i style="height: 8%"></i
+                      ><i style="height: 8%"></i><i style="height: 8%"></i
+                      ><i style="height: 8%"></i>
                     </div>
                   </div>
                   <div class="c-watch">
-                    <div class="t">🟠 Watching · Peanut butter</div>
-                    <div class="seg">
-                      <i class="on"></i><i class="on"></i><i></i>
+                    <div class="ph">
+                      <span>WATCH · PEANUT BUTTER</span><span>D2/3</span>
                     </div>
-                    <div class="acts">
-                      <span>Try again</span
-                      ><span class="warn">Log reaction</span
-                      ><span>Mark safe</span>
+                    <div class="inner">
+                      <div class="meta">ENDS SUN 09:14 · REACTIONS: 0</div>
+                      <div class="bar"><i></i></div>
+                      <div class="acts">
+                        <span class="y">TRY AGAIN</span
+                        ><span class="r">LOG REACTION</span
+                        ><span class="g">MARK SAFE</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="c-group">
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #8e8e93">🆕</span
-                      ><span
-                        ><div class="t">Log introduction</div>
-                        <div class="s">start a Watch Period</div></span
-                      ><span class="val">›</span>
+                  <div class="c-panel">
+                    <div class="ph">
+                      <span>TRACKERS</span><span>8 KINDS</span>
                     </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #ff453a">⚠️</span
-                      ><span
-                        ><div class="t">Log reaction</div>
-                        <div class="s">flags foods as avoid</div></span
-                      ><span class="val">›</span>
+                    <div class="c-rows">
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-feed" /></svg
+                        ><span
+                          ><div class="t">Feed</div>
+                          <div class="s">LAST 4H AGO · LEFT</div></span
+                        ><span></span><span class="cmd">LOG</span>
+                      </div>
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-diaper" /></svg
+                        ><span
+                          ><div class="t">Diaper</div>
+                          <div class="s">LAST 5H AGO · WET</div></span
+                        ><span></span><span class="cmd">LOG</span>
+                      </div>
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-meal" /></svg
+                        ><span
+                          ><div class="t">Meal</div>
+                          <div class="s">DINNER · 4/5</div></span
+                        ><span></span><span class="cmd">LOG</span>
+                      </div>
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-medical" /></svg
+                        ><span
+                          ><div class="t">Medical</div>
+                          <div class="s">MED · VAX · SYMPTOM · TEMP</div></span
+                        ><span></span><span class="cmd">LOG</span>
+                      </div>
                     </div>
+                  </div>
+                  <div class="c-statusline">
+                    LOCAL DB <span class="ok">●</span> SYNCED · 214 ENTRIES
                   </div>
                 </div>
                 <div class="c-tabbar">
-                  <div class="on"><span class="ti">●</span>Now</div>
-                  <div><span class="ti">◷</span>Timeline</div>
-                  <div><span class="ti">❋</span>Foods</div>
-                  <div><span class="ti">⚙</span>Settings</div>
+                  <div class="on">
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Tmln
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Cfg
+                  </div>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Now as grouped lists: zero decorative chrome, one dark sleep hero,
-              semantic color only.
+              Now as an instrument panel: live sleep timer with glowing LED,
+              tracker modules, amber watch module with striped progress.
             </div>
           </div>
           <!-- C2: foods -->
           <div class="screen-cell">
             <div class="phone">
-              <div class="phone-screen c-screen tinted">
+              <div class="phone-screen c-screen">
                 <div class="phone-notch"></div>
                 <div class="phone-status">
-                  <span>9:41</span><span>●●●</span>
+                  <span style="color: #d7dde3">9:41</span
+                  ><span style="color: #5c6670">●●●</span>
                 </div>
                 <div class="c-body">
-                  <div class="c-nav">
-                    <span class="c-h1">Foods</span
-                    ><span class="date" style="color: #0a84ff">Filter</span>
+                  <div class="c-top">
+                    <span class="c-h1">FOODS<span class="cur">_</span></span
+                    ><span class="c-clock">174 RECORDS</span>
                   </div>
-                  <div class="c-segctrl" style="margin-top: 0">
-                    <span>All 174</span><span class="on">Safe 41</span
-                    ><span>Trying 2</span><span>Avoid 1</span>
+                  <div class="c-seg" style="margin-top: 0">
+                    <span class="on">ALL</span><span>SAFE 41</span
+                    ><span>TRY 2</span><span>AVD 1</span>
                   </div>
-                  <div class="c-group">
-                    <div class="c-row">
-                      <span
+                  <div class="c-panel">
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #b7f04a"></span
+                      ><span
                         ><div class="t">Banana</div>
-                        <div class="s">fruit</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #e5f9ec; color: #1e7a4c"
-                          >SAFE</span
-                        >&nbsp;›</span
-                      >
+                        <div class="s">FRUIT</div></span
+                      ><span class="st" style="color: #b7f04a">SAFE</span>
                     </div>
-                    <div class="c-row">
-                      <span
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #c98f3d"></span
+                      ><span
                         ><div class="t">Peanut butter</div>
-                        <div class="s">nuts &amp; seeds · peanut</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #fff3e0; color: #b0620a"
-                          >DAY 2</span
-                        >&nbsp;›</span
-                      >
+                        <div class="s">NUTS &amp; SEEDS · PEANUT</div></span
+                      ><span class="st" style="color: #c98f3d">D2/3</span>
                     </div>
-                    <div class="c-row">
-                      <span
-                        ><div class="t">Sweet potato</div>
-                        <div class="s">vegetables</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #e5f9ec; color: #1e7a4c"
-                          >SAFE</span
-                        >&nbsp;›</span
-                      >
-                    </div>
-                    <div class="c-row">
-                      <span
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #ff6b5e"></span
+                      ><span
                         ><div class="t">Shrimp</div>
-                        <div class="s">fish &amp; shellfish</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #ffe9e8; color: #b42348"
-                          >AVOID</span
-                        >&nbsp;›</span
-                      >
+                        <div class="s">FISH &amp; SHELLFISH</div></span
+                      ><span class="st" style="color: #ff6b5e">AVOID</span>
                     </div>
-                    <div class="c-row">
-                      <span
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #3a434b"></span
+                      ><span
                         ><div class="t">Avocado</div>
-                        <div class="s">fruit</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #ececf0; color: #636366"
-                          >UNTRIED</span
-                        >&nbsp;›</span
-                      >
+                        <div class="s">FRUIT</div></span
+                      ><span class="st" style="color: #5c6670">UNTRIED</span>
                     </div>
-                    <div class="c-row">
-                      <span
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #b7f04a"></span
+                      ><span
                         ><div class="t">Oatmeal</div>
-                        <div class="s">grains &amp; cereals · wheat</div></span
-                      ><span class="val"
-                        ><span
-                          class="c-statuspill"
-                          style="background: #e5f9ec; color: #1e7a4c"
-                          >SAFE</span
-                        >&nbsp;›</span
-                      >
+                        <div class="s">GRAINS · WHEAT</div></span
+                      ><span class="st" style="color: #b7f04a">SAFE</span>
                     </div>
+                    <div class="c-foodrow">
+                      <span class="led" style="background: #b7f04a"></span
+                      ><span
+                        ><div class="t">Sweet potato</div>
+                        <div class="s">VEGETABLES</div></span
+                      ><span class="st" style="color: #b7f04a">SAFE</span>
+                    </div>
+                  </div>
+                  <div class="c-kv">
+                    <span>FILTER: <b>NONE</b></span
+                    ><span>SORT: <b>NAME A–Z</b></span>
                   </div>
                 </div>
                 <div class="c-tabbar">
-                  <div><span class="ti">●</span>Now</div>
-                  <div><span class="ti">◷</span>Timeline</div>
-                  <div class="on"><span class="ti">❋</span>Foods</div>
-                  <div><span class="ti">⚙</span>Settings</div>
+                  <div>
+                    <svg class="ic"><use href="#i-now" /></svg>Now
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-timeline" /></svg>Tmln
+                  </div>
+                  <div class="on">
+                    <svg class="ic"><use href="#i-foods" /></svg>Foods
+                  </div>
+                  <div>
+                    <svg class="ic"><use href="#i-settings" /></svg>Cfg
+                  </div>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Foods as a dense table with a segmented status filter — scales to
-              hundreds of seeded foods.
+              Foods as a status board: LED per row, segmented scope filter,
+              densest read of the three directions.
             </div>
           </div>
           <!-- C3: reaction sheet -->
@@ -2460,85 +2756,142 @@
               <div class="phone-screen c-screen">
                 <div class="phone-notch"></div>
                 <div class="phone-status">
-                  <span>9:41</span><span>●●●</span>
+                  <span style="color: #d7dde3">9:41</span
+                  ><span style="color: #5c6670">●●●</span>
                 </div>
                 <div class="c-body">
-                  <div class="c-nav">
-                    <span class="c-h1">Timeline</span
-                    ><span class="date">Fri, Oct 16</span>
+                  <div class="c-top">
+                    <span class="c-h1">TIMELINE<span class="cur">_</span></span
+                    ><span class="c-clock">FRI 16 OCT</span>
                   </div>
-                  <div class="c-group">
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #30d158">🥣</span
-                      ><span
-                        ><div class="t">Breakfast</div>
-                        <div class="s">ate all · fruit, grains</div></span
-                      ><span class="val">8:10a</span>
-                    </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #ff9f0a">🤱</span
-                      ><span
-                        ><div class="t">Feed</div>
-                        <div class="s">right · 12 min</div></span
-                      ><span class="val">7:58a</span>
-                    </div>
-                    <div class="c-row">
-                      <span class="c-glyph" style="background: #5e5ce6">😴</span
-                      ><span
-                        ><div class="t">Sleep</div>
-                        <div class="s">6h 42m · great</div></span
-                      ><span class="val">night</span>
+                  <div class="c-panel">
+                    <div class="c-rows">
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-meal" /></svg
+                        ><span
+                          ><div class="t">Breakfast</div>
+                          <div class="s">5/5 · FRUIT, GRAINS</div></span
+                        ><span></span><span class="s">08:10</span>
+                      </div>
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-feed" /></svg
+                        ><span
+                          ><div class="t">Feed</div>
+                          <div class="s">RIGHT · 12 MIN</div></span
+                        ><span></span><span class="s">07:58</span>
+                      </div>
+                      <div class="c-row2">
+                        <svg class="ic"><use href="#i-sleep" /></svg
+                        ><span
+                          ><div class="t">Sleep 6:42</div>
+                          <div class="s">GREAT</div></span
+                        ><span></span><span class="s">06:58</span>
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div class="c-sheet">
-                  <div class="c-grab"></div>
-                  <h4>Log Reaction</h4>
-                  <div
-                    style="
-                      font-size: 11px;
-                      color: #8e8e93;
-                      text-align: center;
-                      margin-top: 2px;
-                    "
-                  >
-                    Flagged foods move to avoid
-                  </div>
-                  <div class="c-segctrl">
+                  <h4>Log reaction</h4>
+                  <div class="warnline">Flagged foods → avoid · ends watch</div>
+                  <div class="c-seg red">
                     <span class="on">Mild</span><span>Moderate</span
                     ><span>Severe</span>
                   </div>
-                  <div class="c-wheel">
-                    <span class="on">rash/hives</span><span>vomiting</span
-                    ><span>diarrhea</span><span>swelling</span
-                    ><span>breathing</span>
+                  <div class="c-symp">
+                    <span class="on">RASH/HIVES</span><span>VOMITING</span
+                    ><span>DIARRHEA</span><span>SWELLING</span
+                    ><span>BREATHING</span>
                   </div>
                   <div class="c-ts">
-                    <span>Symptoms appeared · Today 9:41 AM</span
-                    ><span class="edit">Edit</span>
+                    <span>APPEARED · TODAY 09:41</span
+                    ><span class="e">EDIT</span>
                   </div>
-                  <button class="c-save" style="background: #ff453a">
-                    Save reaction
-                  </button>
+                  <button class="c-save red">Save reaction</button>
                 </div>
               </div>
             </div>
             <div class="cap">
-              Reaction sheet: severity is a segmented control, symptoms are
-              token toggles, destructive Save is red — findable mid-incident.
+              Reaction sheet: red severity segment, bordered symptom tokens,
+              alarm-red Save — unmissable mid-incident.
             </div>
           </div>
         </div>
 
         <div class="block-label">Where it shines / watch-outs</div>
         <div class="note sans">
-          <b>Shines:</b> accessibility (Dynamic Type, contrast, VoiceOver map
-          cleanly), density for heavy logging days, and the smoothest PWA→iOS
-          migration since every pattern is already platform-native.
-          <b>Watch-outs:</b> can read as cold for a keepsake product — warmth
-          must come from copy ("Milo's week") and the child photo, not
-          decoration; destructive red Save needs the confirm sheet to carry the
-          full weight of the no-restore Delete model.
+          <b>Shines:</b> night use without any warm-tone compromise (true black,
+          OLED-friendly), highest density, instant status reading, and a
+          distinctive identity no baby app currently owns.
+          <b>Watch-outs:</b> the cold console voice can feel wrong at emotional
+          moments (first tastes, reactions) — copy must stay human ("ends Sunday
+          morning", not "T-41H"); day mode is real work, not an inversion; small
+          mono text needs careful contrast checking.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           ICON SYSTEM
+           ============================================================ -->
+      <section class="direction" id="icons">
+        <div class="doc-eyebrow">Shared asset</div>
+        <h2 class="direction-name">One icon set, three liveries</h2>
+        <p class="direction-tag" style="margin-top: 8px">
+          All emoji are removed from the product UI. A single minimal
+          stroke-icon set (1.7px, round caps, 24px grid) covers the eight Entry
+          kinds plus navigation; each direction recolors it via
+          <code>currentColor</code> — line glyphs in Ledger, pastel-disc glyphs
+          in Bloom, dim phosphor in Monolith. Emoji remain allowed in one place
+          only: the child's own avatar/photo, which is user content, not chrome.
+        </p>
+        <div class="icon-row" style="margin-top: 18px">
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-feed" /></svg
+            >Feed</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-diaper" /></svg
+            >Diaper</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-sleep" /></svg
+            >Sleep</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-meal" /></svg
+            >Meal</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-intro" /></svg
+            >Intro</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-medical" /></svg
+            >Medical</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-reaction" /></svg
+            >Reaction</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-growth" /></svg
+            >Growth</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-now" /></svg
+            >Now</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-timeline" /></svg
+            >Timeline</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-foods" /></svg
+            >Foods</span
+          >
+          <span class="icon-cell"
+            ><svg class="ic" style="color: #333"><use href="#i-settings" /></svg
+            >Settings</span
+          >
         </div>
       </section>
 
@@ -2550,50 +2903,50 @@
         <h2 class="direction-name">Which direction when</h2>
         <div class="compare">
           <div class="col">
-            <span class="fit" style="color: #c96f1e">A · Golden Hour</span>
-            <h4>The keepsake</h4>
-            Choose if the product should feel like a warm baby journal and
-            differentiate on emotion.
+            <span class="fit" style="color: #e4002b">A · Ledger</span>
+            <h4>The archivist</h4>
+            Choose if the product should feel like a precise, trusted record —
+            closest to a clinical tool, expressed through typography alone.
             <ul>
-              <li>Best-in-class 3am experience (dark-first)</li>
-              <li>Strongest brand identity</li>
-              <li>Most custom component work</li>
-              <li>Risk: serif + warm palette can skew precious</li>
+              <li>Perfect number alignment (tabular mono)</li>
+              <li>Most restrained = strongest alarm moments</li>
+              <li>Light-first; dark mode needs a paper rethink</li>
+              <li>Risk: austere for a mainstream parent audience</li>
             </ul>
           </div>
           <div class="col">
-            <span class="fit" style="color: #5b5fc7">B · Playdate</span>
-            <h4>The friendly co-parent</h4>
-            Choose if learnability and delight matter most, and the audience is
-            broad/new parents.
+            <span class="fit" style="color: #c96f4a">B · Bloom</span>
+            <h4>The journal</h4>
+            Choose if warmth and keepsake value lead, without a single emoji —
+            serif, pastel, and rings carry the emotion.
             <ul>
-              <li>Color-coded trackers = zero-reading muscle memory</li>
-              <li>Most App-Store personality</li>
-              <li>Emoji-forward scales may not age well</li>
-              <li>Risk: playful voice vs. serious medical moments</li>
+              <li>Warmest voice of the three</li>
+              <li>Watch ring = clearest progress signal</li>
+              <li>Capsule rows cost vertical density</li>
+              <li>Risk: pastel contrast must be AA-audited</li>
             </ul>
           </div>
           <div class="col">
-            <span class="fit" style="color: #0a84ff">C · First Light</span>
-            <h4>The quiet tool</h4>
-            Choose if speed-to-native and accessibility outrank personality.
+            <span class="fit" style="color: #7da62e">C · Monolith</span>
+            <h4>The night console</h4>
+            Choose if the app's promise is reliability at 3am — status at a
+            glance, OLED-true black, zero sentimentality.
             <ul>
-              <li>Fastest PWA→iOS path (platform patterns)</li>
-              <li>Best a11y and data density defaults</li>
-              <li>Lowest custom-build cost</li>
-              <li>Risk: generic; warmth must come from copy</li>
+              <li>Best-in-class dark mode (native, not inverted)</li>
+              <li>Highest data density</li>
+              <li>Most distinctive identity</li>
+              <li>Risk: console voice must not go cold on users</li>
             </ul>
           </div>
         </div>
         <div class="note sans">
-          <b>Recommendation:</b> all three share the same information
-          architecture from the settled spec — bottom tab bar (Now / Timeline /
-          Foods / Settings), Home cards with one verb each, Watch Cards pinned
-          above the fold, and timestamp-above-Save logging sheets. The
-          directions are interchangeable skins over that skeleton, so the
-          decision can be made on brand alone. If undecided, start with
-          <b>C's structure</b> (cheapest to build correctly) and layer
-          <b>A's dark-mode warmth</b> as the first refinement pass.
+          <b>Recommendation:</b> as before, all three sit on the settled IA (Now
+          / Timeline / Foods / Settings, Watch Cards above the fold,
+          timestamp-above-Save sheets). If the brand should feel like a
+          keepsake, <b>Bloom</b> is the strongest candidate now that it carries
+          zero prototype DNA. If the brand should feel like a tool,
+          <b>Monolith's</b> night panel is the most differentiated option — and
+          its light "day mode" can borrow Ledger's typography wholesale.
         </div>
       </section>
 
@@ -2628,10 +2981,21 @@
             </td>
           </tr>
           <tr>
+            <td>Icons</td>
+            <td>
+              Inline SVG sprite (<code>&lt;use&gt;</code>), stroke =
+              <code>currentColor</code>
+            </td>
+            <td>
+              Same paths wrapped as a <code>react-native-svg</code>
+              <code>Icon</code> component — one source of truth
+            </td>
+          </tr>
+          <tr>
             <td>Dark mode</td>
             <td>
-              <code>prefers-color-scheme</code> media query + manual toggle
-              persisted locally
+              <code>prefers-color-scheme</code> + manual toggle persisted
+              locally (Monolith inverts the default: dark first)
             </td>
             <td>
               Expo <code>userInterfaceStyle</code> + same persisted override
@@ -2649,9 +3013,15 @@
             </td>
           </tr>
           <tr>
-            <td>Logging sheets</td>
-            <td>Bottom sheet with swipe-to-dismiss, max 90dvh</td>
-            <td>Native modal sheet — same visual spec</td>
+            <td>Typography</td>
+            <td>
+              System serif/mono stacks per direction — zero webfont downloads
+              keeps PWA install light
+            </td>
+            <td>
+              Same stacks map to iOS system fonts (New York serif, SF Mono) — no
+              font bundling
+            </td>
           </tr>
           <tr>
             <td>Haptics</td>
@@ -2660,14 +3030,6 @@
               <code>expo-haptics</code>: light impact on Save, warning on
               Reaction Save
             </td>
-          </tr>
-          <tr>
-            <td>Install</td>
-            <td>
-              Web app manifest + service worker; offline-first is already the
-              data model
-            </td>
-            <td>Same bundle via Expo; no redesign needed for any direction</td>
           </tr>
         </table>
 
@@ -2683,7 +3045,8 @@
           than every other action. 6. Reaction logging is reachable mid-incident
           from both Now and any Watch Card. 7. Food Status colors
           (safe/trying/untried/avoid) stay consistent across the Foods list,
-          pickers, and Watch Cards.
+          pickers, and Watch Cards. 8. No emoji in product chrome — only the
+          shared stroke-icon set.
         </div>
       </section>
     </div>
