@@ -1,0 +1,13 @@
+{
+  "name": "@keepsake/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keepsake (Direction D) tokens, CSS sheet, and stroke-icon set — docs/design/design-directions.html",
+  "exports": {
+    ".": "./index.ts",
+    "./tokens": "./tokens.ts",
+    "./icons": "./icons.ts",
+    "./css": "./css.ts"
+  },
+  "type": "module"
+}

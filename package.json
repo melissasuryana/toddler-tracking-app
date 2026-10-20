@@ -1,4 +1,9 @@
 {
+  "private": true,
+  "workspaces": [
+    "app",
+    "packages/*"
+  ],
   "devDependencies": {
     "@types/node": "^22.20.5",
     "dependency-cruiser": "^18.4.0",
@@ -9,9 +14,13 @@
   },
   "scripts": {
     "prepare": "husky",
-    "lint:boundaries": "depcruise packages"
+    "lint:boundaries": "depcruise packages app/src",
+    "test": "node --test packages/*/tests/*.test.ts tests/*.test.ts",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
+    "start": "npm run start --workspace app"
   },
   "dependencies": {
     "ui-ux-pro-max-cli": "^2.15.0"
-  }
+  },
+  "type": "module"
 }
