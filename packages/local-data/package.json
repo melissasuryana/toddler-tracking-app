@@ -1,0 +1,20 @@
+{
+  "name": "@keepsake/local-data",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first persistence: Child + preferences on expo-sqlite/Drizzle behind an injectable driver boundary",
+  "exports": {
+    ".": "./index.ts",
+    "./expo": "./expo.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2"
+  },
+  "peerDependencies": {
+    "expo-sqlite": "*"
+  },
+  "devDependencies": {
+    "@keepsake/design-system": "*"
+  },
+  "type": "module"
+}

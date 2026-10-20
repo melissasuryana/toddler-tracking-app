@@ -205,6 +205,8 @@ export interface TypographyTokens {
     readonly fontSize: number;
     readonly fontWeight: number;
   };
+  /** Body copy and ledger rows — the document's working body size. */
+  readonly body: { readonly fontSize: number; readonly fontWeight: number };
   readonly dataFigure: {
     readonly fontSize: number;
     readonly fontWeight: number;
@@ -224,6 +226,7 @@ export const typography: TypographyTokens = {
   sansStack: '"Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif',
   display: { fontSize: 26, fontWeight: 500 },
   sheetTitle: { fontSize: 21, fontWeight: 500 },
+  body: { fontSize: 15, fontWeight: 400 },
   dataFigure: {
     fontSize: 32,
     fontWeight: 500,
