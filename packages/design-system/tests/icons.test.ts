@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import {
   getIcon,
+  ICON_SIZE,
+  ICON_STROKE_WIDTH,
   icons,
   renderIconSprite,
   renderIconSvg,
@@ -39,6 +41,8 @@ test("the set covers the eight Entry kinds, four tabs, and UI glyphs", () => {
 });
 
 test("icon names are unique and on the shared 24px grid", () => {
+  assert.equal(ICON_SIZE, 24);
+  assert.equal(ICON_STROKE_WIDTH, 1.7);
   const names = new Set<IconName>();
   for (const icon of icons) {
     assert.ok(!names.has(icon.name), `duplicate icon ${icon.name}`);

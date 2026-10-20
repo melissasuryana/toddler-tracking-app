@@ -207,6 +207,7 @@ export interface TypographyTokens {
   };
   /** Body copy and ledger rows — the document's working body size. */
   readonly body: { readonly fontSize: number; readonly fontWeight: number };
+  readonly small: { readonly fontSize: number; readonly fontWeight: number };
   readonly dataFigure: {
     readonly fontSize: number;
     readonly fontWeight: number;
@@ -227,6 +228,7 @@ export const typography: TypographyTokens = {
   display: { fontSize: 26, fontWeight: 500 },
   sheetTitle: { fontSize: 21, fontWeight: 500 },
   body: { fontSize: 15, fontWeight: 400 },
+  small: { fontSize: 13, fontWeight: 400 },
   dataFigure: {
     fontSize: 32,
     fontWeight: 500,
@@ -246,6 +248,15 @@ export const space = {
   rowGap: 12,
   rowBlock: 10,
   sheetBlock: 14,
+  fieldGap: 5,
+  chipInset: 14,
+  buttonInset: 12,
+} as const;
+
+/** Fixed dimensions for recurring UI elements. */
+export const size = {
+  tabIcon: 22,
+  avatar: 64,
 } as const;
 
 /** Radius in px. Circles for discs and pills; radius lives on buttons, never on rows. */

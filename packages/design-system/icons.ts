@@ -31,8 +31,12 @@ export interface Icon {
   readonly body: string;
 }
 
+export const ICON_SIZE = 24;
+export const ICON_STROKE_WIDTH = 1.7;
+const ICON_VIEW_BOX: "0 0 24 24" = "0 0 24 24";
+
 function icon(name: IconName, body: string): Icon {
-  return { name, viewBox: "0 0 24 24", body };
+  return { name, viewBox: ICON_VIEW_BOX, body };
 }
 
 export const icons: readonly Icon[] = [

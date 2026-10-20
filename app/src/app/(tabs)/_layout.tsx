@@ -15,9 +15,17 @@ const TAB_ICONS: Record<string, IconName> = {
   settings: "settings",
 };
 
-function TabIcon({ route, color }: { route: string; color: string }) {
+function TabIcon({
+  route,
+  color,
+  size,
+}: {
+  route: string;
+  color: string;
+  size: number;
+}) {
   const name = TAB_ICONS[route] ?? "now";
-  return <KeepsakeIcon name={name} color={color} size={22} />;
+  return <KeepsakeIcon name={name} color={color} size={size} />;
 }
 
 export default function TabsLayout() {
@@ -42,7 +50,9 @@ export default function TabsLayout() {
             theme.typography.meta.fontSize,
           textTransform: theme.typography.meta.textTransform,
         },
-        tabBarIcon: ({ color }) => <TabIcon route={route.name} color={color} />,
+        tabBarIcon: ({ color }) => (
+          <TabIcon route={route.name} color={color} size={theme.size.tabIcon} />
+        ),
       })}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />

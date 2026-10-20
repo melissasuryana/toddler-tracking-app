@@ -38,8 +38,8 @@ export function PillChip({
         borderColor: border,
         borderWidth: theme.rule.hairline,
         borderRadius: theme.radius.pill,
-        paddingHorizontal: theme.space.rowBlock + 4,
-        paddingVertical: theme.space.rowBlock / 2,
+        paddingHorizontal: theme.space.chipInset,
+        paddingVertical: theme.space.fieldGap,
         opacity: disabled ? 0.5 : 1,
       })}
     >
@@ -48,7 +48,7 @@ export function PillChip({
           color: foreground,
           fontFamily: nativeFonts.sans,
           fontSize: theme.typography.body.fontSize,
-          fontWeight: "600",
+          fontWeight: String(theme.typography.meta.fontWeight) as "600",
         }}
       >
         {label}

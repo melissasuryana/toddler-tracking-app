@@ -70,7 +70,7 @@ export function MetaLabel({ children }: { children: ReactNode }) {
         textTransform: meta.textTransform,
         paddingHorizontal: theme.space.page,
         paddingTop: theme.space.sheetBlock,
-        paddingBottom: theme.space.rowBlock / 2,
+        paddingBottom: theme.space.fieldGap,
       }}
     >
       {children}
