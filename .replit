@@ -1,4 +1,4 @@
-modules = ["web", "nodejs-20", "bash"]
+modules = ["web", "bash", "nodejs-24"]
 
 [nix]
 channel = "stable-25_05"
@@ -16,19 +16,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Prototype preview"
+args = "Expo app"
 
 [[workflows.workflow]]
-name = "Prototype preview"
+name = "Expo app"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python3 -c 'from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer; H=type(\"H\", (SimpleHTTPRequestHandler,), {\"do_GET\": lambda s: (s.send_response(302), s.send_header(\"Location\", \"/prototypes/quick-log-ux.html?variant=C\"), s.end_headers()) if s.path == \"/\" else SimpleHTTPRequestHandler.do_GET(s)}); ThreadingHTTPServer((\"0.0.0.0\", 5000), H).serve_forever()'"
+args = "npm run web --workspace app -- --port 5000 --host lan"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 5000
