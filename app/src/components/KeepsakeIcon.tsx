@@ -6,10 +6,13 @@
  * The design doc's icon contract: fill none, stroke currentColor,
  * stroke-width 1.7, round linecap/linejoin (packages/design-system icons.ts).
  */
-import { getIcon, type IconName } from "@keepsake/design-system";
+import {
+  getIcon,
+  ICON_SIZE,
+  ICON_STROKE_WIDTH,
+  type IconName,
+} from "@keepsake/design-system";
 import { Circle, Path, Rect, Svg } from "react-native-svg";
-
-const STROKE_WIDTH = 1.7;
 
 /** The three shape primitives the icon body markup uses. */
 type Shape =
@@ -79,7 +82,7 @@ export function parseIconBody(body: string): Shape[] {
 
 export function KeepsakeIcon({
   name,
-  size = 24,
+  size = ICON_SIZE,
   color,
 }: {
   readonly name: IconName;
@@ -94,7 +97,7 @@ export function KeepsakeIcon({
         const key = `${name}-${index}`;
         const stroke = {
           stroke: color,
-          strokeWidth: STROKE_WIDTH,
+          strokeWidth: ICON_STROKE_WIDTH,
           strokeLinecap: "round" as const,
           strokeLinejoin: "round" as const,
           fill: "none",

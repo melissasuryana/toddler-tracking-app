@@ -42,7 +42,7 @@ function FieldError({ message }: { readonly message: string }) {
       style={{
         color: theme.colors.danger,
         fontFamily: nativeFonts.sans,
-        fontSize: theme.typography.body.fontSize - 2,
+        fontSize: theme.typography.small.fontSize,
       }}
     >
       {message}
@@ -63,7 +63,7 @@ function Field({
       style={{
         paddingHorizontal: theme.space.page,
         paddingVertical: theme.space.rowBlock,
-        gap: theme.space.rowBlock / 2,
+        gap: theme.space.fieldGap,
       }}
     >
       <Text
@@ -207,8 +207,8 @@ export function Onboarding() {
                 <Image
                   source={{ uri: photo }}
                   style={{
-                    width: theme.typography.dataFigure.fontSize * 2,
-                    height: theme.typography.dataFigure.fontSize * 2,
+                    width: theme.size.avatar,
+                    height: theme.size.avatar,
                     borderRadius: theme.radius.pill,
                   }}
                 />
@@ -257,7 +257,7 @@ export function Onboarding() {
                   ? theme.colors.accentInk
                   : theme.colors.accent,
                 borderRadius: theme.radius.pill,
-                paddingVertical: theme.space.rowBlock + 2,
+                paddingVertical: theme.space.buttonInset,
                 alignItems: "center",
               })}
             >
@@ -266,7 +266,7 @@ export function Onboarding() {
                   color: theme.colors.paper,
                   fontFamily: nativeFonts.sans,
                   fontSize: theme.typography.body.fontSize,
-                  fontWeight: "600",
+                  fontWeight: String(theme.typography.meta.fontWeight) as "600",
                 }}
               >
                 Create Child

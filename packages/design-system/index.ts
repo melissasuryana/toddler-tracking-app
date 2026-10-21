@@ -10,6 +10,7 @@ export {
   night,
   radius,
   rule,
+  size,
   space,
   themes,
   typography,
@@ -29,6 +30,8 @@ export {
   trackerVarNames,
 } from "./css.ts";
 export {
+  ICON_SIZE,
+  ICON_STROKE_WIDTH,
   getIcon,
   icons,
   renderIconSprite,

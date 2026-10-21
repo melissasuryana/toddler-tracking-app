@@ -7,6 +7,7 @@
 import {
   radius,
   rule,
+  size,
   space,
   themes,
   typography,
@@ -29,6 +30,7 @@ export interface Theme {
   readonly space: typeof space;
   readonly rule: typeof rule;
   readonly radius: typeof radius;
+  readonly size: typeof size;
   /** Icon-disc tint for one Entry kind (tracker disc). */
   readonly discTint: (tracker: TrackerKey) => DiscTint;
   /** Pill tint for one Food Status. */
@@ -63,6 +65,7 @@ export function resolveTheme(
     space,
     rule,
     radius,
+    size,
     discTint: (tracker) => colors.tracker[tracker],
     statusPillTint: (status) => colors.status[status],
   };

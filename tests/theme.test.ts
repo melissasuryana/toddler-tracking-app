@@ -10,6 +10,7 @@ import {
   night,
   radius,
   rule,
+  size,
   space,
   typography,
 } from "@keepsake/design-system";
@@ -33,6 +34,7 @@ test("the adapter exposes the design-system token objects unchanged", () => {
   assert.equal(theme.space, space);
   assert.equal(theme.rule, rule);
   assert.equal(theme.radius, radius);
+  assert.equal(theme.size, size);
 });
 
 test("discTint resolves the tracker disc tint per Entry kind and theme", () => {
