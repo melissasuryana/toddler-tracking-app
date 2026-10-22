@@ -32,6 +32,26 @@ export {
   type Child,
 } from "./lib/repository.ts";
 export {
+  EntryRepository,
+  EntryValidationError,
+  MetadataRepository,
+  SeedRepository,
+  type SeedRow,
+  type SeedValue,
+} from "./lib/foundation.ts";
+export {
+  ENTRY_KINDS,
+  isIanaTimezone,
+  isSlugId,
+  isUuidV7,
+  validateEntryInput,
+  type Entry,
+  type EntryFieldError,
+  type EntryInput,
+  type EntryKind,
+  type ValidEntryInput,
+} from "./lib/entry.ts";
+export {
   CHILD_SEXES,
   isIsoDate,
   todayIsoDate,
@@ -52,5 +72,5 @@ export {
   type PreferenceTypes,
   type TemperatureUnit,
 } from "./lib/preferences.ts";
-export { children, preferences } from "./lib/schema.ts";
+export { children, entries, metadata, preferences } from "./lib/schema.ts";
 export { createOrm, type LocalOrm } from "./lib/orm.ts";
