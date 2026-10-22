@@ -1,0 +1,1 @@
+- [Expo monorepo Babel resolution](expo-monorepo-babel-resolution.md) — declare `babel-preset-expo` where Metro can resolve it; Expo's nested copy may not be visible to the app Babel config.
