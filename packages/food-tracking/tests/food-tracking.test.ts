@@ -245,6 +245,10 @@ test("manual-safe is cycle-bound, survives clock passage and irrelevant edits, a
     foods.statusFor(child.id, custom.id, T0 + 2 * DAY).status,
     "trying"
   );
+  assert.equal(
+    foods.markSafe(child.id, custom.id, T0 + 2 * DAY + 1)?.safeReason,
+    "manual"
+  );
   addFoodEntry(database, child.id, "reaction", [custom.id], T0 + 3 * DAY);
   assert.equal(
     foods.statusFor(child.id, custom.id, T0 + 3 * DAY).status,
@@ -264,6 +268,41 @@ test("manual-safe is cycle-bound, survives clock passage and irrelevant edits, a
   );
   assert.equal(database.foods.manualSafeMarker(child.id, custom.id), null);
   assert.ok(database.entries.get(opening));
+  database.close();
+});
+
+test("changing an Introduction's Food invalidates old and new Food markers", () => {
+  const { database, child, foods } = setup();
+  const oldFood = foods.createCustomFood({ name: "Old Food" });
+  const newFood = foods.createCustomFood({ name: "New Food" });
+  const oldIntroduction = addFoodEntry(
+    database,
+    child.id,
+    "introduction",
+    [oldFood.id],
+    T0
+  );
+  addFoodEntry(database, child.id, "introduction", [newFood.id], T0 + 1);
+
+  assert.equal(
+    foods.markSafe(child.id, oldFood.id, T0 + 2)?.safeReason,
+    "manual"
+  );
+  assert.equal(
+    foods.markSafe(child.id, newFood.id, T0 + 2)?.safeReason,
+    "manual"
+  );
+  database.driver
+    .prepareSync(
+      `UPDATE entry_associations SET associated_id = ?
+       WHERE entry_id = ? AND associated_id = ?`
+    )
+    .run(newFood.id, oldIntroduction, oldFood.id);
+
+  assert.equal(database.foods.manualSafeMarker(child.id, oldFood.id), null);
+  assert.equal(database.foods.manualSafeMarker(child.id, newFood.id), null);
+  assert.equal(foods.statusFor(child.id, oldFood.id, T0 + 2).status, "untried");
+  assert.equal(foods.statusFor(child.id, newFood.id, T0 + 2).status, "trying");
   database.close();
 });
 
