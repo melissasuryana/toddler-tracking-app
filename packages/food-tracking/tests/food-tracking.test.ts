@@ -55,6 +55,7 @@ test("the authored catalogue is stable, validated, and read-only", () => {
   );
   assert.equal(foods.getFood("banana")?.name, "Banana");
   assert.equal(foods.getFood("banana")?.source, "seed");
+  assert.deepEqual(foods.getFood("sesame-oil")?.allergenTags, ["sesame"]);
   assert.throws(
     () =>
       foods.updateCustomFood("banana", {
