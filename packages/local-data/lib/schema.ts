@@ -1,12 +1,17 @@
 /**
  * SQLite schema for the local database (Drizzle definitions).
  *
- * Ticket #43 scope: the Child record (CONTEXT.md: name, birthdate, sex for
- * growth charts, optional photo) and a key-value preferences table. The eight
- * Entry kinds and seed data arrive in later tickets as appended tables plus
- * ordered migrations — this file is append-only from here on.
+ * Child, preference, local metadata, and the shared Entry base row. Entry-kind
+ * content and seeded catalog tables are added by their owning domain tickets.
  */
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
+import type { EntryKind } from "./entry.ts";
 
 /** Sex vocabulary from CONTEXT.md: required on the Child for growth charts. */
 export type ChildSex = "female" | "male";
@@ -29,4 +34,66 @@ export const preferences = sqliteTable("preferences", {
   key: text("key").primaryKey(),
   /** JSON-serialized value. */
   value: text("value").notNull(),
+});
+
+/** Internal local-data bookkeeping (seed completion, future metadata). */
+export const metadata = sqliteTable("metadata", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
+/** IANA zones registered after validation; SQLite triggers enforce membership. */
+export const entryTimezones = sqliteTable("entry_timezones", {
+  name: text("name").primaryKey(),
+});
+
+/** The stable, sync-ready metadata shared by every Entry kind. */
+export const entries = sqliteTable(
+  "entries",
+  {
+    /** UUIDv7 for caregiver-created rows; stable slugs for bundled seed rows. */
+    id: text("id").primaryKey(),
+    childId: text("child_id").references(() => children.id, {
+      onDelete: "restrict",
+    }),
+    kind: text("kind").$type<EntryKind>(),
+    /** UTC epoch milliseconds, independent of the recorded civil timezone. */
+    occurredAt: integer("occurred_at"),
+    /** IANA timezone captured when the Entry occurred. */
+    occurredTz: text("occurred_tz"),
+    createdAt: integer("created_at"),
+    updatedAt: integer("updated_at"),
+    /** A scrubbed tombstone retains this timestamp and the Entry id only. */
+    deletedAt: integer("deleted_at"),
+    isSeed: integer("is_seed", { mode: "boolean" }),
+  },
+  (table) => [
+    index("entries_child_occurred_idx").on(table.childId, table.occurredAt),
+    index("entries_child_kind_idx").on(table.childId, table.kind),
+  ]
+);
+
+/** Entry-owned links (Foods, symptoms, factors); deleted with their Entry. */
+export const entryAssociations = sqliteTable(
+  "entry_associations",
+  {
+    entryId: text("entry_id")
+      .notNull()
+      .references(() => entries.id, { onDelete: "cascade" }),
+    associationType: text("association_type").notNull(),
+    associatedId: text("associated_id").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.entryId, table.associationType, table.associatedId],
+    }),
+  ]
+);
+
+/** Kind-specific fields owned by an Entry and scrubbed with its tombstone. */
+export const entryContent = sqliteTable("entry_content", {
+  entryId: text("entry_id")
+    .primaryKey()
+    .references(() => entries.id, { onDelete: "cascade" }),
+  contentJson: text("content_json").notNull(),
 });
