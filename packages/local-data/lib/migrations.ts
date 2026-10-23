@@ -176,6 +176,35 @@ BEGIN
 END;
 `,
   },
+  {
+    index: 4,
+    name: "0004_entry_content",
+    sql: `
+CREATE TABLE IF NOT EXISTS entry_content (
+  entry_id TEXT PRIMARY KEY NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+  content_json TEXT NOT NULL
+    CHECK (json_valid(content_json) AND json_type(content_json) = 'object')
+);
+CREATE TRIGGER IF NOT EXISTS entry_content_live_insert
+BEFORE INSERT ON entry_content
+WHEN NOT EXISTS (
+  SELECT 1 FROM entries
+  WHERE id = NEW.entry_id AND deleted_at IS NULL
+)
+BEGIN
+  SELECT RAISE(ABORT, 'Entry content requires a live Entry');
+END;
+CREATE TRIGGER IF NOT EXISTS entry_content_live_update
+BEFORE UPDATE OF entry_id ON entry_content
+WHEN NOT EXISTS (
+  SELECT 1 FROM entries
+  WHERE id = NEW.entry_id AND deleted_at IS NULL
+)
+BEGIN
+  SELECT RAISE(ABORT, 'Entry content requires a live Entry');
+END;
+`,
+  },
 ];
 
 /** Reads the applied-migration cursor (`PRAGMA user_version`). */

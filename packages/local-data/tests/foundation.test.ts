@@ -126,13 +126,17 @@ test("scrub cascades package-owned associations and leaves only the tombstone", 
   const db = openDatabase(driver);
   const child = db.children.create(childInput());
   const entry = db.entries.create(entryInput(child.id));
+  const content = { side: "left", durationSeconds: 120 };
+  db.entries.setContent(entry.id, content);
   db.entries.addAssociation(entry.id, "food", "pear");
+  assert.deepEqual(db.entries.contentFor(entry.id), content);
   assert.deepEqual(db.entries.associationsFor(entry.id), [
     { associationType: "food", associatedId: "pear" },
   ]);
 
   assert.equal(db.entries.scrub(entry.id, 1_800_000_000_000), true);
   assert.equal(db.entries.get(entry.id), null);
+  assert.equal(db.entries.contentFor(entry.id), null);
   assert.deepEqual(db.entries.associationsFor(entry.id), []);
   assert.deepEqual(
     driver.prepareSync("SELECT * FROM entries WHERE id = ?").get(entry.id),
@@ -161,6 +165,7 @@ test("transaction rolls back multiple writes, including a nested scrub", () => {
   const db = openDatabase(driver);
   const child = db.children.create(childInput());
   const existing = db.entries.create(entryInput(child.id));
+  db.entries.setContent(existing.id, { note: "preserved until commit" });
   db.entries.addAssociation(existing.id, "food", "pear");
   let rolledBackId = "";
 
@@ -173,6 +178,9 @@ test("transaction rolls back multiple writes, including a nested scrub", () => {
   );
   assert.equal(db.entries.get(rolledBackId), null);
   assert.equal(db.entries.get(existing.id)?.id, existing.id);
+  assert.deepEqual(db.entries.contentFor(existing.id), {
+    note: "preserved until commit",
+  });
   assert.deepEqual(db.entries.associationsFor(existing.id), [
     { associationType: "food", associatedId: "pear" },
   ]);

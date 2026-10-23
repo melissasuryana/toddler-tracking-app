@@ -8,7 +8,12 @@ import {
   type EntryInput,
 } from "./entry.ts";
 import type { LocalOrm } from "./orm.ts";
-import { entries, entryAssociations, metadata } from "./schema.ts";
+import {
+  entries,
+  entryAssociations,
+  entryContent,
+  metadata,
+} from "./schema.ts";
 
 export class EntryValidationError extends Error {
   readonly errors: readonly EntryFieldError[];
@@ -24,6 +29,16 @@ export interface EntryAssociation {
   readonly associationType: string;
   readonly associatedId: string;
 }
+
+export type EntryContentValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly EntryContentValue[]
+  | { readonly [key: string]: EntryContentValue };
+
+export type EntryContent = Readonly<Record<string, EntryContentValue>>;
 
 type Atomic = <T>(operation: () => T) => T;
 
@@ -152,6 +167,27 @@ export class EntryRepository {
       }));
   }
 
+  setContent(entryId: string, content: EntryContent): void {
+    const contentJson = serializeEntryContent(content);
+    this.atomic(() => {
+      this.orm
+        .insert(entryContent)
+        .values({ entryId, contentJson })
+        .onConflictDoUpdate({
+          target: entryContent.entryId,
+          set: { contentJson },
+        })
+        .run();
+    });
+  }
+
+  contentFor(entryId: string): EntryContent | null {
+    const row = this.driver
+      .prepareSync("SELECT content_json FROM entry_content WHERE entry_id = ?")
+      .get<{ content_json: string }>(entryId);
+    return row ? (JSON.parse(row.content_json) as EntryContent) : null;
+  }
+
   /**
    * Permanently removes the live row (cascading its owned associations) and
    * replaces it with the id + deleted_at tombstone in the same transaction.
@@ -172,6 +208,41 @@ export class EntryRepository {
       return true;
     });
   }
+}
+
+function serializeEntryContent(content: EntryContent): string {
+  if (
+    content === null ||
+    typeof content !== "object" ||
+    Array.isArray(content) ||
+    !isJsonValue(content)
+  ) {
+    throw new TypeError("Entry content must be a JSON object.");
+  }
+  return JSON.stringify(content);
+}
+
+function isJsonValue(value: unknown, ancestors = new Set<object>()): boolean {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value !== "object") return false;
+  if (ancestors.has(value)) return false;
+  if (!Array.isArray(value)) {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+  }
+  ancestors.add(value);
+  const valid = Array.isArray(value)
+    ? value.every((item) => isJsonValue(item, ancestors))
+    : Object.values(value).every((item) => isJsonValue(item, ancestors));
+  ancestors.delete(value);
+  return valid;
 }
 
 export class MetadataRepository {

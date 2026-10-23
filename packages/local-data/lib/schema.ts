@@ -89,3 +89,11 @@ export const entryAssociations = sqliteTable(
     }),
   ]
 );
+
+/** Kind-specific fields owned by an Entry and scrubbed with its tombstone. */
+export const entryContent = sqliteTable("entry_content", {
+  entryId: text("entry_id")
+    .primaryKey()
+    .references(() => entries.id, { onDelete: "cascade" }),
+  contentJson: text("content_json").notNull(),
+});

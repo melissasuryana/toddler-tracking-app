@@ -115,7 +115,7 @@ export class LocalDatabase {
 
 /**
  * Opens the database: runs pending migrations, then any unrun seed tasks.
- * Seed completion is recorded under the `seed:<key>` preference so seeds are
+ * Seed completion is recorded under the `seed:<key>` metadata key so seeds are
  * idempotent across restarts.
  */
 export function openDatabase(

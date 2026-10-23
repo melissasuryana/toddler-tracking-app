@@ -37,6 +37,8 @@ export {
   MetadataRepository,
   SeedRepository,
   type EntryAssociation,
+  type EntryContent,
+  type EntryContentValue,
   type SeedRow,
   type SeedValue,
 } from "./lib/foundation.ts";
@@ -78,6 +80,7 @@ export {
   children,
   entries,
   entryAssociations,
+  entryContent,
   entryTimezones,
   metadata,
   preferences,
