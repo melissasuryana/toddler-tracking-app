@@ -139,9 +139,13 @@
         "Green bell pepper",
         "Red bell pepper",
         "Yellow bell pepper",
-        "Orange bell pepper",
-        "Edamame"
+        "Orange bell pepper"
       ]
+    },
+    {
+      "category": "vegetables",
+      "allergenTags": ["soy"],
+      "names": ["Edamame"]
     },
     {
       "category": "grains & cereals",
