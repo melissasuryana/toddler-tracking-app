@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS entries (
       AND created_at >= 0
       AND typeof(updated_at) = 'integer'
       AND updated_at >= 0
+      AND is_seed IS NOT NULL
       AND is_seed IN (0, 1)
     )
     OR
@@ -119,6 +120,60 @@ CREATE INDEX IF NOT EXISTS entries_child_occurred_idx
   ON entries(child_id, occurred_at);
 CREATE INDEX IF NOT EXISTS entries_child_kind_idx
   ON entries(child_id, kind);
+`,
+  },
+  {
+    index: 3,
+    name: "0003_entry_timezone_registry_and_associations",
+    sql: `
+CREATE TABLE IF NOT EXISTS entry_timezones (
+  name TEXT PRIMARY KEY
+);
+INSERT OR IGNORE INTO entry_timezones (name)
+  SELECT DISTINCT occurred_tz FROM entries
+  WHERE deleted_at IS NULL AND occurred_tz IS NOT NULL;
+CREATE TRIGGER IF NOT EXISTS entries_timezone_insert
+BEFORE INSERT ON entries
+WHEN NEW.deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM entry_timezones WHERE name = NEW.occurred_tz
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'Entry timezone must be a registered IANA timezone');
+END;
+CREATE TRIGGER IF NOT EXISTS entries_timezone_update
+BEFORE UPDATE OF occurred_tz, deleted_at ON entries
+WHEN NEW.deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM entry_timezones WHERE name = NEW.occurred_tz
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'Entry timezone must be a registered IANA timezone');
+END;
+CREATE TABLE IF NOT EXISTS entry_associations (
+  entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+  association_type TEXT NOT NULL CHECK (length(trim(association_type)) > 0),
+  associated_id TEXT NOT NULL CHECK (length(trim(associated_id)) > 0),
+  PRIMARY KEY (entry_id, association_type, associated_id)
+);
+CREATE TRIGGER IF NOT EXISTS entry_associations_live_insert
+BEFORE INSERT ON entry_associations
+WHEN NOT EXISTS (
+  SELECT 1 FROM entries
+  WHERE id = NEW.entry_id AND deleted_at IS NULL
+)
+BEGIN
+  SELECT RAISE(ABORT, 'Entry associations require a live Entry');
+END;
+CREATE TRIGGER IF NOT EXISTS entry_associations_live_update
+BEFORE UPDATE OF entry_id ON entry_associations
+WHEN NOT EXISTS (
+  SELECT 1 FROM entries
+  WHERE id = NEW.entry_id AND deleted_at IS NULL
+)
+BEGIN
+  SELECT RAISE(ABORT, 'Entry associations require a live Entry');
+END;
 `,
   },
 ];

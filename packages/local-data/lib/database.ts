@@ -6,19 +6,33 @@
  * Seed tasks run once, in order, after migrations and commit with their marker.
  */
 import type { MigrationDriver } from "./driver.ts";
+import { isIanaTimezone } from "./entry.ts";
 import {
   EntryRepository,
   MetadataRepository,
   SeedRepository,
 } from "./foundation.ts";
-import { runMigrations, MIGRATIONS, type Migration } from "./migrations.ts";
+import {
+  currentVersion,
+  runMigrations,
+  MIGRATIONS,
+  type Migration,
+} from "./migrations.ts";
 import { createOrm, type LocalOrm } from "./orm.ts";
 import { ChildRepository, PreferenceRepository } from "./repository.ts";
+
+export interface LocalTransaction {
+  readonly children: ChildRepository;
+  readonly preferences: PreferenceRepository;
+  readonly entries: EntryRepository;
+  readonly metadata: MetadataRepository;
+  readonly seeds: SeedRepository;
+}
 
 /** A one-time seed task; `key` guards re-runs via local metadata. */
 export interface SeedTask {
   readonly key: string;
-  run(db: LocalDatabase): void;
+  run(db: LocalTransaction): void;
 }
 
 export interface OpenDatabaseOptions {
@@ -56,25 +70,32 @@ export class LocalDatabase {
    * Runs synchronous writes atomically. Nested calls use savepoints so domain
    * mutations such as scrubbing can compose with a larger transaction.
    */
-  transaction<T>(operation: (db: LocalDatabase) => T): T {
+  transaction<T>(operation: (db: LocalTransaction) => T): T {
+    assertSynchronousFunction(operation);
+    let active = true;
+    const transaction = transactionScope(this, () => active);
     if (this.transactionDepth === 0) {
       let result!: T;
-      this.driver.withTransactionSync(() => {
-        this.transactionDepth = 1;
-        try {
-          result = assertSynchronous(operation(this));
-        } finally {
-          this.transactionDepth = 0;
-        }
-      });
-      return result;
+      try {
+        this.driver.withTransactionSync(() => {
+          this.transactionDepth = 1;
+          try {
+            result = assertSynchronous(operation(transaction));
+          } finally {
+            this.transactionDepth = 0;
+          }
+        });
+        return result;
+      } finally {
+        active = false;
+      }
     }
 
     const savepoint = `local_data_${++this.savepointSequence}`;
     this.driver.execSync(`SAVEPOINT ${savepoint}`);
     this.transactionDepth += 1;
     try {
-      const result = assertSynchronous(operation(this));
+      const result = assertSynchronous(operation(transaction));
       this.driver.execSync(`RELEASE SAVEPOINT ${savepoint}`);
       return result;
     } catch (error) {
@@ -83,6 +104,7 @@ export class LocalDatabase {
       throw error;
     } finally {
       this.transactionDepth -= 1;
+      active = false;
     }
   }
 
@@ -101,7 +123,20 @@ export function openDatabase(
   options: OpenDatabaseOptions = {}
 ): LocalDatabase {
   driver.execSync("PRAGMA foreign_keys = ON");
+  const version = currentVersion(driver);
+  if (version >= 2 && version < 3) {
+    const invalid = driver
+      .prepareSync("SELECT occurred_tz FROM entries WHERE deleted_at IS NULL")
+      .all<{ occurred_tz: string }>()
+      .find((row) => !isIanaTimezone(row.occurred_tz));
+    if (invalid) {
+      throw new Error(
+        `Cannot migrate invalid Entry timezone: ${invalid.occurred_tz}`
+      );
+    }
+  }
   runMigrations(driver, options.migrations ?? MIGRATIONS);
+  if (currentVersion(driver) >= 3) registerIanaTimezones(driver);
   const db = new LocalDatabase(driver);
   const seedKeys = new Set<string>();
   const seeds = options.seeds ?? [];
@@ -114,14 +149,69 @@ export function openDatabase(
   for (const seed of seeds) {
     const marker = `seed:${seed.key}`;
     if (db.metadata.get(marker) !== null) continue;
-    db.transaction(() => {
+    assertSynchronousFunction(seed.run);
+    db.transaction((transaction) => {
       if (db.metadata.get(marker) !== null) return;
-      const result = seed.run(db) as unknown;
+      const result = seed.run(transaction) as unknown;
       assertSynchronous(result);
       db.metadata.set(marker, "done");
     });
   }
   return db;
+}
+
+function registerIanaTimezones(driver: MigrationDriver): void {
+  const supported =
+    typeof Intl.supportedValuesOf === "function"
+      ? Intl.supportedValuesOf("timeZone")
+      : [];
+  const names = new Set(["UTC", "Etc/UTC", "GMT", ...supported]);
+  driver.withTransactionSync(() => {
+    const insert = driver.prepareSync(
+      "INSERT INTO entry_timezones (name) VALUES (?) ON CONFLICT(name) DO NOTHING"
+    );
+    for (const name of names) insert.run(name);
+  });
+}
+
+function assertSynchronousFunction(
+  operation: (...args: never[]) => unknown
+): void {
+  const source = Function.prototype.toString.call(operation);
+  if (
+    Object.prototype.toString.call(operation) === "[object AsyncFunction]" ||
+    source.startsWith("async ") ||
+    source.startsWith("async(") ||
+    source.includes("[native code]")
+  ) {
+    throw new TypeError("Local database callbacks must be synchronous.");
+  }
+}
+
+function transactionScope(
+  db: LocalDatabase,
+  isActive: () => boolean
+): LocalTransaction {
+  const scopedRepository = <T extends object>(repository: T): T =>
+    new Proxy(repository, {
+      get(target, property, receiver) {
+        const value = Reflect.get(target, property, receiver) as unknown;
+        if (typeof value !== "function") return value;
+        return (...args: unknown[]) => {
+          if (!isActive()) {
+            throw new Error("The database transaction is no longer active.");
+          }
+          return Reflect.apply(value, target, args);
+        };
+      },
+    });
+  return {
+    children: scopedRepository(db.children),
+    preferences: scopedRepository(db.preferences),
+    entries: scopedRepository(db.entries),
+    metadata: scopedRepository(db.metadata),
+    seeds: scopedRepository(db.seeds),
+  };
 }
 
 function assertSynchronous<T>(value: T): T {
@@ -130,6 +220,9 @@ function assertSynchronous<T>(value: T): T {
     (typeof value === "object" || typeof value === "function") &&
     "then" in value
   ) {
+    if (typeof value === "object" && value !== null) {
+      void Promise.resolve(value).catch(() => undefined);
+    }
     throw new TypeError("Local database transactions must be synchronous.");
   }
   return value;

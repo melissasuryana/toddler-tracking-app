@@ -36,9 +36,11 @@ export {
   EntryValidationError,
   MetadataRepository,
   SeedRepository,
+  type EntryAssociation,
   type SeedRow,
   type SeedValue,
 } from "./lib/foundation.ts";
+export type { LocalTransaction } from "./lib/database.ts";
 export {
   ENTRY_KINDS,
   isIanaTimezone,
@@ -72,5 +74,12 @@ export {
   type PreferenceTypes,
   type TemperatureUnit,
 } from "./lib/preferences.ts";
-export { children, entries, metadata, preferences } from "./lib/schema.ts";
+export {
+  children,
+  entries,
+  entryAssociations,
+  entryTimezones,
+  metadata,
+  preferences,
+} from "./lib/schema.ts";
 export { createOrm, type LocalOrm } from "./lib/orm.ts";

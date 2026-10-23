@@ -8,6 +8,7 @@ import {
   MIGRATIONS,
   openDatabase,
   type EntryInput,
+  type LocalTransaction,
   type SeedTask,
 } from "../index.ts";
 import { openTestDriver } from "./helpers.ts";
@@ -81,27 +82,60 @@ test("Entry schema and repository enforce sync-ready metadata", () => {
         Date.now()
       )
   );
+  assert.throws(
+    () =>
+      driver
+        .prepareSync(
+          `INSERT INTO entries
+          (id, child_id, kind, occurred_at, occurred_tz, created_at, updated_at, is_seed)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
+        )
+        .run(
+          "018f0000-0000-7000-8000-000000000001",
+          child.id,
+          "feed",
+          Date.now(),
+          "Invalid/Timezone",
+          Date.now(),
+          Date.now()
+        ),
+    /registered IANA timezone/
+  );
+  assert.throws(() =>
+    driver
+      .prepareSync(
+        `INSERT INTO entries
+          (id, child_id, kind, occurred_at, occurred_tz, created_at, updated_at, is_seed)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`
+      )
+      .run(
+        "018f0000-0000-7000-8000-000000000002",
+        child.id,
+        "feed",
+        Date.now(),
+        "UTC",
+        Date.now(),
+        Date.now()
+      )
+  );
   driver.closeSync();
 });
 
-test("scrub cascades owned rows and leaves only the id and deleted_at", () => {
+test("scrub cascades package-owned associations and leaves only the tombstone", () => {
   const driver = openTestDriver();
   const db = openDatabase(driver);
   const child = db.children.create(childInput());
   const entry = db.entries.create(entryInput(child.id));
-  driver.execSync(
-    "CREATE TABLE entry_notes (entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE, note TEXT NOT NULL)"
-  );
-  driver
-    .prepareSync("INSERT INTO entry_notes (entry_id, note) VALUES (?, ?)")
-    .run(entry.id, "private content");
+  db.entries.addAssociation(entry.id, "food", "pear");
+  assert.deepEqual(db.entries.associationsFor(entry.id), [
+    { associationType: "food", associatedId: "pear" },
+  ]);
 
   assert.equal(db.entries.scrub(entry.id, 1_800_000_000_000), true);
   assert.equal(db.entries.get(entry.id), null);
+  assert.deepEqual(db.entries.associationsFor(entry.id), []);
   assert.deepEqual(
-    driver
-      .prepareSync("SELECT * FROM entries WHERE id = ?")
-      .get(entry.id),
+    driver.prepareSync("SELECT * FROM entries WHERE id = ?").get(entry.id),
     {
       id: entry.id,
       child_id: null,
@@ -114,13 +148,11 @@ test("scrub cascades owned rows and leaves only the id and deleted_at", () => {
       is_seed: null,
     }
   );
-  assert.equal(
-    driver
-      .prepareSync("SELECT COUNT(*) AS count FROM entry_notes")
-      .get<{ count: number }>()?.count,
-    0
-  );
   assert.equal(db.entries.scrub(entry.id, 1_800_000_000_001), false);
+  assert.throws(
+    () => db.entries.addAssociation(entry.id, "food", "apple"),
+    /live Entry/
+  );
   driver.closeSync();
 });
 
@@ -129,12 +161,7 @@ test("transaction rolls back multiple writes, including a nested scrub", () => {
   const db = openDatabase(driver);
   const child = db.children.create(childInput());
   const existing = db.entries.create(entryInput(child.id));
-  driver.execSync(
-    "CREATE TABLE entry_notes (entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE, note TEXT NOT NULL)"
-  );
-  driver
-    .prepareSync("INSERT INTO entry_notes (entry_id, note) VALUES (?, ?)")
-    .run(existing.id, "preserved until commit");
+  db.entries.addAssociation(existing.id, "food", "pear");
   let rolledBackId = "";
 
   assert.throws(() =>
@@ -146,18 +173,52 @@ test("transaction rolls back multiple writes, including a nested scrub", () => {
   );
   assert.equal(db.entries.get(rolledBackId), null);
   assert.equal(db.entries.get(existing.id)?.id, existing.id);
-  assert.equal(
-    driver
-      .prepareSync("SELECT note FROM entry_notes WHERE entry_id = ?")
-      .get<{ note: string }>(existing.id)?.note,
-    "preserved until commit"
-  );
+  assert.deepEqual(db.entries.associationsFor(existing.id), [
+    { associationType: "food", associatedId: "pear" },
+  ]);
   assert.equal(
     driver
       .prepareSync("SELECT COUNT(*) AS count FROM entries WHERE id = ?")
       .get<{ count: number }>(rolledBackId)?.count,
     0
   );
+  driver.closeSync();
+});
+
+test("transaction rejects async callbacks before they can write", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  let called = false;
+  const asyncOperation = async (_tx: LocalTransaction) => {
+    called = true;
+  };
+
+  assert.throws(
+    () => db.transaction(asyncOperation),
+    /callbacks must be synchronous/
+  );
+  assert.equal(called, false);
+  driver.closeSync();
+});
+
+test("transaction scopes reject writes after a thenable callback is rolled back", async () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+
+  assert.throws(
+    () =>
+      db.transaction((tx) => {
+        tx.metadata.set("before", "rolled back");
+        return Promise.resolve().then(() =>
+          tx.metadata.set("after", "must not escape")
+        );
+      }),
+    /transactions must be synchronous/
+  );
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(db.metadata.get("before"), null);
+  assert.equal(db.metadata.get("after"), null);
   driver.closeSync();
 });
 
@@ -237,6 +298,34 @@ test("legacy seed preference markers migrate to metadata", () => {
       .prepareSync("SELECT COUNT(*) AS count FROM preferences WHERE key = ?")
       .get<{ count: number }>("seed:legacy")?.count,
     0
+  );
+  driver.closeSync();
+});
+
+test("migration refuses to register invalid legacy Entry timezones", () => {
+  const driver = openTestDriver();
+  const versionTwo = MIGRATIONS.slice(0, 2);
+  const db = openDatabase(driver, { migrations: versionTwo });
+  const child = db.children.create(childInput());
+  driver
+    .prepareSync(
+      `INSERT INTO entries
+        (id, child_id, kind, occurred_at, occurred_tz, created_at, updated_at, is_seed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
+    )
+    .run(
+      "018f0000-0000-7000-8000-000000000003",
+      child.id,
+      "feed",
+      Date.now(),
+      "Invalid/Timezone",
+      Date.now(),
+      Date.now()
+    );
+
+  assert.throws(
+    () => openDatabase(driver),
+    /Cannot migrate invalid Entry timezone/
   );
   driver.closeSync();
 });

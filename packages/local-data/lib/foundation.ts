@@ -8,7 +8,7 @@ import {
   type EntryInput,
 } from "./entry.ts";
 import type { LocalOrm } from "./orm.ts";
-import { entries, metadata } from "./schema.ts";
+import { entries, entryAssociations, metadata } from "./schema.ts";
 
 export class EntryValidationError extends Error {
   readonly errors: readonly EntryFieldError[];
@@ -18,6 +18,11 @@ export class EntryValidationError extends Error {
     this.name = "EntryValidationError";
     this.errors = errors;
   }
+}
+
+export interface EntryAssociation {
+  readonly associationType: string;
+  readonly associatedId: string;
 }
 
 type Atomic = <T>(operation: () => T) => T;
@@ -52,11 +57,28 @@ export class EntryRepository {
   create(input: EntryInput): Entry {
     const result = validateEntryInput(input);
     if (!result.ok) throw new EntryValidationError(result.errors);
-    const now = Date.now();
-    const value = result.value;
-    this.orm
-      .insert(entries)
-      .values({
+    return this.atomic(() => {
+      const now = Date.now();
+      const value = result.value;
+      this.driver
+        .prepareSync(
+          "INSERT INTO entry_timezones (name) VALUES (?) ON CONFLICT(name) DO NOTHING"
+        )
+        .run(value.occurredTz);
+      this.orm
+        .insert(entries)
+        .values({
+          id: value.id,
+          childId: value.childId,
+          kind: value.kind,
+          occurredAt: value.occurredAt,
+          occurredTz: value.occurredTz,
+          createdAt: now,
+          updatedAt: now,
+          isSeed: value.isSeed,
+        })
+        .run();
+      return {
         id: value.id,
         childId: value.childId,
         kind: value.kind,
@@ -64,20 +86,10 @@ export class EntryRepository {
         occurredTz: value.occurredTz,
         createdAt: now,
         updatedAt: now,
+        deletedAt: null,
         isSeed: value.isSeed,
-      })
-      .run();
-    return {
-      id: value.id,
-      childId: value.childId,
-      kind: value.kind,
-      occurredAt: value.occurredAt,
-      occurredTz: value.occurredTz,
-      createdAt: now,
-      updatedAt: now,
-      deletedAt: null,
-      isSeed: value.isSeed,
-    };
+      };
+    });
   }
 
   get(id: string): Entry | null {
@@ -101,6 +113,43 @@ export class EntryRepository {
       )
       .all()
       .map(toEntry);
+  }
+
+  addAssociation(
+    entryId: string,
+    associationType: string,
+    associatedId: string
+  ): void {
+    if (
+      associationType.trim().length === 0 ||
+      associatedId.trim().length === 0
+    ) {
+      throw new TypeError("Entry association type and id are required.");
+    }
+    this.orm
+      .insert(entryAssociations)
+      .values({
+        entryId,
+        associationType: associationType.trim(),
+        associatedId: associatedId.trim(),
+      })
+      .onConflictDoNothing()
+      .run();
+  }
+
+  associationsFor(entryId: string): EntryAssociation[] {
+    return this.driver
+      .prepareSync(
+        `SELECT association_type, associated_id
+         FROM entry_associations
+         WHERE entry_id = ?
+         ORDER BY association_type, associated_id`
+      )
+      .all<{ association_type: string; associated_id: string }>(entryId)
+      .map(({ association_type, associated_id }) => ({
+        associationType: association_type,
+        associatedId: associated_id,
+      }));
   }
 
   /**
@@ -185,7 +234,8 @@ export class SeedRepository {
       const values = columns.map((column) => row[column]);
       if (
         values.some(
-          (value) => value === undefined ||
+          (value) =>
+            value === undefined ||
             (typeof value === "number" && !Number.isFinite(value))
         )
       ) {

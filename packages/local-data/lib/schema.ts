@@ -4,7 +4,13 @@
  * Child, preference, local metadata, and the shared Entry base row. Entry-kind
  * content and seeded catalog tables are added by their owning domain tickets.
  */
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 import type { EntryKind } from "./entry.ts";
 
 /** Sex vocabulary from CONTEXT.md: required on the Child for growth charts. */
@@ -36,6 +42,11 @@ export const metadata = sqliteTable("metadata", {
   value: text("value").notNull(),
 });
 
+/** IANA zones registered after validation; SQLite triggers enforce membership. */
+export const entryTimezones = sqliteTable("entry_timezones", {
+  name: text("name").primaryKey(),
+});
+
 /** The stable, sync-ready metadata shared by every Entry kind. */
 export const entries = sqliteTable(
   "entries",
@@ -57,10 +68,24 @@ export const entries = sqliteTable(
     isSeed: integer("is_seed", { mode: "boolean" }),
   },
   (table) => [
-    index("entries_child_occurred_idx").on(
-      table.childId,
-      table.occurredAt
-    ),
+    index("entries_child_occurred_idx").on(table.childId, table.occurredAt),
     index("entries_child_kind_idx").on(table.childId, table.kind),
+  ]
+);
+
+/** Entry-owned links (Foods, symptoms, factors); deleted with their Entry. */
+export const entryAssociations = sqliteTable(
+  "entry_associations",
+  {
+    entryId: text("entry_id")
+      .notNull()
+      .references(() => entries.id, { onDelete: "cascade" }),
+    associationType: text("association_type").notNull(),
+    associatedId: text("associated_id").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.entryId, table.associationType, table.associatedId],
+    }),
   ]
 );
