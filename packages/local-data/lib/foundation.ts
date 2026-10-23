@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { MigrationDriver } from "./driver.ts";
 import {
+  isUuidV7,
   isSlugId,
   validateEntryInput,
   type EntryFieldError,
@@ -9,9 +10,11 @@ import {
 } from "./entry.ts";
 import type { LocalOrm } from "./orm.ts";
 import {
+  customFoods,
   entries,
   entryAssociations,
   entryContent,
+  manualSafeMarkers,
   metadata,
 } from "./schema.ts";
 
@@ -45,16 +48,17 @@ type Atomic = <T>(operation: () => T) => T;
 type EntryRow = typeof entries.$inferSelect;
 
 function toEntry(row: EntryRow): Entry {
+  const raw = row as unknown as Record<string, unknown>;
   return {
     id: row.id,
-    childId: row.childId!,
-    kind: row.kind! as Entry["kind"],
-    occurredAt: row.occurredAt!,
-    occurredTz: row.occurredTz!,
-    createdAt: row.createdAt!,
-    updatedAt: row.updatedAt!,
+    childId: (row.childId ?? raw.child_id) as string,
+    kind: (row.kind ?? raw.kind) as Entry["kind"],
+    occurredAt: (row.occurredAt ?? raw.occurred_at) as number,
+    occurredTz: (row.occurredTz ?? raw.occurred_tz) as string,
+    createdAt: (row.createdAt ?? raw.created_at) as number,
+    updatedAt: (row.updatedAt ?? raw.updated_at) as number,
     deletedAt: null,
-    isSeed: row.isSeed ?? false,
+    isSeed: (row.isSeed ?? raw.is_seed ?? false) as boolean,
   };
 }
 
@@ -324,4 +328,216 @@ export class SeedRepository {
       );
     }
   }
+}
+
+export interface StoredFoodInput {
+  readonly id: string;
+  readonly name: string;
+  readonly category: string | null;
+  readonly allergenTags: readonly string[];
+}
+
+export interface StoredFood extends StoredFoodInput {
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+export interface ManualSafeMarker {
+  readonly childId: string;
+  readonly foodId: string;
+  readonly cycleEntryId: string;
+}
+
+type CustomFoodRow = typeof customFoods.$inferSelect;
+
+function toStoredFood(row: CustomFoodRow): StoredFood {
+  const raw = row as unknown as Record<string, unknown>;
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    allergenTags: JSON.parse(
+      (row.allergenTagsJson ?? raw.allergen_tags_json) as string
+    ) as string[],
+    createdAt: (row.createdAt ?? raw.created_at) as number,
+    updatedAt: (row.updatedAt ?? raw.updated_at) as number,
+  };
+}
+
+/** Persistence for custom Foods and cycle-bound manual-safe decisions. */
+export class FoodRepository {
+  private readonly orm: LocalOrm;
+  private readonly driver: MigrationDriver;
+  private readonly atomic: Atomic;
+
+  constructor(orm: LocalOrm, driver: MigrationDriver, atomic: Atomic) {
+    this.orm = orm;
+    this.driver = driver;
+    this.atomic = atomic;
+  }
+
+  listCustomFoods(): StoredFood[] {
+    return this.orm
+      .select()
+      .from(customFoods)
+      .orderBy(asc(customFoods.name), asc(customFoods.id))
+      .all()
+      .map(toStoredFood);
+  }
+
+  getCustomFood(id: string): StoredFood | null {
+    const row = this.orm
+      .select()
+      .from(customFoods)
+      .where(eq(customFoods.id, id))
+      .get();
+    return row ? toStoredFood(row) : null;
+  }
+
+  createCustomFood(input: StoredFoodInput): StoredFood {
+    const value = normalizeStoredFood(input);
+    return this.atomic(() => {
+      const now = Date.now();
+      this.orm
+        .insert(customFoods)
+        .values({
+          id: value.id,
+          name: value.name,
+          category: value.category,
+          allergenTagsJson: JSON.stringify(value.allergenTags),
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run();
+      return { ...value, createdAt: now, updatedAt: now };
+    });
+  }
+
+  updateCustomFood(id: string, input: Omit<StoredFoodInput, "id">): StoredFood {
+    const value = normalizeStoredFood({ ...input, id });
+    return this.atomic(() => {
+      if (!this.getCustomFood(id)) {
+        throw new Error("Custom Food does not exist.");
+      }
+      const now = Date.now();
+      this.orm
+        .update(customFoods)
+        .set({
+          name: value.name,
+          category: value.category,
+          allergenTagsJson: JSON.stringify(value.allergenTags),
+          updatedAt: now,
+        })
+        .where(eq(customFoods.id, id))
+        .run();
+      const existing = this.getCustomFood(id);
+      if (!existing) throw new Error("Custom Food does not exist.");
+      return existing;
+    });
+  }
+
+  deleteCustomFood(id: string): boolean {
+    return this.atomic(() => {
+      if (!this.getCustomFood(id)) return false;
+      this.orm.delete(customFoods).where(eq(customFoods.id, id)).run();
+      return true;
+    });
+  }
+
+  manualSafeMarker(childId: string, foodId: string): ManualSafeMarker | null {
+    const row = this.driver
+      .prepareSync(
+        `SELECT child_id, food_id, cycle_entry_id
+         FROM manual_safe_markers WHERE child_id = ? AND food_id = ?`
+      )
+      .get<{ child_id: string; food_id: string; cycle_entry_id: string }>(
+        childId,
+        foodId
+      );
+    return row
+      ? {
+          childId: row.child_id,
+          foodId: row.food_id,
+          cycleEntryId: row.cycle_entry_id,
+        }
+      : null;
+  }
+
+  listManualSafeMarkers(childId: string): ManualSafeMarker[] {
+    return this.driver
+      .prepareSync(
+        `SELECT child_id, food_id, cycle_entry_id
+         FROM manual_safe_markers WHERE child_id = ? ORDER BY food_id`
+      )
+      .all<{ child_id: string; food_id: string; cycle_entry_id: string }>(
+        childId
+      )
+      .map((row) => ({
+        childId: row.child_id,
+        foodId: row.food_id,
+        cycleEntryId: row.cycle_entry_id,
+      }));
+  }
+
+  setManualSafeMarker(
+    childId: string,
+    foodId: string,
+    cycleEntryId: string
+  ): void {
+    this.atomic(() => {
+      this.driver
+        .prepareSync(
+          `INSERT INTO manual_safe_markers (child_id, food_id, cycle_entry_id)
+           VALUES (?, ?, ?)
+           ON CONFLICT(child_id, food_id)
+           DO UPDATE SET cycle_entry_id = excluded.cycle_entry_id`
+        )
+        .run(childId, foodId, cycleEntryId);
+    });
+  }
+
+  clearManualSafeMarker(childId: string, foodId: string): void {
+    this.atomic(() => {
+      this.driver
+        .prepareSync(
+          "DELETE FROM manual_safe_markers WHERE child_id = ? AND food_id = ?"
+        )
+        .run(childId, foodId);
+    });
+  }
+}
+
+function normalizeStoredFood(input: StoredFoodInput): StoredFoodInput {
+  if (!isUuidV7(input.id)) {
+    throw new TypeError("Custom Food id must be UUIDv7.");
+  }
+  const name = input.name.trim();
+  if (name.length === 0) throw new TypeError("Custom Food name is required.");
+  if (
+    input.category !== null &&
+    ![
+      "fruit",
+      "vegetables",
+      "grains & cereals",
+      "proteins",
+      "dairy",
+      "nuts & seeds",
+      "fish & shellfish",
+      "compound",
+    ].includes(input.category)
+  ) {
+    throw new TypeError("Custom Food category is not supported.");
+  }
+  if (
+    !Array.isArray(input.allergenTags) ||
+    input.allergenTags.some((tag) => typeof tag !== "string")
+  ) {
+    throw new TypeError("Custom Food allergen tags must be strings.");
+  }
+  return {
+    id: input.id,
+    name,
+    category: input.category,
+    allergenTags: [...new Set(input.allergenTags)],
+  };
 }

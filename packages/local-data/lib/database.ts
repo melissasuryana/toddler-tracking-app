@@ -9,6 +9,7 @@ import type { MigrationDriver } from "./driver.ts";
 import { isIanaTimezone } from "./entry.ts";
 import {
   EntryRepository,
+  FoodRepository,
   MetadataRepository,
   SeedRepository,
 } from "./foundation.ts";
@@ -25,6 +26,7 @@ export interface LocalTransaction {
   readonly children: ChildRepository;
   readonly preferences: PreferenceRepository;
   readonly entries: EntryRepository;
+  readonly foods: FoodRepository;
   readonly metadata: MetadataRepository;
   readonly seeds: SeedRepository;
 }
@@ -46,6 +48,7 @@ export class LocalDatabase {
   readonly children: ChildRepository;
   readonly preferences: PreferenceRepository;
   readonly entries: EntryRepository;
+  readonly foods: FoodRepository;
   readonly metadata: MetadataRepository;
   readonly seeds: SeedRepository;
   readonly driver: MigrationDriver;
@@ -60,6 +63,9 @@ export class LocalDatabase {
     this.children = new ChildRepository(this.orm);
     this.preferences = new PreferenceRepository(this.orm);
     this.entries = new EntryRepository(this.orm, driver, (operation) =>
+      this.transaction(() => operation())
+    );
+    this.foods = new FoodRepository(this.orm, driver, (operation) =>
       this.transaction(() => operation())
     );
     this.metadata = new MetadataRepository(this.orm);
@@ -209,6 +215,7 @@ function transactionScope(
     children: scopedRepository(db.children),
     preferences: scopedRepository(db.preferences),
     entries: scopedRepository(db.entries),
+    foods: scopedRepository(db.foods),
     metadata: scopedRepository(db.metadata),
     seeds: scopedRepository(db.seeds),
   };
