@@ -1,6 +1,8 @@
 /** Home — the "Now" ledger with the Child's persistent Sleep timer control. */
 import { useEffect, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
+import { MealForm } from "~/components/MealForm";
+import { PillChip } from "~/components/PillChip";
 import {
   Hairline,
   MetaLabel,
@@ -22,11 +24,16 @@ export default function HomeScreen() {
     startSleepTimer,
     cancelWake,
     stopSleepTimer,
+    mealDefaultsForChild,
+    mealNameSuggestions,
+    createMeal,
+    updateMeal,
   } = useData();
   const timer = runningSleepTimer();
   const [now, setNow] = useState(Date.now);
   const [wakePromptVisible, setWakePromptVisible] = useState(false);
   const [sleepError, setSleepError] = useState<string | null>(null);
+  const [mealFormVisible, setMealFormVisible] = useState(false);
 
   useEffect(() => {
     if (!timer) return;
@@ -131,9 +138,33 @@ export default function HomeScreen() {
         {sleepError && !wakePromptVisible ? <Body>{sleepError}</Body> : null}
       </View>
       <Hairline />
-      <View style={{ padding: theme.space.page }}>
-        <Body dim>Other quick logging lands here next.</Body>
-      </View>
+      {mealFormVisible && child ? (
+        <MealForm
+          childId={child.id}
+          defaults={mealDefaultsForChild(child.id)}
+          suggestionsFor={(query) => mealNameSuggestions(child.id, query)}
+          onCancel={() => setMealFormVisible(false)}
+          onSave={(input, id) => {
+            if (id) {
+              if (!updateMeal(id, input)) {
+                throw new Error("This Meal is no longer available.");
+              }
+            } else {
+              createMeal(input);
+            }
+            setMealFormVisible(false);
+          }}
+        />
+      ) : (
+        <View style={{ padding: theme.space.page, gap: theme.space.fieldGap }}>
+          <PillChip
+            label="Log a meal"
+            selected
+            onPress={() => setMealFormVisible(true)}
+          />
+          <Body dim>Other quick logging lands here next.</Body>
+        </View>
+      )}
       <Modal
         visible={wakePromptVisible}
         transparent

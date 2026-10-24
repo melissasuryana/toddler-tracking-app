@@ -9,6 +9,12 @@ import type {
   RunningSleepTimer,
   TemperatureUnit,
 } from "@keepsake/local-data";
+import type {
+  MealDefaults,
+  MealEntry,
+  MealEntryInput,
+  MealNameSuggestion,
+} from "@keepsake/food-tracking";
 import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
 
 export interface DataSession {
@@ -21,4 +27,12 @@ export interface DataSession {
   readonly startSleepTimer: () => void;
   readonly cancelWake: () => void;
   readonly stopSleepTimer: (quality: SleepQuality) => RoutineEntry;
+  readonly mealsForChild: (childId: string) => readonly MealEntry[];
+  readonly mealDefaultsForChild: (childId: string) => MealDefaults;
+  readonly mealNameSuggestions: (
+    childId: string,
+    query: string
+  ) => readonly MealNameSuggestion[];
+  readonly createMeal: (input: MealEntryInput) => MealEntry;
+  readonly updateMeal: (id: string, input: MealEntryInput) => MealEntry | null;
 }

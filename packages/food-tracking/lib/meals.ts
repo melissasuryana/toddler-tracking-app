@@ -106,51 +106,22 @@ export class MealEntries {
   }
 
   listForChild(childId: string): MealEntry[] {
-    return this.database.entries
+    const meals = this.database.entries
       .listForChild(childId)
       .filter((entry) => entry.kind === "meal")
-      .sort(
-        (left, right) =>
-          right.occurredAt - left.occurredAt ||
-          right.createdAt - left.createdAt ||
-          left.id.localeCompare(right.id)
-      )
       .flatMap((entry) => {
         const content = this.database.entries.contentFor(entry.id);
         return content ? [attachContent(entry, fromEntryContent(content))] : [];
       });
+    return sortMealsByRecency(meals);
   }
 
   defaultsForChild(childId: string): MealDefaults {
-    const latest = this.listForChild(childId)[0];
-    return latest
-      ? {
-          textures: latest.content.textures,
-          feedingStyles: latest.content.feedingStyles,
-        }
-      : EMPTY_DEFAULTS;
+    return mealDefaultsFrom(this.listForChild(childId));
   }
 
   nameSuggestions(childId: string, query = ""): MealNameSuggestion[] {
-    const normalizedQuery = query.trim().toLowerCase();
-    const seen = new Set<string>();
-    const suggestions: MealNameSuggestion[] = [];
-    for (const meal of this.listForChild(childId)) {
-      const name = meal.content.name?.trim();
-      if (!name) continue;
-      const key = name.toLowerCase();
-      if (seen.has(key) || !key.includes(normalizedQuery)) continue;
-      seen.add(key);
-      suggestions.push({
-        name,
-        categories: meal.content.categories,
-        allergenTags: meal.content.allergenTags,
-        textures: meal.content.textures,
-        feedingStyles: meal.content.feedingStyles,
-      });
-      if (suggestions.length === MAX_MEAL_NAME_SUGGESTIONS) break;
-    }
-    return suggestions;
+    return mealNameSuggestionsFrom(this.listForChild(childId), query);
   }
 
   update(id: string, input: MealEntryInput): MealEntry | null {
@@ -181,6 +152,41 @@ export class MealEntries {
       );
     });
   }
+}
+
+export function mealDefaultsFrom(meals: readonly MealEntry[]): MealDefaults {
+  const latest = sortMealsByRecency(meals)[0];
+  return latest
+    ? {
+        textures: latest.content.textures,
+        feedingStyles: latest.content.feedingStyles,
+      }
+    : EMPTY_DEFAULTS;
+}
+
+export function mealNameSuggestionsFrom(
+  meals: readonly MealEntry[],
+  query = ""
+): MealNameSuggestion[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  const seen = new Set<string>();
+  const suggestions: MealNameSuggestion[] = [];
+  for (const meal of sortMealsByRecency(meals)) {
+    const name = meal.content.name?.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key) || !key.includes(normalizedQuery)) continue;
+    seen.add(key);
+    suggestions.push({
+      name,
+      categories: meal.content.categories,
+      allergenTags: meal.content.allergenTags,
+      textures: meal.content.textures,
+      feedingStyles: meal.content.feedingStyles,
+    });
+    if (suggestions.length === MAX_MEAL_NAME_SUGGESTIONS) break;
+  }
+  return suggestions;
 }
 
 function validateAndNormalize(input: MealEntryInput): MealContent {
@@ -296,4 +302,13 @@ function storedChoices<T extends string>(
       )
     ),
   ];
+}
+
+export function sortMealsByRecency(meals: readonly MealEntry[]): MealEntry[] {
+  return [...meals].sort(
+    (left, right) =>
+      right.occurredAt - left.occurredAt ||
+      right.createdAt - left.createdAt ||
+      left.id.localeCompare(right.id)
+  );
 }

@@ -4,6 +4,9 @@ export {
   MealValidationError,
   MEAL_FEEDING_STYLES,
   MEAL_TEXTURES,
+  mealDefaultsFrom,
+  mealNameSuggestionsFrom,
+  sortMealsByRecency,
 } from "./lib/meals.ts";
 export type {
   CustomFoodInput,
