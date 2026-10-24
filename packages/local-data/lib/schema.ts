@@ -97,3 +97,28 @@ export const entryContent = sqliteTable("entry_content", {
     .references(() => entries.id, { onDelete: "cascade" }),
   contentJson: text("content_json").notNull(),
 });
+
+/** Parent-created Foods; the bundled read-only catalogue stays in its domain package. */
+export const customFoods = sqliteTable("custom_foods", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category"),
+  allergenTagsJson: text("allergen_tags_json").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+/** A manual-safe decision is valid only for the watch cycle it names. */
+export const manualSafeMarkers = sqliteTable(
+  "manual_safe_markers",
+  {
+    childId: text("child_id")
+      .notNull()
+      .references(() => children.id, { onDelete: "cascade" }),
+    foodId: text("food_id").notNull(),
+    cycleEntryId: text("cycle_entry_id")
+      .notNull()
+      .references(() => entries.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.childId, table.foodId] })]
+);

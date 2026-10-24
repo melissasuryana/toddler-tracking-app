@@ -10,6 +10,7 @@ npm workspaces: `app/` is the Expo app (expo-router, Keepsake theme), and
 `packages/*` are deep modules (see `packages/README.md`):
 
 - `packages/design-system` — Keepsake (Direction D) tokens + stroke icons.
+- `packages/food-tracking` — Food catalogue, deterministic status, and watch rules.
 - `packages/local-data` — Child + preferences persistence on expo-sqlite +
   Drizzle, behind an injectable driver boundary (tests run on `node:sqlite`).
 

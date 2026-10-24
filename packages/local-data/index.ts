@@ -34,13 +34,17 @@ export {
 export {
   EntryRepository,
   EntryValidationError,
+  FoodRepository,
   MetadataRepository,
   SeedRepository,
   type EntryAssociation,
   type EntryContent,
   type EntryContentValue,
+  type ManualSafeMarker,
   type SeedRow,
   type SeedValue,
+  type StoredFood,
+  type StoredFoodInput,
 } from "./lib/foundation.ts";
 export type { LocalTransaction } from "./lib/database.ts";
 export {
@@ -82,6 +86,8 @@ export {
   entryAssociations,
   entryContent,
   entryTimezones,
+  customFoods,
+  manualSafeMarkers,
   metadata,
   preferences,
 } from "./lib/schema.ts";
