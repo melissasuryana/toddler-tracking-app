@@ -160,6 +160,99 @@ test("scrub cascades package-owned associations and leaves only the tombstone", 
   driver.closeSync();
 });
 
+test("Entry updates preserve identity and creation time while validating timestamps", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  const child = db.children.create(childInput());
+  const entry = db.entries.create(entryInput(child.id));
+  const updated = db.entries.update(entry.id, {
+    childId: child.id,
+    kind: "feed",
+    occurredAt: entry.occurredAt - 1_000,
+    occurredTz: "America/Los_Angeles",
+  });
+
+  assert.ok(updated);
+  assert.equal(updated.id, entry.id);
+  assert.equal(updated.childId, entry.childId);
+  assert.equal(updated.kind, entry.kind);
+  assert.equal(updated.createdAt, entry.createdAt);
+  assert.equal(updated.occurredAt, entry.occurredAt - 1_000);
+  assert.equal(updated.occurredTz, "America/Los_Angeles");
+  assert.ok(updated.updatedAt > entry.updatedAt);
+  assert.throws(
+    () =>
+      db.entries.update(entry.id, {
+        childId: child.id,
+        kind: "growth",
+        occurredAt: entry.occurredAt,
+        occurredTz: entry.occurredTz,
+      }),
+    EntryValidationError
+  );
+  assert.equal(
+    db.entries.update("missing", {
+      childId: child.id,
+      kind: "feed",
+      occurredAt: entry.occurredAt,
+      occurredTz: entry.occurredTz,
+    }),
+    null
+  );
+  driver.closeSync();
+});
+
+test("latest Entry query follows corrected occurrence times without rewriting Entries", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  const child = db.children.create(childInput());
+  const first = db.entries.create(entryInput(child.id));
+  const second = db.entries.create({
+    ...entryInput(child.id),
+    occurredAt: first.occurredAt - 1_000,
+  });
+  assert.equal(db.entries.latestForChildKind(child.id, "feed")?.id, first.id);
+
+  const corrected = db.entries.update(second.id, {
+    childId: child.id,
+    kind: "feed",
+    occurredAt: first.occurredAt + 1_000,
+    occurredTz: second.occurredTz,
+  });
+  assert.ok(corrected);
+  assert.equal(corrected.createdAt, second.createdAt);
+  assert.equal(db.entries.latestForChildKind(child.id, "feed")?.id, second.id);
+
+  const earlierMeal = db.entries.create({
+    ...entryInput(child.id),
+    kind: "meal",
+    occurredAt: first.occurredAt - 2_000,
+  });
+  const laterMeal = db.entries.create({
+    ...entryInput(child.id),
+    kind: "meal",
+    occurredAt: first.occurredAt - 1_000,
+  });
+  db.entries.setContent(earlierMeal.id, { amount: 3 });
+  db.entries.setContent(laterMeal.id, { amount: 4 });
+  assert.equal(
+    db.entries.latestForChildKind(child.id, "meal")?.id,
+    laterMeal.id
+  );
+  db.entries.update(earlierMeal.id, {
+    childId: child.id,
+    kind: "meal",
+    occurredAt: first.occurredAt,
+    occurredTz: earlierMeal.occurredTz,
+  });
+  assert.equal(
+    db.entries.latestForChildKind(child.id, "meal")?.id,
+    earlierMeal.id
+  );
+  assert.deepEqual(db.entries.contentFor(earlierMeal.id), { amount: 3 });
+  driver.closeSync();
+});
+
 test("transaction rolls back multiple writes, including a nested scrub", () => {
   const driver = openTestDriver();
   const db = openDatabase(driver);

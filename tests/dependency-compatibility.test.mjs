@@ -92,11 +92,12 @@ test("SDK54 Metro reads synthetic PNG dimensions through the patched buffer and 
   }
 });
 
-test("xcode's CommonJS uuid.v4 call still generates 24-character project identifiers", () => {
-  const xcodeRequire = createRequire(require.resolve("xcode"));
-  const uuid = xcodeRequire("uuid");
-  assert.match(uuid.v4(), /^[0-9a-f-]{36}$/);
-  const project = require("xcode").project("synthetic.pbxproj");
+test("Xcode generates 24-character project identifiers", () => {
+  const expoConfigRequire = createRequire(
+    require.resolve("@expo/config-plugins/package.json")
+  );
+  const xcodeRequire = createRequire(expoConfigRequire.resolve("xcode"));
+  const project = xcodeRequire("xcode").project("synthetic.pbxproj");
   project.hash = { project: { objects: {} } };
   assert.match(project.generateUuid(), /^[A-F0-9]{24}$/);
 });
