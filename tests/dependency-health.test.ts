@@ -41,7 +41,7 @@ function api({
     calls,
     get: async (url: string, init?: RequestInit) => {
       calls.push(url);
-      if (url.includes("registry.npmjs.org"))
+      if (new URL(url).hostname === "registry.npmjs.org")
         return {
           name: "example",
           versions: published
@@ -52,7 +52,7 @@ function api({
           "dist-tags": { latest: version },
           time: { [version]: released },
         };
-      if (url.includes("api.npmjs.org"))
+      if (new URL(url).hostname === "api.npmjs.org")
         return { package: "example", downloads };
       assert.deepEqual(JSON.parse(init!.body as string), {
         package: { ecosystem: "npm", name: "example" },
@@ -222,7 +222,9 @@ test("fails closed on network errors or malformed advisory data", async () => {
     checkHealth(
       candidate,
       async (url, init) =>
-        url.includes("osv.dev") ? { vulns: "invalid" } : source.get(url, init),
+        new URL(url).hostname === "api.osv.dev"
+          ? { vulns: "invalid" }
+          : source.get(url, init),
       now
     ),
     /invalid vulnerability/
