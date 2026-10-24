@@ -6,6 +6,7 @@ export {
   MEAL_TEXTURES,
   mealDefaultsFrom,
   mealNameSuggestionsFrom,
+  normalizeMealContent,
   sortMealsByRecency,
 } from "./lib/meals.ts";
 export type {

@@ -1,8 +1,10 @@
 /** Home — the "Now" ledger with the Child's persistent Sleep timer control. */
 import { useEffect, useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import type { RoutineEntry } from "@keepsake/routine";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { MealForm } from "~/components/MealForm";
 import { PillChip } from "~/components/PillChip";
+import { SleepSessionEditor } from "~/components/SleepSessionEditor";
 import {
   Hairline,
   MetaLabel,
@@ -24,6 +26,9 @@ export default function HomeScreen() {
     startSleepTimer,
     cancelWake,
     stopSleepTimer,
+    hasSleepSessionOverlap,
+    updateSleepSession,
+    mealsForChild,
     mealDefaultsForChild,
     mealNameSuggestions,
     createMeal,
@@ -33,13 +38,28 @@ export default function HomeScreen() {
   const [now, setNow] = useState(Date.now);
   const [wakePromptVisible, setWakePromptVisible] = useState(false);
   const [sleepError, setSleepError] = useState<string | null>(null);
+  const [lastSleepSession, setLastSleepSession] = useState<Extract<
+    RoutineEntry,
+    { kind: "sleep_session" }
+  > | null>(null);
+  const [sleepSessionOverlaps, setSleepSessionOverlaps] = useState(false);
+  const [sleepEditorVisible, setSleepEditorVisible] = useState(false);
   const [mealFormVisible, setMealFormVisible] = useState(false);
+  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+  const meals = child ? mealsForChild(child.id) : [];
+  const selectedMeal = meals.find((meal) => meal.id === selectedMealId) ?? null;
 
   useEffect(() => {
     if (!timer) return;
     const interval = setInterval(() => setNow(Date.now()), 1_000);
     return () => clearInterval(interval);
   }, [timer?.startedAt]);
+
+  useEffect(() => {
+    if (lastSleepSession) {
+      setSleepSessionOverlaps(hasSleepSessionOverlap(lastSleepSession.id));
+    }
+  }, [hasSleepSessionOverlap, lastSleepSession]);
 
   const start = () => {
     try {
@@ -59,7 +79,12 @@ export default function HomeScreen() {
 
   const stop = (quality: (typeof SLEEP_QUALITIES)[number]) => {
     try {
-      stopSleepTimer(quality);
+      const entry = stopSleepTimer(quality);
+      if (entry.kind === "sleep_session") {
+        setLastSleepSession(entry);
+        setSleepSessionOverlaps(hasSleepSessionOverlap(entry.id));
+        setSleepEditorVisible(false);
+      }
       setWakePromptVisible(false);
       setSleepError(null);
     } catch (error) {
@@ -129,7 +154,7 @@ export default function HomeScreen() {
             style={{
               color: theme.colors.paper,
               fontSize: theme.typography.body.fontSize,
-              fontWeight: "600",
+              fontWeight: String(theme.typography.meta.fontWeight) as "600",
             }}
           >
             {timer ? "Wake" : "Start sleep"}
@@ -138,19 +163,65 @@ export default function HomeScreen() {
         {sleepError && !wakePromptVisible ? <Body>{sleepError}</Body> : null}
       </View>
       <Hairline />
+      {lastSleepSession ? (
+        <View
+          style={{
+            backgroundColor: theme.colors.sheet,
+            padding: theme.space.page,
+            gap: theme.space.fieldGap,
+          }}
+        >
+          {sleepEditorVisible ? (
+            <SleepSessionEditor
+              entry={lastSleepSession}
+              onCancel={() => setSleepEditorVisible(false)}
+              onSave={(input) => {
+                const updated = updateSleepSession(lastSleepSession.id, input);
+                if (!updated || updated.kind !== "sleep_session") {
+                  throw new Error("This Sleep Session is no longer available.");
+                }
+                setLastSleepSession(updated);
+                setSleepSessionOverlaps(hasSleepSessionOverlap(updated.id));
+                setSleepEditorVisible(false);
+              }}
+            />
+          ) : (
+            <>
+              <Body>Sleep Session saved</Body>
+              {sleepSessionOverlaps ? (
+                <Body>
+                  This Sleep Session overlaps another logged Sleep Session.
+                </Body>
+              ) : null}
+              <PillChip
+                label="Correct Sleep times"
+                selected={false}
+                onPress={() => setSleepEditorVisible(true)}
+              />
+            </>
+          )}
+        </View>
+      ) : null}
+      <Hairline />
       {mealFormVisible && child ? (
         <MealForm
           childId={child.id}
+          initialMeal={selectedMeal}
           defaults={mealDefaultsForChild(child.id)}
           suggestionsFor={(query) => mealNameSuggestions(child.id, query)}
-          onCancel={() => setMealFormVisible(false)}
+          onCancel={() => {
+            setMealFormVisible(false);
+            setSelectedMealId(null);
+          }}
           onSave={(input, id) => {
             if (id) {
               if (!updateMeal(id, input)) {
                 throw new Error("This Meal is no longer available.");
               }
+              setSelectedMealId(id);
             } else {
-              createMeal(input);
+              const meal = createMeal(input);
+              setSelectedMealId(meal.id);
             }
             setMealFormVisible(false);
           }}
@@ -160,8 +231,28 @@ export default function HomeScreen() {
           <PillChip
             label="Log a meal"
             selected
-            onPress={() => setMealFormVisible(true)}
+            onPress={() => {
+              setSelectedMealId(null);
+              setMealFormVisible(true);
+            }}
           />
+          {meals.length > 0 ? <MetaLabel>Recent Meals</MetaLabel> : null}
+          {meals.slice(0, 5).map((meal) => (
+            <Pressable
+              key={meal.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${meal.content.name || "Meal"}`}
+              onPress={() => {
+                setSelectedMealId(meal.id);
+                setMealFormVisible(true);
+              }}
+              style={{ paddingVertical: theme.space.fieldGap }}
+            >
+              <Body>
+                {meal.content.name || "Meal"} · {meal.content.amount}/5
+              </Body>
+            </Pressable>
+          ))}
           <Body dim>Other quick logging lands here next.</Body>
         </View>
       )}
@@ -174,11 +265,17 @@ export default function HomeScreen() {
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.32)",
             justifyContent: "center",
             padding: theme.space.page,
           }}
         >
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: theme.colors.ink, opacity: 0.32 },
+            ]}
+          />
           <View
             accessibilityViewIsModal
             style={{

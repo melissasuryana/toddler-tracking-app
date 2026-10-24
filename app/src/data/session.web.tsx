@@ -7,6 +7,7 @@ import { uuidv7 } from "@keepsake/local-data";
 import {
   mealDefaultsFrom,
   mealNameSuggestionsFrom,
+  normalizeMealContent,
   sortMealsByRecency,
   type MealEntry,
   type MealEntryInput,
@@ -25,7 +26,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { DataSession } from "./session.types";
+import type { DataSession, SleepSessionEditInput } from "./session.types";
 
 const DataContext = createContext<DataSession | null>(null);
 
@@ -33,6 +34,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [child, setChild] = useState<Child | null>(null);
   const [unit, setUnit] = useState<TemperatureUnit | null>(null);
   const [sleepTimer, setSleepTimer] = useState<RunningSleepTimer | null>(null);
+  const [sleepSessions, setSleepSessions] = useState<
+    Extract<RoutineEntry, { kind: "sleep_session" }>[]
+  >([]);
   const [meals, setMeals] = useState<MealEntry[]>([]);
 
   const session = useMemo<DataSession>(
@@ -72,7 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (endedAt <= sleepTimer.startedAt) {
           throw new Error("Sleep must end after its start time.");
         }
-        const entry: RoutineEntry = {
+        const entry: Extract<RoutineEntry, { kind: "sleep_session" }> = {
           id: uuidv7(),
           childId: child.id,
           kind: "sleep_session",
@@ -85,7 +89,40 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           content: { startAt: sleepTimer.startedAt, quality },
         };
         setSleepTimer(null);
+        setSleepSessions((current) => [...current, entry]);
         return entry;
+      },
+      hasSleepSessionOverlap: (id: string) => {
+        const target = sleepSessions.find((entry) => entry.id === id);
+        return (
+          target !== undefined &&
+          sleepSessions.some(
+            (entry) =>
+              entry.id !== target.id &&
+              entry.childId === target.childId &&
+              entry.content.startAt < target.occurredAt &&
+              entry.occurredAt > target.content.startAt
+          )
+        );
+      },
+      updateSleepSession: (id: string, input: SleepSessionEditInput) => {
+        const existing = sleepSessions.find((entry) => entry.id === id);
+        if (!existing || input.endedAt <= input.startAt) return null;
+        const factors = input.factors ?? existing.content.factors;
+        const updated: Extract<RoutineEntry, { kind: "sleep_session" }> = {
+          ...existing,
+          occurredAt: input.endedAt,
+          updatedAt: Math.max(Date.now(), existing.updatedAt + 1),
+          content: {
+            startAt: input.startAt,
+            quality: input.quality,
+            ...(factors ? { factors } : {}),
+          },
+        };
+        setSleepSessions((current) =>
+          current.map((entry) => (entry.id === id ? updated : entry))
+        );
+        return updated;
       },
       mealsForChild: (childId: string) =>
         sortMealsByRecency(meals.filter((meal) => meal.childId === childId)),
@@ -117,7 +154,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return updated;
       },
     }),
-    [child, meals, sleepTimer, unit]
+    [child, meals, sleepSessions, sleepTimer, unit]
   );
 
   return (
@@ -135,8 +172,6 @@ export function useData(): DataSession {
 
 function toWebMeal(input: MealEntryInput, existing?: MealEntry): MealEntry {
   const now = Date.now();
-  const name = input.name?.trim();
-  const note = input.note?.trim();
   return {
     id: existing?.id ?? uuidv7(),
     childId: input.childId,
@@ -147,14 +182,6 @@ function toWebMeal(input: MealEntryInput, existing?: MealEntry): MealEntry {
     updatedAt: Math.max(now, (existing?.updatedAt ?? 0) + 1),
     deletedAt: null,
     isSeed: false,
-    content: {
-      amount: input.amount ?? 4,
-      ...(name ? { name } : {}),
-      ...(note ? { note } : {}),
-      categories: [...new Set(input.categories ?? [])],
-      allergenTags: [...new Set(input.allergenTags ?? [])],
-      textures: [...new Set(input.textures ?? [])],
-      feedingStyles: [...new Set(input.feedingStyles ?? [])],
-    },
+    content: normalizeMealContent(input),
   };
 }

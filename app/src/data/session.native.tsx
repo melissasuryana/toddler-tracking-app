@@ -72,6 +72,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setSleepTimerVersion((version) => version + 1);
         return entry;
       },
+      hasSleepSessionOverlap: (id) => {
+        const entry = routineEntries.get(id);
+        return (
+          entry?.kind === "sleep_session" &&
+          routineEntries.hasSleepSessionOverlap(
+            entry.childId,
+            entry.content.startAt,
+            entry.occurredAt,
+            entry.id
+          )
+        );
+      },
+      updateSleepSession: (id, input) => {
+        const existing = routineEntries.get(id);
+        if (!existing || existing.kind !== "sleep_session") return null;
+        return routineEntries.update(id, {
+          childId: existing.childId,
+          kind: "sleep_session",
+          startAt: input.startAt,
+          occurredAt: input.endedAt,
+          occurredTz: existing.occurredTz,
+          quality: input.quality,
+          factors: input.factors ?? existing.content.factors,
+        });
+      },
       mealsForChild: (childId: string) => {
         void mealVersion;
         return mealEntries.listForChild(childId);

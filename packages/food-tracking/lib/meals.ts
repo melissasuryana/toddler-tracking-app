@@ -84,7 +84,7 @@ export class MealEntries {
   }
 
   create(input: MealEntryInput): MealEntry {
-    const content = validateAndNormalize(input);
+    const content = normalizeMealContent(input);
     const entry = this.database.transaction((transaction) => {
       const created = transaction.entries.create({
         childId: input.childId,
@@ -125,7 +125,7 @@ export class MealEntries {
   }
 
   update(id: string, input: MealEntryInput): MealEntry | null {
-    const content = validateAndNormalize(input);
+    const content = normalizeMealContent(input);
     const updated = this.database.transaction((transaction) => {
       const existing = transaction.entries.get(id);
       if (!existing || existing.kind !== "meal") return null;
@@ -189,7 +189,7 @@ export function mealNameSuggestionsFrom(
   return suggestions;
 }
 
-function validateAndNormalize(input: MealEntryInput): MealContent {
+export function normalizeMealContent(input: MealEntryInput): MealContent {
   const amount = input.amount ?? 4;
   if (!Number.isInteger(amount) || amount < 1 || amount > 5) {
     throw new MealValidationError("Amount eaten must be from 1 to 5.");

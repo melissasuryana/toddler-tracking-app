@@ -3,6 +3,7 @@ import {
   FOOD_CATEGORIES,
   MEAL_FEEDING_STYLES,
   MEAL_TEXTURES,
+  type MealContent,
   type MealDefaults,
   type MealEntry,
   type MealEntryInput,
@@ -20,20 +21,26 @@ export interface MealFormProps {
   readonly childId: string;
   readonly initialMeal?: MealEntry | null;
   readonly defaults: MealDefaults;
-  readonly preservePrefilledFields?: readonly MealSuggestionField[];
+  readonly prefilled?: MealPrefill;
+  readonly prefilledTimestamp?: {
+    readonly occurredAt: number;
+    readonly occurredTz: string;
+  };
   readonly suggestionsFor: (query: string) => readonly MealNameSuggestion[];
   readonly onSave: (input: MealEntryInput, id?: string) => void;
   readonly onCancel?: () => void;
 }
 
-export type MealSuggestionField =
+type MealSuggestionField =
   "categories" | "allergenTags" | "textures" | "feedingStyles";
+export type MealPrefill = Partial<Pick<MealContent, MealSuggestionField>>;
 
 export function MealForm({
   childId,
   initialMeal = null,
   defaults,
-  preservePrefilledFields = [],
+  prefilled = {},
+  prefilledTimestamp,
   suggestionsFor,
   onSave,
   onCancel,
@@ -41,32 +48,43 @@ export function MealForm({
   const theme = useTheme();
   const timestamp = initialMeal
     ? localDateTime(initialMeal.occurredAt, initialMeal.occurredTz)
-    : localDateTime(Date.now(), currentTimezone());
+    : prefilledTimestamp
+      ? localDateTime(
+          prefilledTimestamp.occurredAt,
+          prefilledTimestamp.occurredTz
+        )
+      : localDateTime(Date.now(), currentTimezone());
   const [occurredOn, setOccurredOn] = useState(timestamp.date);
   const [occurredAt, setOccurredAt] = useState(timestamp.time);
   const [utcOffsetMinutes, setUtcOffsetMinutes] = useState<
     number | undefined
   >();
   const [name, setName] = useState(initialMeal?.content.name ?? "");
+  const [nameFieldFocused, setNameFieldFocused] = useState(false);
   const [note, setNote] = useState(initialMeal?.content.note ?? "");
   const [amount, setAmount] = useState(initialMeal?.content.amount ?? 4);
   const [categories, setCategories] = useState<readonly string[]>(
-    initialMeal?.content.categories ?? []
+    initialMeal?.content.categories ?? prefilled.categories ?? []
   );
   const [allergenTags, setAllergenTags] = useState<readonly string[]>(
-    initialMeal?.content.allergenTags ?? []
+    initialMeal?.content.allergenTags ?? prefilled.allergenTags ?? []
   );
   const [textures, setTextures] = useState<readonly string[]>(
-    initialMeal?.content.textures ?? defaults.textures
+    initialMeal?.content.textures ?? prefilled.textures ?? defaults.textures
   );
   const [feedingStyles, setFeedingStyles] = useState<readonly string[]>(
-    initialMeal?.content.feedingStyles ?? defaults.feedingStyles
+    initialMeal?.content.feedingStyles ??
+      prefilled.feedingStyles ??
+      defaults.feedingStyles
   );
   const [edited, setEdited] = useState<ReadonlySet<MealSuggestionField>>(
-    () => new Set(preservePrefilledFields)
+    () => new Set(Object.keys(prefilled) as MealSuggestionField[])
   );
   const [error, setError] = useState<string | null>(null);
-  const timezone = initialMeal?.occurredTz ?? currentTimezone();
+  const timezone =
+    initialMeal?.occurredTz ??
+    prefilledTimestamp?.occurredTz ??
+    currentTimezone();
   const suggestions = suggestionsFor(name);
   const localTimestamp = `${occurredOn}T${occurredAt}`;
   const timestampOptions = useMemo(
@@ -90,6 +108,7 @@ export function MealForm({
 
   function selectSuggestion(suggestion: MealNameSuggestion) {
     setName(suggestion.name);
+    setNameFieldFocused(false);
     if (!edited.has("categories")) setCategories(suggestion.categories);
     if (!edited.has("allergenTags")) setAllergenTags(suggestion.allergenTags);
     if (!edited.has("textures")) setTextures(suggestion.textures);
@@ -142,21 +161,25 @@ export function MealForm({
         accessibilityLabel="Meal name"
         maxLength={100}
         onChangeText={setName}
+        onFocus={() => setNameFieldFocused(true)}
+        onBlur={() => setNameFieldFocused(false)}
         placeholder="Optional dish name"
         placeholderTextColor={theme.colors.meta}
         style={inputStyle(theme)}
         value={name}
       />
-      {suggestions.map((suggestion) => (
-        <Pressable
-          accessibilityRole="button"
-          key={`${suggestion.name}:${suggestion.categories.join(",")}`}
-          onPress={() => selectSuggestion(suggestion)}
-          style={{ paddingVertical: theme.space.fieldGap }}
-        >
-          <Body>{suggestion.name}</Body>
-        </Pressable>
-      ))}
+      {nameFieldFocused
+        ? suggestions.map((suggestion) => (
+            <Pressable
+              accessibilityRole="button"
+              key={`${suggestion.name}:${suggestion.categories.join(",")}`}
+              onPressIn={() => selectSuggestion(suggestion)}
+              style={{ paddingVertical: theme.space.fieldGap }}
+            >
+              <Body>{suggestion.name}</Body>
+            </Pressable>
+          ))
+        : null}
 
       <FieldLabel label="Amount eaten" />
       <View

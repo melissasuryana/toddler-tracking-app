@@ -17,6 +17,13 @@ import type {
 } from "@keepsake/food-tracking";
 import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
 
+export interface SleepSessionEditInput {
+  readonly startAt: number;
+  readonly endedAt: number;
+  readonly quality: SleepQuality;
+  readonly factors?: readonly string[];
+}
+
 export interface DataSession {
   /** Null when no Child exists yet — the onboarding gate's question. */
   readonly child: Child | null;
@@ -27,6 +34,11 @@ export interface DataSession {
   readonly startSleepTimer: () => void;
   readonly cancelWake: () => void;
   readonly stopSleepTimer: (quality: SleepQuality) => RoutineEntry;
+  readonly hasSleepSessionOverlap: (id: string) => boolean;
+  readonly updateSleepSession: (
+    id: string,
+    input: SleepSessionEditInput
+  ) => RoutineEntry | null;
   readonly mealsForChild: (childId: string) => readonly MealEntry[];
   readonly mealDefaultsForChild: (childId: string) => MealDefaults;
   readonly mealNameSuggestions: (
