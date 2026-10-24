@@ -81,6 +81,9 @@ Git's `--no-verify` bypasses local hooks; CI provides an independent check.
 The Security workflow runs on pull requests, pushes, weekly, and manually:
 
 - Gitleaks scans full Git history, without a blanket baseline or allowlist.
+  `.gitleaksignore` excludes only the exact historical fingerprint of GitHub
+  homepage analytics metadata in the deleted, incorrectly downloaded
+  `cloudflared.deb` HTML file; new findings in that path are still scanned.
 - npm audits the committed lockfile without installing dependencies or running
   package lifecycle scripts.
 - CodeQL analyzes JavaScript/TypeScript with the extended security query suite.
