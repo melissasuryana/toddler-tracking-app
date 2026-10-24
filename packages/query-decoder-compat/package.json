@@ -1,0 +1,9 @@
+{
+  "name": "@keepsake/query-decoder-compat",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "dependencies": {
+    "upstream-uri-decoder": "npm:decode-uri-component@0.5.1"
+  }
+}

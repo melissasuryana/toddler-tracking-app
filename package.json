@@ -15,10 +15,10 @@
   "scripts": {
     "prepare": "husky",
     "check:secrets": "gitleaks git --pre-commit --staged --redact --no-banner",
-    "check:security:dependencies": "npm audit --package-lock-only --audit-level=low --include=dev --include=optional --include=peer",
+    "check:security:dependencies": "node scripts/audit-dependencies.mjs",
     "check:dependencies": "node scripts/check-dependencies.ts",
     "lint:boundaries": "depcruise packages app/src",
-    "test": "node --test packages/*/tests/*.test.ts tests/*.test.ts",
+    "test": "node --test packages/*/tests/*.test.ts tests/*.test.ts tests/*.test.mjs",
     "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
     "start": "npm run start --workspace app"
   },
@@ -28,5 +28,17 @@
     "react-dom": "19.1.0",
     "ui-ux-pro-max-cli": "^2.15.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "query-string": {
+      "decode-uri-component": "file:./packages/query-decoder-compat"
+    },
+    "postcss": "8.5.31",
+    "xcode": {
+      "uuid": "11.1.1"
+    },
+    "metro": {
+      "image-size": "file:./packages/metro-image-size-compat"
+    }
+  }
 }

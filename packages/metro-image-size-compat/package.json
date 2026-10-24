@@ -1,0 +1,9 @@
+{
+  "name": "@keepsake/metro-image-size-compat",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "dependencies": {
+    "upstream-image-size": "npm:image-size@2.0.4"
+  }
+}

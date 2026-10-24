@@ -74,7 +74,8 @@ redacted output, then `npm run check:security:dependencies` against the full
 lockfile, including unchanged, transitive, and development dependencies. Stage or
 stash all manifest and lockfile edits first so the audit matches the index.
 Missing Gitleaks, audit service errors, and advisories of any severity block
-commits. The existing changed-dependency health screen still runs afterward.
+commits, except for the narrowly scoped, expiring exception below. The existing
+changed-dependency health screen still runs afterward.
 Jev remains an optional supplementary check, not the security enforcement layer.
 Git's `--no-verify` bypasses local hooks; CI provides an independent check.
 
@@ -85,12 +86,62 @@ The Security workflow runs on pull requests, pushes, weekly, and manually:
   homepage analytics metadata in the deleted, incorrectly downloaded
   `cloudflared.deb` HTML file; new findings in that path are still scanned.
 - npm audits the committed lockfile without installing dependencies or running
-  package lifecycle scripts.
+  package lifecycle scripts. CI and local hooks both use
+  `npm run check:security:dependencies`, a built-in-Node audit wrapper that
+  includes development, optional, and peer dependencies and fails closed on
+  subprocess errors, invalid reports, and unknown or cyclic vulnerability edges.
 - CodeQL analyzes JavaScript/TypeScript with the extended security query suite.
 
 Dependabot checks npm and GitHub Actions updates weekly. Existing vulnerabilities
 or historical secrets can make the initial checks fail; remediate them rather
 than lowering the threshold. Rotate exposed credentials before removing them.
+
+### Temporary node-forge advisory exception
+
+**Owner:** repository maintainers. **Approved scope:** the maintainer-approved
+temporary exclusion of
+[GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
+only, expiring **2026-11-23 at 00:00 UTC**. As checked on 2026-10-24, upstream
+has not published a patched release; Expo SDK 54's CLI and code-signing
+certificates still require node-forge. Upgrading Expo does not eliminate it.
+RSA PKCS#1 v1.5 signature verification remains vulnerable; this is risk
+acceptance, not remediation. Do not rely on this version to verify untrusted
+signatures or certificate material.
+
+`scripts/audit-dependencies.mjs` matches the exact advisory URL, package and
+dependency identity, advisory affected range `<=1.4.0`, and only the currently
+locked **node-forge 1.4.0** npm artifact (including its SHA-512 integrity).
+Older versions, aliases to other artifacts, new node-forge advisories, and
+advisories in any other package still block. An Expo ancestor is accepted only
+when every advisory reachable through its `via` graph is this exact exception;
+there is no package-wide or Expo-wide suppression. Every accepted run prints a
+warning with the advisory, remaining risk, and expiration date. The exception
+blocks at expiration while the advisory is present.
+
+Maintainers must monitor the linked advisory and upstream releases, install a
+patched version as soon as available, and remove the exception and this policy
+in the same change. An unused exception warns that it must be removed; extending
+its expiry or changing its scope requires a fresh maintainer review and approval.
+
+Other advisories are remediated with pinned upstream **PostCSS 8.5.31** and
+**uuid 11.1.1** (the last CommonJS major, scoped to xcode). Two narrow workspace
+adapters preserve existing consumer APIs without copying upstream algorithms:
+
+- `@keepsake/query-decoder-compat` exposes patched **decode-uri-component 0.5.1**
+  as the callable CommonJS export expected by query-string 7. This retains Expo
+  Router's existing parsing and serialization API. Its upstream npm alias
+  remains visible to the dependency audit. Node must support synchronous
+  `require(ESM)` (Node 20.19+, already required by this Expo/React Native line).
+- `@keepsake/metro-image-size-compat` delegates buffers to patched
+  **image-size 2.0.4** and reads file-path inputs synchronously for SDK 54 Metro.
+  It is scoped only to Metro's image-size dependency. Metro 0.83.8's published
+  backport was tested but its root-ancestor traversal regression breaks this
+  workspace's Expo resolver, so the compatible Metro 0.83.3 is retained.
+
+Remove each adapter when its consumer supports the patched upstream API.
+Compatibility tests cover query decoding, Metro buffer and file-path image
+dimensions, xcode UUID generation, and PostCSS. Expo web export validates the
+combined workspace resolver and bundler.
 
 Maintainers must enable GitHub Code Security for private repositories where
 required, and select advanced CodeQL setup rather than duplicate default setup.
