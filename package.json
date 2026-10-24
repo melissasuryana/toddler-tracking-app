@@ -14,6 +14,8 @@
   },
   "scripts": {
     "prepare": "husky",
+    "check:secrets": "gitleaks git --pre-commit --staged --redact --no-banner",
+    "check:security:dependencies": "npm audit --package-lock-only --audit-level=low --include=dev --include=optional --include=peer",
     "check:dependencies": "node scripts/check-dependencies.ts",
     "lint:boundaries": "depcruise packages app/src",
     "test": "node --test packages/*/tests/*.test.ts tests/*.test.ts",

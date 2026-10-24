@@ -62,3 +62,54 @@ A stable, low-download, or private package may require an exception. Record
 the failed signal, evidence, rationale, and maintainer approval in the review
 before deliberately using Git's `--no-verify` escape hatch (which bypasses all
 hooks). There is no automatic offline pass or persistent allowlist.
+
+## Security checks
+
+Install [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1)
+and put `gitleaks` on your PATH before committing. Verify the downloaded archive
+against the release checksums. Run `npm install` to activate Husky hooks.
+
+Pre-commit runs `npm run check:secrets` against the complete staged diff with
+redacted output, then `npm run check:security:dependencies` against the full
+lockfile, including unchanged, transitive, and development dependencies. Stage or
+stash all manifest and lockfile edits first so the audit matches the index.
+Missing Gitleaks, audit service errors, and advisories of any severity block
+commits. The existing changed-dependency health screen still runs afterward.
+Jev remains an optional supplementary check, not the security enforcement layer.
+Git's `--no-verify` bypasses local hooks; CI provides an independent check.
+
+The Security workflow runs on pull requests, pushes, weekly, and manually:
+
+- Gitleaks scans full Git history, without a blanket baseline or allowlist.
+- npm audits the committed lockfile without installing dependencies or running
+  package lifecycle scripts.
+- CodeQL analyzes JavaScript/TypeScript with the extended security query suite.
+
+Dependabot checks npm and GitHub Actions updates weekly. Existing vulnerabilities
+or historical secrets can make the initial checks fail; remediate them rather
+than lowering the threshold. Rotate exposed credentials before removing them.
+
+Maintainers must enable GitHub Code Security for private repositories where
+required, and select advanced CodeQL setup rather than duplicate default setup.
+After the first workflow run, require the `Secrets`, `Dependencies`, and `CodeQL`
+checks in the branch ruleset. Also enable code-scanning merge protection for
+CodeQL alerts: a successful analysis job means scanning completed, not that it
+found no vulnerabilities. Enable GitHub secret scanning and push protection
+where the repository's plan supports them. These settings are not enabled by
+committing workflow files.
+
+### Application-security review requirements
+
+For every code review, assess the changed code for:
+
+- Input validation, injection, unsafe file/path handling, and untrusted URLs.
+- Authentication and authorization at any exposed trust boundaries.
+- Child-data privacy: storage, export/deletion, logs, analytics, and network
+  disclosure; keep credentials and child health data out of agent/AI requests.
+- Secret exposure, cryptographic misuse, and insecure platform configuration.
+- Dependency advisories, including transitive lockfile changes, and available
+  Security workflow results and CodeQL alerts.
+
+Report concrete attack paths and impact with severity, file/line, and remediation.
+Mark each area checked or not applicable, and disclose unavailable evidence or
+checks not run. Use synthetic data for verification.
