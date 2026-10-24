@@ -160,6 +160,48 @@ test("scrub cascades package-owned associations and leaves only the tombstone", 
   driver.closeSync();
 });
 
+test("Entry updates preserve identity and creation time while validating timestamps", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  const child = db.children.create(childInput());
+  const entry = db.entries.create(entryInput(child.id));
+  const updated = db.entries.update(entry.id, {
+    childId: child.id,
+    kind: "feed",
+    occurredAt: entry.occurredAt - 1_000,
+    occurredTz: "America/Los_Angeles",
+  });
+
+  assert.ok(updated);
+  assert.equal(updated.id, entry.id);
+  assert.equal(updated.childId, entry.childId);
+  assert.equal(updated.kind, entry.kind);
+  assert.equal(updated.createdAt, entry.createdAt);
+  assert.equal(updated.occurredAt, entry.occurredAt - 1_000);
+  assert.equal(updated.occurredTz, "America/Los_Angeles");
+  assert.ok(updated.updatedAt > entry.updatedAt);
+  assert.throws(
+    () =>
+      db.entries.update(entry.id, {
+        childId: child.id,
+        kind: "growth",
+        occurredAt: entry.occurredAt,
+        occurredTz: entry.occurredTz,
+      }),
+    EntryValidationError
+  );
+  assert.equal(
+    db.entries.update("missing", {
+      childId: child.id,
+      kind: "feed",
+      occurredAt: entry.occurredAt,
+      occurredTz: entry.occurredTz,
+    }),
+    null
+  );
+  driver.closeSync();
+});
+
 test("transaction rolls back multiple writes, including a nested scrub", () => {
   const driver = openTestDriver();
   const db = openDatabase(driver);

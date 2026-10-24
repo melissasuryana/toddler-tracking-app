@@ -120,6 +120,60 @@ export class EntryRepository {
     return row ? toEntry(row) : null;
   }
 
+  update(id: string, input: Omit<EntryInput, "id" | "isSeed">): Entry | null {
+    return this.atomic(() => {
+      const existing = this.get(id);
+      if (!existing) return null;
+      if (
+        input.childId !== existing.childId ||
+        input.kind !== existing.kind ||
+        input.occurredTz !== existing.occurredTz
+      ) {
+        throw new EntryValidationError([
+          {
+            field:
+              input.childId !== existing.childId
+                ? "childId"
+                : input.kind !== existing.kind
+                  ? "kind"
+                  : "occurredTz",
+            message:
+              "Entry identity, kind, and recorded timezone cannot be changed.",
+          },
+        ]);
+      }
+      const result = validateEntryInput({
+        ...input,
+        id,
+        isSeed: existing.isSeed,
+      });
+      if (!result.ok) throw new EntryValidationError(result.errors);
+
+      const value = result.value;
+      const updatedAt = Math.max(Date.now(), existing.updatedAt + 1);
+      this.driver
+        .prepareSync(
+          "INSERT INTO entry_timezones (name) VALUES (?) ON CONFLICT(name) DO NOTHING"
+        )
+        .run(value.occurredTz);
+      this.orm
+        .update(entries)
+        .set({
+          occurredAt: value.occurredAt,
+          occurredTz: value.occurredTz,
+          updatedAt,
+        })
+        .where(and(eq(entries.id, id), isNull(entries.deletedAt)))
+        .run();
+      return {
+        ...existing,
+        occurredAt: value.occurredAt,
+        occurredTz: value.occurredTz,
+        updatedAt,
+      };
+    });
+  }
+
   listForChild(childId: string): Entry[] {
     return this.orm
       .select()

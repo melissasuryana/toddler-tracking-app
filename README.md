@@ -11,6 +11,7 @@ npm workspaces: `app/` is the Expo app (expo-router, Keepsake theme), and
 
 - `packages/design-system` — Keepsake (Direction D) tokens + stroke icons.
 - `packages/food-tracking` — Food catalogue, deterministic status, and watch rules.
+- `packages/routine` — Routine Entry validation, persistence, and timestamp rules.
 - `packages/local-data` — Child + preferences persistence on expo-sqlite +
   Drizzle, behind an injectable driver boundary (tests run on `node:sqlite`).
 
