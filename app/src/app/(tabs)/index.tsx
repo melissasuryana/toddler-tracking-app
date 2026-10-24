@@ -1,6 +1,6 @@
 /** Home — the "Now" ledger with the Child's persistent Sleep timer control. */
 import { useEffect, useState } from "react";
-import type { RoutineEntry } from "@keepsake/routine";
+import { SLEEP_QUALITIES, type RoutineEntry } from "@keepsake/routine";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { MealForm } from "~/components/MealForm";
 import { PillChip } from "~/components/PillChip";
@@ -15,8 +15,6 @@ import {
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
 import { nativeFonts } from "~/theme/tokens";
-
-const SLEEP_QUALITIES = ["poor", "okay", "great"] as const;
 
 export default function HomeScreen() {
   const theme = useTheme();

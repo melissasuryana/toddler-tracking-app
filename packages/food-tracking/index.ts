@@ -4,6 +4,7 @@ export {
   MealValidationError,
   MEAL_FEEDING_STYLES,
   MEAL_TEXTURES,
+  applyMealSuggestion,
   mealDefaultsFrom,
   mealNameSuggestionsFrom,
   normalizeMealContent,
@@ -21,6 +22,8 @@ export type {
   MealEntryInput,
   MealFeedingStyle,
   MealNameSuggestion,
+  MealSuggestionField,
+  MealSuggestionFields,
   MealTexture,
 } from "./lib/meals.ts";
 export {

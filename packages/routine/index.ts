@@ -2,6 +2,7 @@ export {
   RoutineEntries,
   RoutineValidationError,
   SleepTimerNotRunningError,
+  SLEEP_QUALITIES,
   SLEEP_QUALITY_FACTOR_SEEDS,
   type DiaperChangeContent,
   type FeedContent,

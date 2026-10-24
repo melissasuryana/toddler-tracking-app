@@ -3,11 +3,13 @@ import {
   FOOD_CATEGORIES,
   MEAL_FEEDING_STYLES,
   MEAL_TEXTURES,
-  type MealContent,
+  applyMealSuggestion,
   type MealDefaults,
   type MealEntry,
   type MealEntryInput,
   type MealNameSuggestion,
+  type MealSuggestionField,
+  type MealSuggestionFields,
 } from "@keepsake/food-tracking";
 import { resolveLocalTimestamp } from "@keepsake/routine";
 import { useMemo, useState } from "react";
@@ -31,9 +33,7 @@ export interface MealFormProps {
   readonly onCancel?: () => void;
 }
 
-type MealSuggestionField =
-  "categories" | "allergenTags" | "textures" | "feedingStyles";
-export type MealPrefill = Partial<Pick<MealContent, MealSuggestionField>>;
+export type MealPrefill = Partial<MealSuggestionFields>;
 
 export function MealForm({
   childId,
@@ -63,16 +63,18 @@ export function MealForm({
   const [nameFieldFocused, setNameFieldFocused] = useState(false);
   const [note, setNote] = useState(initialMeal?.content.note ?? "");
   const [amount, setAmount] = useState(initialMeal?.content.amount ?? 4);
-  const [categories, setCategories] = useState<readonly string[]>(
-    initialMeal?.content.categories ?? prefilled.categories ?? []
-  );
-  const [allergenTags, setAllergenTags] = useState<readonly string[]>(
-    initialMeal?.content.allergenTags ?? prefilled.allergenTags ?? []
-  );
-  const [textures, setTextures] = useState<readonly string[]>(
+  const [categories, setCategories] = useState<
+    MealSuggestionFields["categories"]
+  >(initialMeal?.content.categories ?? prefilled.categories ?? []);
+  const [allergenTags, setAllergenTags] = useState<
+    MealSuggestionFields["allergenTags"]
+  >(initialMeal?.content.allergenTags ?? prefilled.allergenTags ?? []);
+  const [textures, setTextures] = useState<MealSuggestionFields["textures"]>(
     initialMeal?.content.textures ?? prefilled.textures ?? defaults.textures
   );
-  const [feedingStyles, setFeedingStyles] = useState<readonly string[]>(
+  const [feedingStyles, setFeedingStyles] = useState<
+    MealSuggestionFields["feedingStyles"]
+  >(
     initialMeal?.content.feedingStyles ??
       prefilled.feedingStyles ??
       defaults.feedingStyles
@@ -92,11 +94,11 @@ export function MealForm({
     [localTimestamp, timezone]
   );
 
-  function toggle(
+  function toggle<T extends string>(
     field: MealSuggestionField,
-    value: string,
-    selected: readonly string[],
-    setSelected: (values: readonly string[]) => void
+    value: T,
+    selected: readonly T[],
+    setSelected: (values: readonly T[]) => void
   ) {
     setEdited((previous) => new Set(previous).add(field));
     setSelected(
@@ -109,11 +111,15 @@ export function MealForm({
   function selectSuggestion(suggestion: MealNameSuggestion) {
     setName(suggestion.name);
     setNameFieldFocused(false);
-    if (!edited.has("categories")) setCategories(suggestion.categories);
-    if (!edited.has("allergenTags")) setAllergenTags(suggestion.allergenTags);
-    if (!edited.has("textures")) setTextures(suggestion.textures);
-    if (!edited.has("feedingStyles"))
-      setFeedingStyles(suggestion.feedingStyles);
+    const fields = applyMealSuggestion(
+      { categories, allergenTags, textures, feedingStyles },
+      suggestion,
+      edited
+    );
+    setCategories(fields.categories);
+    setAllergenTags(fields.allergenTags);
+    setTextures(fields.textures);
+    setFeedingStyles(fields.feedingStyles);
   }
 
   function save() {
@@ -309,16 +315,16 @@ export function MealForm({
   );
 }
 
-function ChoiceGroup({
+function ChoiceGroup<T extends string>({
   label,
   options,
   selected,
   onToggle,
 }: {
   readonly label: string;
-  readonly options: readonly string[];
-  readonly selected: readonly string[];
-  readonly onToggle: (value: string) => void;
+  readonly options: readonly T[];
+  readonly selected: readonly T[];
+  readonly onToggle: (value: T) => void;
 }) {
   const theme = useTheme();
   return (

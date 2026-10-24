@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { FoodTracking, MealEntries, MealValidationError } from "../index.ts";
+import {
+  applyMealSuggestion,
+  FoodTracking,
+  MealEntries,
+  MealValidationError,
+} from "../index.ts";
+import type { MealNameSuggestion, MealSuggestionFields } from "../index.ts";
 import { openDatabase } from "@keepsake/local-data";
 import { openTestDriver } from "./helpers.ts";
 
@@ -152,6 +158,36 @@ test("Meal name suggestions are child-scoped, recent, substring-filtered, dedupl
   assert.equal(meals.nameSuggestions(child.id, "bowl")[0]?.name, "Rice Bowl");
   assert.ok(meals.get(first.id));
   database.close();
+});
+
+test("explicit suggestion selection preserves edited and shortcut-prefilled fields", () => {
+  const current: MealSuggestionFields = {
+    categories: ["vegetables"],
+    allergenTags: ["milk"],
+    textures: [],
+    feedingStyles: ["self-fed with hands"],
+  };
+  const suggestion: MealNameSuggestion = {
+    name: "Fruit bowl",
+    categories: ["fruit"],
+    allergenTags: ["egg"],
+    textures: ["mashed"],
+    feedingStyles: ["spoon-fed"],
+  };
+
+  assert.deepEqual(
+    applyMealSuggestion(
+      current,
+      suggestion,
+      new Set(["categories", "textures"])
+    ),
+    {
+      categories: ["vegetables"],
+      allergenTags: ["egg"],
+      textures: [],
+      feedingStyles: ["spoon-fed"],
+    }
+  );
 });
 
 test("Meal edits preserve Entry identity and clear names without affecting Food Status", () => {

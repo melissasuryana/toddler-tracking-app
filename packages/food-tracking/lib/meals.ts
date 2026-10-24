@@ -64,6 +64,10 @@ export interface MealNameSuggestion extends MealDefaults {
   readonly allergenTags: readonly AllergenTag[];
 }
 
+export type MealSuggestionField =
+  "categories" | "allergenTags" | "textures" | "feedingStyles";
+export type MealSuggestionFields = Pick<MealContent, MealSuggestionField>;
+
 export class MealValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -187,6 +191,27 @@ export function mealNameSuggestionsFrom(
     if (suggestions.length === MAX_MEAL_NAME_SUGGESTIONS) break;
   }
   return suggestions;
+}
+
+export function applyMealSuggestion(
+  current: MealSuggestionFields,
+  suggestion: MealNameSuggestion,
+  preservedFields: ReadonlySet<MealSuggestionField> = new Set()
+): MealSuggestionFields {
+  return {
+    categories: preservedFields.has("categories")
+      ? current.categories
+      : suggestion.categories,
+    allergenTags: preservedFields.has("allergenTags")
+      ? current.allergenTags
+      : suggestion.allergenTags,
+    textures: preservedFields.has("textures")
+      ? current.textures
+      : suggestion.textures,
+    feedingStyles: preservedFields.has("feedingStyles")
+      ? current.feedingStyles
+      : suggestion.feedingStyles,
+  };
 }
 
 export function normalizeMealContent(input: MealEntryInput): MealContent {

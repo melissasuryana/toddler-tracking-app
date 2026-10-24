@@ -1,4 +1,4 @@
-import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
+import { SLEEP_QUALITIES, type RoutineEntry } from "@keepsake/routine";
 import { useState } from "react";
 import { TextInput, View } from "react-native";
 import type { SleepSessionEditInput } from "~/data/session.types";
@@ -6,8 +6,6 @@ import { Body } from "~/components/Screen";
 import { PillChip } from "~/components/PillChip";
 import { nativeFonts } from "~/theme/tokens";
 import { useTheme } from "~/theme/ThemeProvider";
-
-const QUALITIES: readonly SleepQuality[] = ["poor", "okay", "great"];
 
 export function SleepSessionEditor({
   entry,
@@ -90,7 +88,7 @@ export function SleepSessionEditor({
           gap: theme.space.fieldGap,
         }}
       >
-        {QUALITIES.map((option) => (
+        {SLEEP_QUALITIES.map((option) => (
           <PillChip
             key={option}
             label={option[0].toUpperCase() + option.slice(1)}

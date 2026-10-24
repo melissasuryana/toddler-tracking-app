@@ -13,7 +13,8 @@ import {
 
 export type RoutineEntryKind =
   "feed" | "diaper_change" | "sleep_session" | "medical" | "growth";
-export type SleepQuality = "poor" | "okay" | "great";
+export const SLEEP_QUALITIES = ["poor", "okay", "great"] as const;
+export type SleepQuality = (typeof SLEEP_QUALITIES)[number];
 
 export interface StartSleepTimerInput {
   readonly childId: string;
@@ -47,7 +48,7 @@ export type RoutineEntryInput =
   | (RoutineTimestamp & {
       readonly kind: "sleep_session";
       readonly startAt: number;
-      readonly quality: "poor" | "okay" | "great";
+      readonly quality: SleepQuality;
       readonly factors?: readonly string[];
     })
   | (RoutineTimestamp & {
@@ -520,7 +521,7 @@ function validateAndNormalize(
       break;
     case "sleep_session":
       content = { startAt: input.startAt, quality: input.quality };
-      if (!["poor", "okay", "great"].includes(input.quality)) {
+      if (!SLEEP_QUALITIES.includes(input.quality)) {
         errors.push({
           field: "quality",
           message: "Choose poor, okay, or great sleep quality.",
