@@ -1,5 +1,6 @@
 import {
   DEFAULT_TEMPERATURE_UNIT,
+  EntryValidationError,
   type Entry,
   type EntryKind,
   type LocalDatabase,
@@ -299,32 +300,20 @@ export class RoutineEntries {
         : this.temperatureUnitDefault();
     const content = validateAndNormalize(input, this.now(), existingUnit);
     const updated = this.database.transaction((transaction) => {
-      const existing = transaction.entries.get(id);
-      if (!existing) return null;
-      if (
-        existing.childId !== input.childId ||
-        existing.kind !== input.kind ||
-        existing.occurredTz !== input.occurredTz
-      ) {
-        throw new RoutineValidationError([
-          {
-            field:
-              existing.childId !== input.childId
-                ? "childId"
-                : existing.kind !== input.kind
-                  ? "kind"
-                  : "occurredTz",
-            message:
-              "Entry identity, Child, kind, and recorded timezone cannot be changed.",
-          },
-        ]);
+      let entry: Entry | null;
+      try {
+        entry = transaction.entries.update(id, {
+          childId: input.childId,
+          kind: input.kind,
+          occurredAt: input.occurredAt,
+          occurredTz: input.occurredTz,
+        });
+      } catch (error) {
+        if (error instanceof EntryValidationError) {
+          throw new RoutineValidationError(error.errors);
+        }
+        throw error;
       }
-      const entry = transaction.entries.update(id, {
-        childId: input.childId,
-        kind: input.kind,
-        occurredAt: input.occurredAt,
-        occurredTz: input.occurredTz,
-      });
       if (!entry) return null;
       transaction.entries.setContent(id, asEntryContent(content));
       return entry;
