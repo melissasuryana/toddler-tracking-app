@@ -10,6 +10,8 @@ export {
   type RoutineEntryContent,
   type RoutineEntryInput,
   type RoutineEntryKind,
+  type RoutineEntrySummary,
+  type RoutineDayGroup,
   type SleepSessionContent,
 } from "./lib/routine.ts";
 export {

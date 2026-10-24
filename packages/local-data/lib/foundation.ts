@@ -188,6 +188,26 @@ export class EntryRepository {
       .map(toEntry);
   }
 
+  latestForChildKind(childId: string, kind: Entry["kind"]): Entry | null {
+    const row = this.orm
+      .select()
+      .from(entries)
+      .where(
+        and(
+          eq(entries.childId, childId),
+          eq(entries.kind, kind),
+          isNull(entries.deletedAt)
+        )
+      )
+      .orderBy(
+        desc(entries.occurredAt),
+        desc(entries.createdAt),
+        asc(entries.id)
+      )
+      .get();
+    return row ? toEntry(row) : null;
+  }
+
   addAssociation(
     entryId: string,
     associationType: string,

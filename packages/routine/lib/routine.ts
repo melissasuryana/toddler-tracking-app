@@ -135,6 +135,15 @@ export type RoutineEntry =
       readonly content: GrowthContent;
     });
 
+export interface RoutineDayGroup {
+  readonly localDate: string;
+  readonly entries: readonly RoutineEntry[];
+}
+
+export type RoutineEntrySummary = Partial<
+  Readonly<Record<RoutineEntryKind, RoutineEntry>>
+>;
+
 export interface RoutineFieldError {
   readonly field: string;
   readonly message: string;
@@ -202,6 +211,43 @@ export class RoutineEntries {
         const content = this.database.entries.contentFor(entry.id);
         return content ? [attachContent(entry, content)] : [];
       });
+  }
+
+  groupForChildByRecordedDay(childId: string): RoutineDayGroup[] {
+    const groups = new Map<string, RoutineEntry[]>();
+    for (const entry of this.listForChild(childId)) {
+      const localDate = dateInTimezone(entry.occurredAt, entry.occurredTz);
+      const entries = groups.get(localDate) ?? [];
+      entries.push(entry);
+      groups.set(localDate, entries);
+    }
+    return [...groups].map(([localDate, entries]) => ({
+      localDate,
+      entries,
+    }));
+  }
+
+  latestEntriesForChild(childId: string): RoutineEntrySummary {
+    const summary: Partial<Record<RoutineEntryKind, RoutineEntry>> = {};
+    const kinds: readonly RoutineEntryKind[] = [
+      "feed",
+      "diaper_change",
+      "sleep_session",
+      "medical",
+      "growth",
+    ];
+    for (const kind of kinds) {
+      const entry = this.database.entries.latestForChildKind(childId, kind);
+      const content = entry && this.database.entries.contentFor(entry.id);
+      if (entry && content) summary[kind] = attachContent(entry, content);
+    }
+    return summary;
+  }
+
+  feedCountForChild(childId: string): number {
+    return this.database.entries
+      .listForChild(childId)
+      .filter((entry) => entry.kind === "feed").length;
   }
 
   medicalNameSuggestions(
@@ -535,4 +581,15 @@ function attachContent(entry: Entry, content: EntryContent): RoutineEntry {
 
 function asEntryContent(content: RoutineEntryContent): EntryContent {
   return content as unknown as EntryContent;
+}
+
+function dateInTimezone(epoch: number, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(epoch);
+  const values = new Map(parts.map(({ type, value }) => [type, value]));
+  return `${values.get("year")}-${values.get("month")}-${values.get("day")}`;
 }

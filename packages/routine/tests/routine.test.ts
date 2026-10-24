@@ -207,6 +207,49 @@ test("routine validation rejects future and malformed timestamps", () => {
   database.close();
 });
 
+test("routine summaries and recorded-day groups re-derive after timestamp edits", () => {
+  const { database, child, entries } = setup();
+  const first = entries.create({
+    childId: child.id,
+    kind: "feed",
+    occurredAt: Date.parse("2024-11-02T23:59:00Z"),
+    occurredTz: "UTC",
+  });
+  const second = entries.create({
+    childId: child.id,
+    kind: "diaper_change",
+    change: "wet",
+    occurredAt: Date.parse("2024-11-03T00:01:00Z"),
+    occurredTz: "UTC",
+  });
+  assert.equal(entries.feedCountForChild(child.id), 1);
+  assert.deepEqual(
+    entries
+      .groupForChildByRecordedDay(child.id)
+      .map(({ localDate }) => localDate),
+    ["2024-11-03", "2024-11-02"]
+  );
+
+  entries.update(first.id, {
+    childId: child.id,
+    kind: "feed",
+    occurredAt: Date.parse("2024-11-03T00:02:00Z"),
+    occurredTz: "UTC",
+  });
+  assert.equal(entries.latestEntriesForChild(child.id).feed?.id, first.id);
+  assert.deepEqual(
+    entries
+      .groupForChildByRecordedDay(child.id)
+      .map(({ localDate, entries }) => [localDate, entries.length]),
+    [["2024-11-03", 2]]
+  );
+  assert.equal(
+    entries.latestEntriesForChild(child.id).diaper_change?.id,
+    second.id
+  );
+  database.close();
+});
+
 test("temperature defaults follow Settings without rewriting history; name suggestions are live and Child-scoped", () => {
   const { database, child, entries } = setup();
   const firstTemperature = entries.create({
