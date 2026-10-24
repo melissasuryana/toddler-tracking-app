@@ -161,11 +161,20 @@ test("Meal name suggestions are child-scoped, recent, substring-filtered, dedupl
 });
 
 test("explicit suggestion selection preserves edited and shortcut-prefilled fields", () => {
-  const current: MealSuggestionFields = {
+  const current: MealSuggestionFields & {
+    readonly occurredOn: string;
+    readonly occurredAt: string;
+    readonly amount: number;
+    readonly note: string;
+  } = {
     categories: ["vegetables"],
     allergenTags: ["milk"],
     textures: [],
     feedingStyles: ["self-fed with hands"],
+    occurredOn: "2024-01-01",
+    occurredAt: "08:30",
+    amount: 3,
+    note: "Carefully edited",
   };
   const suggestion: MealNameSuggestion = {
     name: "Fruit bowl",
@@ -186,6 +195,10 @@ test("explicit suggestion selection preserves edited and shortcut-prefilled fiel
       allergenTags: ["egg"],
       textures: [],
       feedingStyles: ["spoon-fed"],
+      occurredOn: "2024-01-01",
+      occurredAt: "08:30",
+      amount: 3,
+      note: "Carefully edited",
     }
   );
 });

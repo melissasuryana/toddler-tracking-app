@@ -193,12 +193,13 @@ export function mealNameSuggestionsFrom(
   return suggestions;
 }
 
-export function applyMealSuggestion(
-  current: MealSuggestionFields,
+export function applyMealSuggestion<T extends MealSuggestionFields>(
+  current: T,
   suggestion: MealNameSuggestion,
   preservedFields: ReadonlySet<MealSuggestionField> = new Set()
-): MealSuggestionFields {
+): T {
   return {
+    ...current,
     categories: preservedFields.has("categories")
       ? current.categories
       : suggestion.categories,

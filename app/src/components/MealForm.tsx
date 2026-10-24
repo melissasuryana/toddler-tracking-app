@@ -112,7 +112,16 @@ export function MealForm({
     setName(suggestion.name);
     setNameFieldFocused(false);
     const fields = applyMealSuggestion(
-      { categories, allergenTags, textures, feedingStyles },
+      {
+        categories,
+        allergenTags,
+        textures,
+        feedingStyles,
+        occurredOn,
+        occurredAt,
+        amount,
+        note,
+      },
       suggestion,
       edited
     );
