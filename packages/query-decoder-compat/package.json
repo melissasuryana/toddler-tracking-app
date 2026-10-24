@@ -1,6 +1,6 @@
 {
-  "name": "@keepsake/query-decoder-compat",
-  "version": "1.0.0",
+  "name": "decode-uri-component",
+  "version": "0.5.1",
   "private": true,
   "main": "index.cjs",
   "dependencies": {
