@@ -35,6 +35,8 @@ Look for the originating spec, in this order:
 
 Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
 
+For dependency additions or updates, include `README.md#dependency-health` in the Standards sources and require dated primary-source evidence for each changed dependency. Cover published identity/version, release cadence, security-patch responsiveness, deprecation/archive status, downloads, and unresolved advisories. Report unverifiable evidence and policy exceptions explicitly; the pre-commit check supplies signals, not proof of maintenance.
+
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.

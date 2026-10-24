@@ -20,6 +20,10 @@ Single-context layout: see `docs/agents/domain.md`.
 
 Deep modules: see [packages/README.md](./packages/README.md) before adding or importing one.
 
+### Dependency health
+
+When adding/updating dependencies or reviewing dependency changes, apply the [dependency health policy](./README.md#dependency-health). In reviews, include dated primary-source evidence for maintenance, security response, and usage; report unavailable evidence as unverified.
+
 ### Bounded decisions (Jev)
 
 Use the `jev-agent` skill proactively for any bounded decision — a classification into known options, an ordered score, or a yes/no gate. Examples: triaging issue urgency, choosing which package a change belongs in, checking task completeness before reporting success, gating a risky command.
