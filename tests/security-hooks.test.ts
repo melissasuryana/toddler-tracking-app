@@ -11,14 +11,28 @@ test("audit explicitly includes every dependency type despite npm omit settings"
     readFileSync(new URL("../package.json", import.meta.url), "utf8")
   );
   const command = scripts["check:security:dependencies"];
+  assert.equal(command, "node scripts/audit-dependencies.mjs");
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      'import { auditArgs } from "./scripts/audit-dependencies.mjs"; console.log(JSON.stringify(auditArgs));',
+    ],
+    { encoding: "utf8", cwd: fileURLToPath(new URL("..", import.meta.url)) }
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const args = JSON.parse(result.stdout);
+  assert.equal(args[0], "audit");
   for (const flag of [
+    "--json",
     "--package-lock-only",
     "--audit-level=low",
     "--include=dev",
     "--include=optional",
     "--include=peer",
   ]) {
-    assert.ok(command.split(" ").includes(flag), `missing ${flag}`);
+    assert.ok(args.includes(flag), `missing ${flag}`);
   }
 });
 
