@@ -48,6 +48,11 @@ export {
 } from "./lib/foundation.ts";
 export type { LocalTransaction } from "./lib/database.ts";
 export {
+  RunningSleepTimerAlreadyExistsError,
+  SleepTimerRepository,
+  type RunningSleepTimer,
+} from "./lib/sleep-timer.ts";
+export {
   ENTRY_KINDS,
   isIanaTimezone,
   isSlugId,
@@ -90,5 +95,6 @@ export {
   manualSafeMarkers,
   metadata,
   preferences,
+  runningSleepTimers,
 } from "./lib/schema.ts";
 export { createOrm, type LocalOrm } from "./lib/orm.ts";

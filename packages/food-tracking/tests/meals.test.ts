@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MealEntries, MealValidationError } from "../index.ts";
+import { FoodTracking, MealEntries, MealValidationError } from "../index.ts";
 import { openDatabase } from "@keepsake/local-data";
 import { openTestDriver } from "./helpers.ts";
 
@@ -82,11 +82,25 @@ test("defaults follow the latest non-deleted Meal by occurrence then creation ti
       feedingStyles: ["self-fed with hands"],
     })
   );
+  const tieBreak = meals.create(
+    mealInput(child.id, T0 + 1, {
+      textures: ["mashed"],
+      feedingStyles: ["self-fed with utensils"],
+    })
+  );
+  database.driver
+    .prepareSync("UPDATE entries SET created_at = ? WHERE id = ?")
+    .run(latest.createdAt + 100, tieBreak.id);
+  assert.deepEqual(meals.defaultsForChild(child.id), {
+    textures: ["mashed"],
+    feedingStyles: ["self-fed with utensils"],
+  });
+
+  meals.delete(tieBreak.id);
   assert.deepEqual(meals.defaultsForChild(child.id), {
     textures: ["firm finger food"],
     feedingStyles: ["self-fed with hands"],
   });
-
   meals.delete(latest.id);
   assert.deepEqual(meals.defaultsForChild(child.id), {
     textures: ["purée"],
@@ -125,10 +139,6 @@ test("Meal name suggestions are child-scoped, recent, substring-filtered, dedupl
   const allSuggestions = meals.nameSuggestions(child.id);
   assert.equal(allSuggestions.length, 10);
   assert.equal(allSuggestions[0]?.name, "Meal 9");
-  assert.equal(
-    allSuggestions.filter(({ name }) => name.toLowerCase() === "rice bowl").length,
-    1
-  );
 
   const rice = meals.nameSuggestions(child.id, "BOWL");
   assert.equal(rice.length, 1);
@@ -146,11 +156,13 @@ test("Meal name suggestions are child-scoped, recent, substring-filtered, dedupl
 
 test("Meal edits preserve Entry identity and clear names without affecting Food Status", () => {
   const { database, child, meals } = setup();
+  const foods = new FoodTracking(database);
   const created = meals.create(
     mealInput(child.id, T0, {
       amount: 2,
       name: "Toast",
       categories: ["grains & cereals"],
+      allergenTags: ["peanut"],
     })
   );
   const updated = meals.update(
@@ -170,10 +182,13 @@ test("Meal edits preserve Entry identity and clear names without affecting Food 
   assert.equal(updated?.content.name, undefined);
   assert.equal(updated?.content.amount, 5);
   assert.equal(
-    database.entries.listForChild(child.id).filter((entry) => entry.kind === "meal")
-      .length,
+    database.entries
+      .listForChild(child.id)
+      .filter((entry) => entry.kind === "meal").length,
     1
   );
+  assert.equal(foods.statusFor(child.id, "peanut", T0 + 5).exposureCount, 0);
+  assert.equal(foods.statusFor(child.id, "peanut", T0 + 5).status, "untried");
   database.close();
 });
 
@@ -192,12 +207,11 @@ test("Meal validation enforces amount, name length, and supported flag values", 
     MealValidationError
   );
   assert.throws(
-    () => meals.create(mealInput(child.id, T0, { categories: ["invalid" as never] })),
+    () =>
+      meals.create(
+        mealInput(child.id, T0, { categories: ["invalid" as never] })
+      ),
     MealValidationError
-  );
-  assert.throws(
-    () => meals.nameSuggestions(child.id, "", -1),
-    RangeError
   );
   database.close();
 });

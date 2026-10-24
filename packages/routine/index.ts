@@ -1,6 +1,7 @@
 export {
   RoutineEntries,
   RoutineValidationError,
+  SleepTimerNotRunningError,
   SLEEP_QUALITY_FACTOR_SEEDS,
   type DiaperChangeContent,
   type FeedContent,
@@ -13,6 +14,9 @@ export {
   type RoutineEntrySummary,
   type RoutineDayGroup,
   type SleepSessionContent,
+  type SleepQuality,
+  type StartSleepTimerInput,
+  type StopSleepTimerInput,
 } from "./lib/routine.ts";
 export {
   resolveLocalTimestamp,

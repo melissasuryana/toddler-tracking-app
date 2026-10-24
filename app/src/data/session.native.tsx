@@ -12,6 +12,7 @@ import type {
   TemperatureUnit,
 } from "@keepsake/local-data";
 import { openAppDatabase } from "@keepsake/local-data/expo";
+import { RoutineEntries, type SleepQuality } from "@keepsake/routine";
 import {
   createContext,
   useContext,
@@ -27,6 +28,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [db] = useState<LocalDatabase>(() => openAppDatabase());
   const [child, setChild] = useState<Child | null>(() => db.children.first());
   const [unitVersion, setUnitVersion] = useState(0);
+  const [sleepTimerVersion, setSleepTimerVersion] = useState(0);
+  const [routineEntries] = useState(() => new RoutineEntries(db));
 
   const session = useMemo<DataSession>(
     () => ({
@@ -42,8 +45,32 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         db.preferences.set("temperatureUnit", unit);
         setUnitVersion((version) => version + 1);
       },
+      runningSleepTimer: () => {
+        void sleepTimerVersion;
+        return child ? routineEntries.getSleepTimer(child.id) : null;
+      },
+      startSleepTimer: () => {
+        if (!child) throw new Error("A Child is required to start Sleep.");
+        routineEntries.startSleepTimer({
+          childId: child.id,
+          startedTz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+        setSleepTimerVersion((version) => version + 1);
+      },
+      cancelWake: () => {
+        if (child) routineEntries.cancelWake(child.id);
+      },
+      stopSleepTimer: (quality: SleepQuality) => {
+        if (!child) throw new Error("A Child is required to stop Sleep.");
+        const entry = routineEntries.stopSleepTimer(child.id, {
+          endedAt: Date.now(),
+          quality,
+        });
+        setSleepTimerVersion((version) => version + 1);
+        return entry;
+      },
     }),
-    [child, db, unitVersion]
+    [child, db, routineEntries, sleepTimerVersion, unitVersion]
   );
 
   return (

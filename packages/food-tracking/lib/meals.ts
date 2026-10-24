@@ -56,6 +56,8 @@ export interface MealEntryInput {
 
 export type MealDefaults = Pick<MealContent, "textures" | "feedingStyles">;
 
+const MAX_MEAL_NAME_SUGGESTIONS = 10;
+
 export interface MealNameSuggestion extends MealDefaults {
   readonly name: string;
   readonly categories: readonly FoodCategory[];
@@ -115,9 +117,7 @@ export class MealEntries {
       )
       .flatMap((entry) => {
         const content = this.database.entries.contentFor(entry.id);
-        return content
-          ? [attachContent(entry, fromEntryContent(content))]
-          : [];
+        return content ? [attachContent(entry, fromEntryContent(content))] : [];
       });
   }
 
@@ -131,15 +131,7 @@ export class MealEntries {
       : EMPTY_DEFAULTS;
   }
 
-  nameSuggestions(
-    childId: string,
-    query = "",
-    limit = 10
-  ): MealNameSuggestion[] {
-    if (!Number.isSafeInteger(limit) || limit < 0) {
-      throw new RangeError("Suggestion limit must be a nonnegative integer.");
-    }
-    if (limit === 0) return [];
+  nameSuggestions(childId: string, query = ""): MealNameSuggestion[] {
     const normalizedQuery = query.trim().toLowerCase();
     const seen = new Set<string>();
     const suggestions: MealNameSuggestion[] = [];
@@ -156,7 +148,7 @@ export class MealEntries {
         textures: meal.content.textures,
         feedingStyles: meal.content.feedingStyles,
       });
-      if (suggestions.length === limit) break;
+      if (suggestions.length === MAX_MEAL_NAME_SUGGESTIONS) break;
     }
     return suggestions;
   }
@@ -164,6 +156,8 @@ export class MealEntries {
   update(id: string, input: MealEntryInput): MealEntry | null {
     const content = validateAndNormalize(input);
     const updated = this.database.transaction((transaction) => {
+      const existing = transaction.entries.get(id);
+      if (!existing || existing.kind !== "meal") return null;
       const entry = transaction.entries.update(id, {
         childId: input.childId,
         kind: "meal",
@@ -202,7 +196,9 @@ function validateAndNormalize(input: MealEntryInput): MealContent {
     }
     name = input.name.trim() || undefined;
     if (name && name.length > 100) {
-      throw new MealValidationError("Meal name must be 100 characters or fewer.");
+      throw new MealValidationError(
+        "Meal name must be 100 characters or fewer."
+      );
     }
   }
 
@@ -224,7 +220,11 @@ function validateAndNormalize(input: MealEntryInput): MealContent {
     ALLERGEN_TAGS,
     "Allergen Tag"
   );
-  const textures = normalizeChoices(input.textures ?? [], MEAL_TEXTURES, "Texture");
+  const textures = normalizeChoices(
+    input.textures ?? [],
+    MEAL_TEXTURES,
+    "Texture"
+  );
   const feedingStyles = normalizeChoices(
     input.feedingStyles ?? [],
     MEAL_FEEDING_STYLES,
@@ -247,7 +247,10 @@ function normalizeChoices<T extends string>(
   allowed: readonly T[],
   label: string
 ): T[] {
-  if (!Array.isArray(values) || values.some((value) => !allowed.includes(value))) {
+  if (
+    !Array.isArray(values) ||
+    values.some((value) => !allowed.includes(value))
+  ) {
     throw new MealValidationError(`Choose valid ${label} values.`);
   }
   return [...new Set(values)];
@@ -262,13 +265,35 @@ function toEntryContent(content: MealContent): EntryContent {
 }
 
 function fromEntryContent(content: EntryContent): MealContent {
+  const name = typeof content.name === "string" ? content.name.trim() : "";
+  const note = typeof content.note === "string" ? content.note.trim() : "";
   return {
-    amount: content.amount as number,
-    name: content.name as string | undefined,
-    note: content.note as string | undefined,
-    categories: content.categories as readonly FoodCategory[],
-    allergenTags: content.allergenTags as readonly AllergenTag[],
-    textures: content.textures as readonly MealTexture[],
-    feedingStyles: content.feedingStyles as readonly MealFeedingStyle[],
+    amount:
+      Number.isInteger(content.amount) &&
+      Number(content.amount) >= 1 &&
+      Number(content.amount) <= 5
+        ? Number(content.amount)
+        : 4,
+    ...(name ? { name } : {}),
+    ...(note ? { note } : {}),
+    categories: storedChoices(content.categories, FOOD_CATEGORIES),
+    allergenTags: storedChoices(content.allergenTags, ALLERGEN_TAGS),
+    textures: storedChoices(content.textures, MEAL_TEXTURES),
+    feedingStyles: storedChoices(content.feedingStyles, MEAL_FEEDING_STYLES),
   };
+}
+
+function storedChoices<T extends string>(
+  values: EntryContent["categories"],
+  allowed: readonly T[]
+): T[] {
+  if (!Array.isArray(values)) return [];
+  return [
+    ...new Set(
+      values.filter(
+        (value): value is T =>
+          typeof value === "string" && allowed.includes(value as T)
+      )
+    ),
+  ];
 }

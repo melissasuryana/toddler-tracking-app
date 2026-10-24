@@ -3,7 +3,13 @@
  * The native build (session.native.tsx) opens the real database; the web
  * build (session.web.tsx) is an in-memory stand-in — the app targets iOS.
  */
-import type { Child, ChildInput, TemperatureUnit } from "@keepsake/local-data";
+import type {
+  Child,
+  ChildInput,
+  RunningSleepTimer,
+  TemperatureUnit,
+} from "@keepsake/local-data";
+import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
 
 export interface DataSession {
   /** Null when no Child exists yet — the onboarding gate's question. */
@@ -11,4 +17,8 @@ export interface DataSession {
   readonly createChild: (input: ChildInput) => void;
   readonly temperatureUnit: () => TemperatureUnit | null;
   readonly setTemperatureUnit: (unit: TemperatureUnit) => void;
+  readonly runningSleepTimer: () => RunningSleepTimer | null;
+  readonly startSleepTimer: () => void;
+  readonly cancelWake: () => void;
+  readonly stopSleepTimer: (quality: SleepQuality) => RoutineEntry;
 }

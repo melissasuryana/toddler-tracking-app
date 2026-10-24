@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { rmSync } from "node:fs";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { openDatabase } from "@keepsake/local-data";
 import {
   resolveLocalTimestamp,
@@ -177,6 +180,214 @@ test("sleep, Medical, and Growth entries enforce required domain values", () => 
     occurredTz: "UTC",
   });
   assert.deepEqual(growth.content, { heightCm: 89.2 });
+  database.close();
+});
+
+test("a running Sleep timer survives service restoration and prevents a second start", () => {
+  const databasePath = fileURLToPath(
+    new URL(`./sleep-timer-${randomUUID()}.sqlite`, import.meta.url)
+  );
+  try {
+    const database = openDatabase(openTestDriver(databasePath));
+    const child = database.children.create({
+      name: "Ada",
+      birthdate: "2023-03-01",
+      sex: "female",
+    });
+    const entries = new RoutineEntries(database, () => NOW);
+    const timer = entries.startSleepTimer({
+      childId: child.id,
+      startedAt: RECORDED_AT,
+      startedTz: "America/Los_Angeles",
+    });
+    database.close();
+
+    const restoredDatabase = openDatabase(openTestDriver(databasePath));
+    const restored = new RoutineEntries(restoredDatabase, () => NOW);
+    assert.deepEqual(restored.getSleepTimer(child.id), timer);
+    assert.deepEqual(restored.cancelWake(child.id), timer);
+    assert.deepEqual(restored.getSleepTimer(child.id), timer);
+    assert.throws(
+      () =>
+        restored.startSleepTimer({
+          childId: child.id,
+          startedAt: NOW,
+          startedTz: "UTC",
+        }),
+      /already running/
+    );
+    assert.deepEqual(restored.getSleepTimer(child.id), timer);
+    const secondChild = restoredDatabase.children.create({
+      name: "Bea",
+      birthdate: "2023-03-02",
+      sex: "female",
+    });
+    assert.equal(
+      restored.startSleepTimer({
+        childId: secondChild.id,
+        startedAt: NOW,
+        startedTz: "UTC",
+      }).childId,
+      secondChild.id
+    );
+    restoredDatabase.close();
+  } finally {
+    rmSync(databasePath, { force: true });
+    rmSync(`${databasePath}-journal`, { force: true });
+    rmSync(`${databasePath}-wal`, { force: true });
+    rmSync(`${databasePath}-shm`, { force: true });
+  }
+});
+
+test("stopping a Sleep timer requires a quality and creates an editable Session", () => {
+  const { database, child, entries } = setup();
+  const timer = entries.startSleepTimer({
+    childId: child.id,
+    startedAt: RECORDED_AT,
+    startedTz: "America/Los_Angeles",
+  });
+
+  assert.throws(() => {
+    // @ts-expect-error a completed Sleep Session requires an explicit quality
+    return entries.stopSleepTimer(child.id, {
+      endedAt: RECORDED_AT + 1_000,
+    });
+  }, RoutineValidationError);
+  assert.throws(
+    () =>
+      entries.stopSleepTimer(child.id, {
+        endedAt: RECORDED_AT,
+        quality: "okay",
+      }),
+    RoutineValidationError
+  );
+  assert.deepEqual(entries.getSleepTimer(child.id), timer);
+
+  const session = entries.stopSleepTimer(child.id, {
+    endedAt: RECORDED_AT + 3_600_000,
+    quality: "great",
+  });
+  assert.equal(session.kind, "sleep_session");
+  assert.equal(session.occurredAt, RECORDED_AT + 3_600_000);
+  assert.equal(session.occurredTz, "America/Los_Angeles");
+  assert.deepEqual(session.content, {
+    startAt: RECORDED_AT,
+    quality: "great",
+  });
+  assert.equal(entries.getSleepTimer(child.id), null);
+
+  const corrected = entries.update(session.id, {
+    childId: child.id,
+    kind: "sleep_session",
+    startAt: RECORDED_AT - 1_000,
+    occurredAt: RECORDED_AT + 3_600_000,
+    occurredTz: session.occurredTz,
+    quality: "okay",
+  });
+  assert.ok(corrected);
+  assert.deepEqual(corrected.content, {
+    startAt: RECORDED_AT - 1_000,
+    quality: "okay",
+  });
+  assert.equal(entries.delete(session.id), true);
+  assert.equal(entries.get(session.id), null);
+  database.close();
+});
+
+test("a failed Sleep Session save leaves the running timer recoverable", () => {
+  const { database, child, entries } = setup();
+  const timer = entries.startSleepTimer({
+    childId: child.id,
+    startedAt: RECORDED_AT,
+    startedTz: "UTC",
+  });
+  database.driver.execSync(`
+    CREATE TRIGGER fail_sleep_session_insert
+    BEFORE INSERT ON entries
+    WHEN NEW.kind = 'sleep_session'
+    BEGIN
+      SELECT RAISE(ABORT, 'forced save failure');
+    END;
+  `);
+
+  assert.throws(
+    () =>
+      entries.stopSleepTimer(child.id, {
+        endedAt: RECORDED_AT + 1_000,
+        quality: "poor",
+      }),
+    /forced save failure/
+  );
+  assert.deepEqual(new RoutineEntries(database).getSleepTimer(child.id), timer);
+  assert.equal(entries.listForChild(child.id).length, 0);
+  database.close();
+});
+
+test("a failure clearing the timer rolls back the completed Sleep Session", () => {
+  const { database, child, entries } = setup();
+  const timer = entries.startSleepTimer({
+    childId: child.id,
+    startedAt: RECORDED_AT,
+    startedTz: "UTC",
+  });
+  database.driver.execSync(`
+    CREATE TRIGGER fail_sleep_timer_clear
+    BEFORE DELETE ON running_sleep_timers
+    BEGIN
+      SELECT RAISE(ABORT, 'forced timer clear failure');
+    END;
+  `);
+
+  assert.throws(
+    () =>
+      entries.stopSleepTimer(child.id, {
+        endedAt: RECORDED_AT + 1_000,
+        quality: "okay",
+      }),
+    /forced timer clear failure/
+  );
+  assert.deepEqual(entries.getSleepTimer(child.id), timer);
+  assert.equal(entries.listForChild(child.id).length, 0);
+  database.close();
+});
+
+test("historical Sleep Session overlaps are detectable but never block logging", () => {
+  const { database, child, entries } = setup();
+  const first = entries.create({
+    childId: child.id,
+    kind: "sleep_session",
+    occurredAt: RECORDED_AT + 3_600_000,
+    occurredTz: "UTC",
+    startAt: RECORDED_AT,
+    quality: "okay",
+  });
+  assert.equal(
+    entries.hasSleepSessionOverlap(
+      child.id,
+      RECORDED_AT + 1_000,
+      RECORDED_AT + 2_000
+    ),
+    true
+  );
+  assert.equal(
+    entries.hasSleepSessionOverlap(
+      child.id,
+      RECORDED_AT + 3_600_000,
+      RECORDED_AT + 4_000_000
+    ),
+    false
+  );
+
+  const overlapping = entries.create({
+    childId: child.id,
+    kind: "sleep_session",
+    occurredAt: RECORDED_AT + 2_000_000,
+    occurredTz: "UTC",
+    startAt: RECORDED_AT + 1_000_000,
+    quality: "poor",
+  });
+  assert.notEqual(overlapping.id, first.id);
+  assert.equal(entries.listForChild(child.id).length, 2);
   database.close();
 });
 

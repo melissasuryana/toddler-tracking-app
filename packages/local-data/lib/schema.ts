@@ -122,3 +122,14 @@ export const manualSafeMarkers = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.childId, table.foodId] })]
 );
+
+/** A single durable in-progress Sleep timer per Child, separate from Entries. */
+export const runningSleepTimers = sqliteTable("running_sleep_timers", {
+  childId: text("child_id")
+    .primaryKey()
+    .references(() => children.id, { onDelete: "cascade" }),
+  startedAt: integer("started_at").notNull(),
+  startedTz: text("started_tz")
+    .notNull()
+    .references(() => entryTimezones.name, { onDelete: "restrict" }),
+});
