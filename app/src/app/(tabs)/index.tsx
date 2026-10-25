@@ -1,6 +1,10 @@
 /** Home — the "Now" ledger with the Child's persistent Sleep timer control. */
 import { useEffect, useState } from "react";
-import { SLEEP_QUALITIES, type RoutineEntry } from "@keepsake/routine";
+import {
+  SLEEP_QUALITIES,
+  type RoutineEntry,
+  type SleepQuality,
+} from "@keepsake/routine";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { MealForm } from "~/components/MealForm";
 import { PillChip } from "~/components/PillChip";
@@ -36,6 +40,8 @@ export default function HomeScreen() {
   const [now, setNow] = useState(Date.now);
   const [wakePromptVisible, setWakePromptVisible] = useState(false);
   const [sleepError, setSleepError] = useState<string | null>(null);
+  const [selectedSleepQuality, setSelectedSleepQuality] =
+    useState<SleepQuality>("great");
   const [lastSleepSession, setLastSleepSession] = useState<Extract<
     RoutineEntry,
     { kind: "sleep_session" }
@@ -96,68 +102,102 @@ export default function HomeScreen() {
       <MetaLabel>Now</MetaLabel>
       <View
         style={{
+          backgroundColor: theme.colors.sleepBand,
           paddingHorizontal: theme.space.page,
-          paddingBottom: theme.space.rowBlock,
-        }}
-      >
-        <Text
-          style={{
-            color: theme.colors.meta,
-            fontFamily: nativeFonts.serif,
-            fontStyle: "italic",
-            fontSize: theme.typography.body.fontSize,
-          }}
-        >
-          Sleep
-        </Text>
-      </View>
-      <View
-        style={{
-          backgroundColor: theme.colors.sheet,
-          padding: theme.space.page,
+          paddingVertical: theme.space.sheetBlock,
           gap: theme.space.fieldGap,
         }}
       >
-        <Body>{timer ? "Sleep timer running" : "No running Sleep timer"}</Body>
-        {timer ? (
-          <Body dim>
-            Started {formatElapsed(now - timer.startedAt)} ago ·{" "}
-            {timer.startedTz}
-          </Body>
-        ) : (
-          <Body dim>Start a timer when your Child falls asleep.</Body>
-        )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            timer ? "Wake and stop Sleep timer" : "Start Sleep timer"
-          }
-          onPress={
-            timer
-              ? () => {
-                  setSleepError(null);
-                  setWakePromptVisible(true);
-                }
-              : start
-          }
+        <View
           style={{
-            alignSelf: "flex-start",
-            backgroundColor: theme.colors.ink,
-            borderRadius: theme.radius.pill,
-            paddingHorizontal: theme.space.rowBlock,
-            paddingVertical: theme.space.fieldGap,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: theme.space.rowGap,
           }}
         >
-          <Text
-            style={{
-              color: theme.colors.paper,
-              fontSize: theme.typography.body.fontSize,
-              fontWeight: String(theme.typography.meta.fontWeight) as "600",
-            }}
+          <View style={{ flex: 1, gap: theme.space.fieldGap }}>
+            <Text
+              style={{
+                color: theme.colors.sleepInk,
+                fontFamily: nativeFonts.sans,
+                fontSize: theme.typography.meta.fontSize,
+                fontWeight: String(theme.typography.meta.fontWeight) as "600",
+                letterSpacing:
+                  theme.typography.meta.letterSpacingEm *
+                  theme.typography.meta.fontSize,
+                textTransform: "uppercase",
+              }}
+            >
+              Sleep · {timer ? "timer running" : "ready"}
+            </Text>
+            {timer ? (
+              <Text
+                style={{
+                  color: theme.colors.ink,
+                  fontFamily: nativeFonts.serif,
+                  fontSize: theme.typography.dataFigure.fontSize,
+                  fontWeight: String(
+                    theme.typography.dataFigure.fontWeight
+                  ) as "500",
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {formatElapsed(now - timer.startedAt)}{" "}
+                <Text
+                  style={{
+                    color: theme.colors.sleepInk,
+                    fontStyle: "italic",
+                  }}
+                >
+                  so far
+                </Text>
+              </Text>
+            ) : (
+              <Body dim>Start a timer when your Child falls asleep.</Body>
+            )}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              timer ? "Wake and stop Sleep timer" : "Start Sleep timer"
+            }
+            onPress={
+              timer
+                ? () => {
+                    setSleepError(null);
+                    setSelectedSleepQuality("great");
+                    setWakePromptVisible(true);
+                  }
+                : start
+            }
+            style={({ pressed }) => ({
+              alignSelf: "center",
+              backgroundColor: theme.colors.ink,
+              borderRadius: theme.radius.pill,
+              paddingHorizontal: theme.space.buttonInset,
+              paddingVertical: theme.space.rowBlock,
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
-            {timer ? "Wake" : "Start sleep"}
-          </Text>
-        </Pressable>
+            <Text
+              style={{
+                color: theme.colors.paper,
+                fontFamily: nativeFonts.sans,
+                fontSize: theme.typography.body.fontSize,
+                fontWeight: String(theme.typography.meta.fontWeight) as "600",
+              }}
+            >
+              {timer ? "Wake" : "Start sleep"}
+            </Text>
+          </Pressable>
+        </View>
+        {timer ? (
+          <Body dim>
+            Down at {formatSleepTime(timer.startedAt, timer.startedTz)} ·{" "}
+            {timer.startedTz}
+          </Body>
+        ) : null}
         {sleepError && !wakePromptVisible ? <Body>{sleepError}</Body> : null}
       </View>
       <Hairline />
@@ -263,8 +303,7 @@ export default function HomeScreen() {
         <View
           style={{
             flex: 1,
-            justifyContent: "center",
-            padding: theme.space.page,
+            justifyContent: "flex-end",
           }}
         >
           <View
@@ -278,46 +317,160 @@ export default function HomeScreen() {
             accessibilityViewIsModal
             style={{
               backgroundColor: theme.colors.paper,
-              padding: theme.space.page,
+              borderTopColor: theme.colors.ruleStrong,
+              borderTopWidth: theme.rule.alert,
+              paddingHorizontal: theme.space.page,
+              paddingTop: theme.space.sheetBlock,
+              paddingBottom: theme.space.page,
               gap: theme.space.fieldGap,
             }}
           >
+            <MetaLabel>Sleep session</MetaLabel>
             <Text
               style={{
                 color: theme.colors.ink,
                 fontFamily: nativeFonts.serif,
                 fontSize: theme.typography.sheetTitle.fontSize,
+                fontWeight: String(
+                  theme.typography.sheetTitle.fontWeight
+                ) as "500",
+                paddingBottom: theme.space.fieldGap,
               }}
             >
-              Sleep quality
-            </Text>
-            <Body>Choose a quality to save this Sleep Session.</Body>
-            {SLEEP_QUALITIES.map((quality) => (
-              <Pressable
-                key={quality}
-                accessibilityRole="button"
-                onPress={() => stop(quality)}
-                style={{
-                  borderColor: theme.colors.ruleThin,
-                  borderRadius: theme.radius.pill,
-                  borderWidth: theme.rule.hairline,
-                  padding: theme.space.rowBlock,
-                }}
+              Ending{" "}
+              <Text
+                style={{ color: theme.colors.sleepInk, fontStyle: "italic" }}
               >
-                <Body>{quality[0].toUpperCase() + quality.slice(1)}</Body>
-              </Pressable>
-            ))}
+                the night
+              </Text>
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: theme.space.fieldGap,
+                justifyContent: "center",
+                paddingVertical: theme.space.rowBlock,
+              }}
+            >
+              {SLEEP_QUALITIES.map((quality) => {
+                const selected = selectedSleepQuality === quality;
+                return (
+                  <Pressable
+                    key={quality}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => setSelectedSleepQuality(quality)}
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      backgroundColor: selected
+                        ? theme.colors.safeChip.background
+                        : "transparent",
+                      borderColor: selected
+                        ? theme.colors.safeChip.border
+                        : theme.colors.chipBorder,
+                      borderRadius: theme.radius.pill,
+                      borderWidth: theme.rule.hairline,
+                      flex: 1,
+                      paddingVertical: theme.space.rowBlock,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Text
+                      style={{
+                        color: selected
+                          ? theme.colors.safeChip.foreground
+                          : theme.colors.meta,
+                        fontFamily: nativeFonts.sans,
+                        fontSize: theme.typography.body.fontSize,
+                        fontWeight: String(
+                          theme.typography.meta.fontWeight
+                        ) as "600",
+                      }}
+                    >
+                      {quality[0].toUpperCase() + quality.slice(1)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             {sleepError ? <Body>{sleepError}</Body> : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Cancel Wake and keep Sleep timer running"
               onPress={cancelWakePrompt}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <Text
+                style={{
+                  color: theme.colors.accent,
+                  fontFamily: nativeFonts.sans,
+                  fontSize: theme.typography.small.fontSize,
+                  paddingVertical: theme.space.fieldGap,
+                }}
+              >
+                Cancel — keep timer running
+              </Text>
+            </Pressable>
+            <View
               style={{
-                alignSelf: "flex-start",
-                paddingVertical: theme.space.fieldGap,
+                borderTopColor: theme.colors.ruleThin,
+                borderBottomColor: theme.colors.ruleThin,
+                borderTopWidth: theme.rule.hairline,
+                borderBottomWidth: theme.rule.hairline,
+                marginTop: theme.space.fieldGap,
               }}
             >
-              <Body dim>Cancel — keep timer running</Body>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingVertical: theme.space.rowBlock,
+                }}
+              >
+                <Body>Fell asleep</Body>
+                <Body dim>
+                  {timer
+                    ? formatSleepTime(timer.startedAt, timer.startedTz)
+                    : "—"}
+                </Body>
+              </View>
+              <Hairline />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingVertical: theme.space.rowBlock,
+                }}
+              >
+                <Body>Woke up</Body>
+                <Body dim>
+                  {timer ? formatSleepTime(now, timer.startedTz) : "—"}
+                </Body>
+              </View>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => stop(selectedSleepQuality)}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: theme.colors.ink,
+                borderRadius: theme.radius.pill,
+                marginTop: theme.space.rowBlock,
+                paddingHorizontal: theme.space.buttonInset,
+                paddingVertical: theme.space.rowBlock,
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  color: theme.colors.paper,
+                  fontFamily: nativeFonts.sans,
+                  fontSize: theme.typography.body.fontSize,
+                  fontWeight: String(theme.typography.meta.fontWeight) as "600",
+                }}
+              >
+                Save sleep
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -334,6 +487,14 @@ function formatElapsed(elapsedMilliseconds: number): string {
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
+}
+
+function formatSleepTime(epoch: number, timezone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(epoch);
 }
 
 function errorMessage(error: unknown): string {

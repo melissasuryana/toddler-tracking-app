@@ -5,6 +5,7 @@
  * resolves to a design-system token via useTheme().
  */
 import type { ReactNode } from "react";
+import type { IconName, TrackerKey } from "@keepsake/design-system";
 import {
   StyleSheet,
   Text,
@@ -15,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeProvider";
 import { nativeFonts } from "../theme/tokens";
+import { KeepsakeIcon } from "./KeepsakeIcon";
 
 /** Paper background with safe-area padding. Wraps every screen. */
 export function Screen({ children }: { children: ReactNode }) {
@@ -145,6 +147,68 @@ export function Body({
     >
       {children}
     </Text>
+  );
+}
+
+/** Quiet, illustrated empty state using the same tracker disc as ledger rows. */
+export function EmptyState({
+  icon,
+  tracker,
+  title,
+  description,
+}: {
+  readonly icon: IconName;
+  readonly tracker: TrackerKey;
+  readonly title: string;
+  readonly description: string;
+}) {
+  const theme = useTheme();
+  const tint = theme.discTint(tracker);
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: theme.space.page * 2,
+        gap: theme.space.rowGap,
+      }}
+    >
+      <View
+        style={{
+          width: theme.size.avatar,
+          height: theme.size.avatar,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: theme.radius.pill,
+          backgroundColor: tint.background,
+        }}
+      >
+        <KeepsakeIcon name={icon} color={tint.foreground} />
+      </View>
+      <Text
+        style={{
+          color: theme.colors.ink,
+          fontFamily: nativeFonts.serif,
+          fontSize: theme.typography.sheetTitle.fontSize,
+          fontWeight: String(theme.typography.sheetTitle.fontWeight) as "500",
+          textAlign: "center",
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        style={{
+          color: theme.colors.meta,
+          fontFamily: nativeFonts.sans,
+          fontSize: theme.typography.body.fontSize,
+          textAlign: "center",
+          lineHeight: theme.typography.body.fontSize * 1.5,
+        }}
+      >
+        {description}
+      </Text>
+    </View>
   );
 }
 
