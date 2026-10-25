@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import type { IntroductionEntry } from "@keepsake/food-tracking";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
-import { Body, MetaLabel } from "./Screen";
-import { PillChip } from "./PillChip";
+import { nativeFonts } from "~/theme/tokens";
 import { MealForm } from "./MealForm";
 import { FoodEntryForm } from "./FoodEntryForm";
 import { RoutineEntryForm } from "./RoutineEntryForm";
@@ -30,6 +29,7 @@ export function EntryDetail({
   const [editorStarted, setEditorStarted] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   function remove() {
     try {
       const deleted =
@@ -48,125 +48,430 @@ export function EntryDetail({
       );
     }
   }
+
+  const label = ENTRY_LABELS[entry.kind];
+  const summary = entrySummary(entry, data.foods());
+  const dateFormatted = new Date(entry.occurredAt).toLocaleString(undefined, {
+    timeZone: entry.occurredTz,
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.paper }}>
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          padding: theme.space.page,
-          gap: theme.space.fieldGap,
-        }}
-      >
-        <PillChip label="Close" selected={false} onPress={onClose} />
-        {!editing ? (
-          <PillChip
-            label="Edit"
-            selected
-            onPress={() => {
-              setEditorStarted(true);
-              setEditing(true);
+      {!editing ? (
+        <ScrollView style={{ flex: 1 }}>
+          {/* Hero Banner */}
+          <View
+            style={{
+              backgroundColor: theme.colors.sleepBand,
+              borderBottomWidth: 1,
+              borderBottomColor: theme.colors.ruleStrong,
+              paddingHorizontal: theme.space.page,
+              paddingTop: theme.space.page,
+              paddingBottom: 20,
             }}
-          />
-        ) : null}
-        <PillChip
-          label="Delete entry"
-          selected={false}
-          onPress={() => setConfirmDelete(true)}
-        />
-      </View>
-      {error ? <Body>{error}</Body> : null}
-      <ScrollView
-        style={{ display: editing ? "none" : "flex" }}
-        contentContainerStyle={{
-          padding: theme.space.page,
-          gap: theme.space.fieldGap,
-        }}
-      >
-        <MetaLabel>{ENTRY_LABELS[entry.kind]}</MetaLabel>
-        <Body>{entrySummary(entry, data.foods())}</Body>
-        <Body>
-          {new Date(entry.occurredAt).toLocaleString(undefined, {
-            timeZone: entry.occurredTz,
-          })}{" "}
-          · {entry.occurredTz}
-        </Body>
-        {Object.entries(entry.content)
-          .filter(
-            ([key, value]) =>
-              !["foodId", "foodIds", "startAt"].includes(key) &&
-              value !== undefined &&
-              value !== null &&
-              value !== ""
-          )
-          .map(([key, value]) => (
-            <Body key={key}>
-              {key.replace(/([A-Z])/g, " $1")}:{" "}
-              {Array.isArray(value)
-                ? value.join(", ") || "None"
-                : String(value)}
-            </Body>
-          ))}
-        {entry.kind === "sleep_session" ? (
-          <>
-            <Body>
-              Fell asleep:{" "}
-              {new Date(entry.content.startAt).toLocaleString(undefined, {
-                timeZone: entry.occurredTz,
-              })}
-            </Body>
-            {data.hasSleepSessionOverlap(entry.id) ? (
-              <Body>
-                This Sleep Session overlaps another logged Sleep Session.
-              </Body>
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back to Ledger"
+                onPress={onClose}
+                hitSlop={8}
+              >
+                <Text
+                  style={{
+                    fontFamily: nativeFonts.sans,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 1.2,
+                    color: theme.colors.meta,
+                    fontWeight: "600",
+                  }}
+                >
+                  ← Ledger
+                </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Delete entry"
+                onPress={() => setConfirmDelete(true)}
+                hitSlop={8}
+              >
+                <Text
+                  style={{
+                    fontFamily: nativeFonts.sans,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 1.2,
+                    color: theme.colors.danger,
+                    fontWeight: "700",
+                  }}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1.4,
+                color: theme.colors.meta,
+                marginBottom: 4,
+              }}
+            >
+              {label} · {dateFormatted}
+            </Text>
+
+            <Text
+              style={{
+                fontFamily: nativeFonts.serif,
+                fontSize: 20,
+                fontWeight: "500",
+                lineHeight: 26,
+                color: theme.colors.ink,
+                marginBottom: 8,
+              }}
+            >
+              {summary}
+            </Text>
+          </View>
+
+          {error ? (
+            <View
+              style={{
+                padding: theme.space.page,
+                backgroundColor: theme.colors.accentWash,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.colors.accent,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  color: theme.colors.danger,
+                }}
+              >
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Key-Value Details */}
+          <View
+            style={{
+              paddingHorizontal: theme.space.page,
+              paddingVertical: 12,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingVertical: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.colors.ruleThin,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: theme.colors.meta,
+                }}
+              >
+                Type
+              </Text>
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: theme.colors.ink,
+                }}
+              >
+                {label}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingVertical: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.colors.ruleThin,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: theme.colors.meta,
+                }}
+              >
+                Time
+              </Text>
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: theme.colors.ink,
+                }}
+              >
+                {dateFormatted} ({entry.occurredTz})
+              </Text>
+            </View>
+
+            {Object.entries(entry.content)
+              .filter(
+                ([key, value]) =>
+                  !["foodId", "foodIds", "startAt"].includes(key) &&
+                  value !== undefined &&
+                  value !== null &&
+                  value !== ""
+              )
+              .map(([key, value]) => (
+                <View
+                  key={key}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.colors.ruleThin,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: theme.colors.meta,
+                    }}
+                  >
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: theme.colors.ink,
+                      textAlign: "right",
+                      maxWidth: "60%",
+                    }}
+                  >
+                    {Array.isArray(value)
+                      ? value.join(", ") || "None"
+                      : String(value)}
+                  </Text>
+                </View>
+              ))}
+
+            {entry.kind === "sleep_session" ? (
+              <>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.colors.ruleThin,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: theme.colors.meta,
+                    }}
+                  >
+                    Fell asleep
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: theme.colors.ink,
+                    }}
+                  >
+                    {new Date(entry.content.startAt).toLocaleString(undefined, {
+                      timeZone: entry.occurredTz,
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+
+                {data.hasSleepSessionOverlap(entry.id) ? (
+                  <View
+                    style={{
+                      paddingVertical: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 11.5,
+                        color: theme.colors.danger,
+                      }}
+                    >
+                      This Sleep Session overlaps another logged Sleep Session.
+                    </Text>
+                  </View>
+                ) : null}
+              </>
             ) : null}
-          </>
-        ) : null}
-      </ScrollView>
-      <View style={{ flex: 1, display: editing ? "flex" : "none" }}>
-        {editorStarted ? (
-          entry.kind === "meal" ? (
-            <MealForm
-              childId={entry.childId}
-              initialMeal={entry}
-              defaults={data.mealDefaultsForChild(entry.childId)}
-              suggestionsFor={(query) =>
-                data.mealNameSuggestions(entry.childId, query)
-              }
-              onCancel={() => setEditing(false)}
-              onSave={(input) => {
-                if (!data.updateMeal(entry.id, input))
-                  throw new Error("This Meal is no longer available.");
-                onClose();
+          </View>
+
+          {/* Action buttons */}
+          <View
+            style={{
+              paddingHorizontal: theme.space.page,
+              paddingVertical: 16,
+              gap: 8,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Edit this ${label.toLowerCase()}`}
+              onPress={() => {
+                setEditorStarted(true);
+                setEditing(true);
               }}
-            />
-          ) : entry.kind === "introduction" || entry.kind === "reaction" ? (
-            <FoodEntryForm
-              childId={entry.childId}
-              kind={entry.kind}
-              entry={entry}
-              hideDelete
-              onCancel={() => setEditing(false)}
-              onSaved={onClose}
-              onAlsoMeal={onAlsoMeal}
-            />
-          ) : (
-            <RoutineEntryForm
-              childId={entry.childId}
-              kind={entry.kind}
-              entry={entry}
-              onCancel={() => setEditing(false)}
-              onSave={(input) => {
-                if (!data.updateRoutineEntry(entry.id, input))
-                  throw new Error("This Entry is no longer available.");
-                onClose();
+              style={({ pressed }) => ({
+                paddingVertical: 11,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: theme.radius.pill,
+                backgroundColor: theme.colors.ruleStrong,
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: theme.colors.sheet,
+                }}
+              >
+                Edit this {label.toLowerCase()}
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: theme.space.page,
+              paddingVertical: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: theme.colors.ruleThin,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Cancel edit"
+              onPress={() => setEditing(false)}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: theme.colors.meta,
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 12,
+                fontWeight: "600",
+                color: theme.colors.ink,
               }}
-            />
-          )
-        ) : null}
-      </View>
+            >
+              Edit {label}
+            </Text>
+            <View style={{ width: 44 }} />
+          </View>
+
+          {editorStarted ? (
+            entry.kind === "meal" ? (
+              <MealForm
+                childId={entry.childId}
+                initialMeal={entry}
+                defaults={data.mealDefaultsForChild(entry.childId)}
+                suggestionsFor={(query) =>
+                  data.mealNameSuggestions(entry.childId, query)
+                }
+                onCancel={() => setEditing(false)}
+                onSave={(input) => {
+                  if (!data.updateMeal(entry.id, input))
+                    throw new Error("This Meal is no longer available.");
+                  onClose();
+                }}
+              />
+            ) : entry.kind === "introduction" || entry.kind === "reaction" ? (
+              <FoodEntryForm
+                childId={entry.childId}
+                kind={entry.kind}
+                entry={entry}
+                hideDelete
+                onCancel={() => setEditing(false)}
+                onSaved={onClose}
+                onAlsoMeal={onAlsoMeal}
+              />
+            ) : (
+              <RoutineEntryForm
+                childId={entry.childId}
+                kind={entry.kind}
+                entry={entry}
+                onCancel={() => setEditing(false)}
+                onSave={(input) => {
+                  if (!data.updateRoutineEntry(entry.id, input))
+                    throw new Error("This Entry is no longer available.");
+                  onClose();
+                }}
+              />
+            )
+          ) : null}
+        </View>
+      )}
+
       <DeleteEntryConfirm
         visible={confirmDelete}
+        title={`Delete this ${label.toLowerCase()}?`}
+        description={`${summary} · ${dateFormatted}`}
         onKeep={() => setConfirmDelete(false)}
         onDelete={remove}
       />
