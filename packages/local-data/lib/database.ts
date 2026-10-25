@@ -13,6 +13,7 @@ import {
   MetadataRepository,
   SeedRepository,
 } from "./foundation.ts";
+import { SleepTimerRepository } from "./sleep-timer.ts";
 import {
   currentVersion,
   runMigrations,
@@ -26,6 +27,7 @@ export interface LocalTransaction {
   readonly children: ChildRepository;
   readonly preferences: PreferenceRepository;
   readonly entries: EntryRepository;
+  readonly sleepTimers: SleepTimerRepository;
   readonly foods: FoodRepository;
   readonly metadata: MetadataRepository;
   readonly seeds: SeedRepository;
@@ -48,6 +50,7 @@ export class LocalDatabase {
   readonly children: ChildRepository;
   readonly preferences: PreferenceRepository;
   readonly entries: EntryRepository;
+  readonly sleepTimers: SleepTimerRepository;
   readonly foods: FoodRepository;
   readonly metadata: MetadataRepository;
   readonly seeds: SeedRepository;
@@ -63,6 +66,9 @@ export class LocalDatabase {
     this.children = new ChildRepository(this.orm);
     this.preferences = new PreferenceRepository(this.orm);
     this.entries = new EntryRepository(this.orm, driver, (operation) =>
+      this.transaction(() => operation())
+    );
+    this.sleepTimers = new SleepTimerRepository(this.orm, driver, (operation) =>
       this.transaction(() => operation())
     );
     this.foods = new FoodRepository(this.orm, driver, (operation) =>
@@ -215,6 +221,7 @@ function transactionScope(
     children: scopedRepository(db.children),
     preferences: scopedRepository(db.preferences),
     entries: scopedRepository(db.entries),
+    sleepTimers: scopedRepository(db.sleepTimers),
     foods: scopedRepository(db.foods),
     metadata: scopedRepository(db.metadata),
     seeds: scopedRepository(db.seeds),

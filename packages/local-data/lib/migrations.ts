@@ -300,6 +300,20 @@ BEGIN
 END;
 `,
   },
+  {
+    index: 6,
+    name: "0006_running_sleep_timers",
+    sql: `
+CREATE TABLE IF NOT EXISTS running_sleep_timers (
+  child_id TEXT PRIMARY KEY NOT NULL
+    REFERENCES children(id) ON DELETE CASCADE,
+  started_at INTEGER NOT NULL
+    CHECK (typeof(started_at) = 'integer' AND started_at >= 0),
+  started_tz TEXT NOT NULL
+    REFERENCES entry_timezones(name) ON DELETE RESTRICT
+);
+`,
+  },
 ];
 
 /** Reads the applied-migration cursor (`PRAGMA user_version`). */

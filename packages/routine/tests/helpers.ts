@@ -57,6 +57,6 @@ class NodeDriver implements MigrationDriver {
   }
 }
 
-export function openTestDriver(): MigrationDriver {
-  return new NodeDriver(new DatabaseSync(":memory:"));
+export function openTestDriver(databasePath = ":memory:"): MigrationDriver {
+  return new NodeDriver(new DatabaseSync(databasePath));
 }

@@ -1,15 +1,32 @@
 import {
   DEFAULT_TEMPERATURE_UNIT,
   EntryValidationError,
+  RunningSleepTimerAlreadyExistsError,
+  isIanaTimezone,
   type Entry,
   type EntryKind,
   type LocalDatabase,
   type EntryContent,
+  type RunningSleepTimer,
   type TemperatureUnit,
 } from "@keepsake/local-data";
 
 export type RoutineEntryKind =
   "feed" | "diaper_change" | "sleep_session" | "medical" | "growth";
+export const SLEEP_QUALITIES = ["poor", "okay", "great"] as const;
+export type SleepQuality = (typeof SLEEP_QUALITIES)[number];
+
+export interface StartSleepTimerInput {
+  readonly childId: string;
+  readonly startedTz: string;
+  readonly startedAt?: number;
+}
+
+export interface StopSleepTimerInput {
+  readonly endedAt: number;
+  readonly quality: SleepQuality;
+  readonly factors?: readonly string[];
+}
 
 interface RoutineTimestamp {
   readonly childId: string;
@@ -31,7 +48,7 @@ export type RoutineEntryInput =
   | (RoutineTimestamp & {
       readonly kind: "sleep_session";
       readonly startAt: number;
-      readonly quality: "poor" | "okay" | "great";
+      readonly quality: SleepQuality;
       readonly factors?: readonly string[];
     })
   | (RoutineTimestamp & {
@@ -73,7 +90,7 @@ export interface DiaperChangeContent {
 
 export interface SleepSessionContent {
   readonly startAt: number;
-  readonly quality: "poor" | "okay" | "great";
+  readonly quality: SleepQuality;
   readonly factors?: readonly string[];
 }
 
@@ -160,6 +177,13 @@ export class RoutineValidationError extends Error {
   }
 }
 
+export class SleepTimerNotRunningError extends Error {
+  constructor() {
+    super("There is no running Sleep timer for this Child.");
+    this.name = "SleepTimerNotRunningError";
+  }
+}
+
 export const SLEEP_QUALITY_FACTOR_SEEDS = [
   "many wakeups",
   "illness",
@@ -193,6 +217,104 @@ export class RoutineEntries {
       return created;
     });
     return attachContent(entry, asEntryContent(content));
+  }
+
+  startSleepTimer(input: StartSleepTimerInput): RunningSleepTimer {
+    const startedAt = input.startedAt ?? this.now();
+    if (
+      !Number.isSafeInteger(startedAt) ||
+      startedAt < 0 ||
+      startedAt > this.now()
+    ) {
+      throw new RoutineValidationError([
+        {
+          field: "startedAt",
+          message: "Sleep timer start must be a valid time no later than now.",
+        },
+      ]);
+    }
+    if (!isIanaTimezone(input.startedTz)) {
+      throw new RoutineValidationError([
+        {
+          field: "startedTz",
+          message: "Sleep timer timezone must be a valid IANA timezone.",
+        },
+      ]);
+    }
+    try {
+      return this.database.sleepTimers.start({
+        childId: input.childId,
+        startedAt,
+        startedTz: input.startedTz,
+      });
+    } catch (error) {
+      if (error instanceof RunningSleepTimerAlreadyExistsError) {
+        throw new RoutineValidationError([
+          {
+            field: "childId",
+            message: "A Sleep timer is already running for this Child.",
+          },
+        ]);
+      }
+      throw error;
+    }
+  }
+
+  getSleepTimer(childId: string): RunningSleepTimer | null {
+    return this.database.sleepTimers.get(childId);
+  }
+
+  /** Dismissing the Wake prompt only closes that prompt; the timer keeps running. */
+  cancelWake(childId: string): RunningSleepTimer | null {
+    return this.getSleepTimer(childId);
+  }
+
+  stopSleepTimer(childId: string, input: StopSleepTimerInput): RoutineEntry {
+    return this.database.transaction((transaction) => {
+      const timer = transaction.sleepTimers.get(childId);
+      if (!timer) throw new SleepTimerNotRunningError();
+      const entry = this.create({
+        childId,
+        kind: "sleep_session",
+        startAt: timer.startedAt,
+        occurredAt: input.endedAt,
+        occurredTz: timer.startedTz,
+        quality: input.quality,
+        factors: input.factors,
+      });
+      if (!transaction.sleepTimers.clear(childId)) {
+        throw new Error("Running Sleep timer could not be cleared.");
+      }
+      return entry;
+    });
+  }
+
+  hasSleepSessionOverlap(
+    childId: string,
+    startAt: number,
+    endAt: number,
+    excludingEntryId?: string
+  ): boolean {
+    if (
+      !Number.isSafeInteger(startAt) ||
+      !Number.isSafeInteger(endAt) ||
+      startAt < 0 ||
+      endAt <= startAt
+    ) {
+      throw new RoutineValidationError([
+        {
+          field: "startAt",
+          message: "Sleep must end after its start time.",
+        },
+      ]);
+    }
+    return this.listForChild(childId).some(
+      (entry) =>
+        entry.kind === "sleep_session" &&
+        entry.id !== excludingEntryId &&
+        entry.content.startAt < endAt &&
+        entry.occurredAt > startAt
+    );
   }
 
   get(id: string): RoutineEntry | null {
@@ -399,7 +521,7 @@ function validateAndNormalize(
       break;
     case "sleep_session":
       content = { startAt: input.startAt, quality: input.quality };
-      if (!["poor", "okay", "great"].includes(input.quality)) {
+      if (!SLEEP_QUALITIES.includes(input.quality)) {
         errors.push({
           field: "quality",
           message: "Choose poor, okay, or great sleep quality.",
