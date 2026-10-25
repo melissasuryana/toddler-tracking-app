@@ -1,8 +1,8 @@
 import { SLEEP_QUALITIES, type RoutineEntry } from "@keepsake/routine";
 import { useState } from "react";
-import { TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import type { SleepSessionEditInput } from "~/data/session.types";
-import { Body } from "~/components/Screen";
+import { Body, MetaLabel } from "~/components/Screen";
 import { PillChip } from "~/components/PillChip";
 import { nativeFonts } from "~/theme/tokens";
 import { useTheme } from "~/theme/ThemeProvider";
@@ -59,33 +59,30 @@ export function SleepSessionEditor({
         gap: theme.space.fieldGap,
       }}
     >
-      <Body>Correct Sleep Session</Body>
+      <MetaLabel>Sleep session</MetaLabel>
+      <Text
+        style={{
+          color: theme.colors.ink,
+          fontFamily: nativeFonts.serif,
+          fontSize: theme.typography.sheetTitle.fontSize,
+          fontWeight: String(theme.typography.sheetTitle.fontWeight) as "500",
+        }}
+      >
+        Correct{" "}
+        <Text style={{ color: theme.colors.sleepInk, fontStyle: "italic" }}>
+          sleep
+        </Text>{" "}
+        times
+      </Text>
       <Body dim>
         Times use UTC. The recorded timezone remains {entry.occurredTz}.
       </Body>
-      <TextInput
-        accessibilityLabel="Sleep start in UTC"
-        keyboardType="numbers-and-punctuation"
-        onChangeText={setStartAt}
-        placeholder="Sleep start (ISO 8601)"
-        placeholderTextColor={theme.colors.meta}
-        style={inputStyle(theme)}
-        value={startAt}
-      />
-      <TextInput
-        accessibilityLabel="Sleep end in UTC"
-        keyboardType="numbers-and-punctuation"
-        onChangeText={setEndedAt}
-        placeholder="Sleep end (ISO 8601)"
-        placeholderTextColor={theme.colors.meta}
-        style={inputStyle(theme)}
-        value={endedAt}
-      />
       <View
         style={{
           flexDirection: "row",
           flexWrap: "wrap",
           gap: theme.space.fieldGap,
+          paddingVertical: theme.space.rowBlock,
         }}
       >
         {SLEEP_QUALITIES.map((option) => (
@@ -93,6 +90,7 @@ export function SleepSessionEditor({
             key={option}
             label={option[0].toUpperCase() + option.slice(1)}
             selected={quality === option}
+            tint={theme.colors.safeChip}
             onPress={() => setQuality(option)}
           />
         ))}
@@ -100,12 +98,69 @@ export function SleepSessionEditor({
       {error ? <Body>{error}</Body> : null}
       <View
         style={{
+          borderTopColor: theme.colors.ruleThin,
+          borderBottomColor: theme.colors.ruleThin,
+          borderTopWidth: theme.rule.hairline,
+          borderBottomWidth: theme.rule.hairline,
+          paddingVertical: theme.space.fieldGap,
+        }}
+      >
+        <MetaLabel>When</MetaLabel>
+        <Body>Fell asleep · ISO 8601</Body>
+        <TextInput
+          accessibilityLabel="Sleep start in UTC"
+          keyboardType="numbers-and-punctuation"
+          onChangeText={setStartAt}
+          placeholder="Sleep start (ISO 8601)"
+          placeholderTextColor={theme.colors.meta}
+          style={inputStyle(theme)}
+          value={startAt}
+        />
+        <Body>Woke up · ISO 8601</Body>
+        <TextInput
+          accessibilityLabel="Sleep end in UTC"
+          keyboardType="numbers-and-punctuation"
+          onChangeText={setEndedAt}
+          placeholder="Sleep end (ISO 8601)"
+          placeholderTextColor={theme.colors.meta}
+          style={inputStyle(theme)}
+          value={endedAt}
+        />
+      </View>
+      <View
+        style={{
           flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: theme.space.fieldGap,
+          paddingTop: theme.space.rowBlock,
         }}
       >
         <PillChip label="Cancel" selected={false} onPress={onCancel} />
-        <PillChip label="Save changes" selected onPress={save} />
+        <Pressable
+          accessibilityRole="button"
+          onPress={save}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: theme.colors.ink,
+            borderRadius: theme.radius.pill,
+            flex: 1,
+            paddingHorizontal: theme.space.buttonInset,
+            paddingVertical: theme.space.rowBlock,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text
+            style={{
+              color: theme.colors.paper,
+              fontFamily: nativeFonts.sans,
+              fontSize: theme.typography.body.fontSize,
+              fontWeight: String(theme.typography.meta.fontWeight) as "600",
+            }}
+          >
+            Save changes
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -113,11 +168,12 @@ export function SleepSessionEditor({
 
 function inputStyle(theme: ReturnType<typeof useTheme>) {
   return {
-    borderColor: theme.colors.chipBorder,
-    borderWidth: theme.rule.hairline,
+    borderBottomColor: theme.colors.ruleThin,
+    borderBottomWidth: theme.rule.hairline,
     color: theme.colors.ink,
     fontFamily: nativeFonts.sans,
     fontSize: theme.typography.body.fontSize,
-    padding: theme.space.fieldGap,
+    paddingHorizontal: 2,
+    paddingVertical: theme.space.fieldGap,
   };
 }

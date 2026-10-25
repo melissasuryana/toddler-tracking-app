@@ -14,6 +14,7 @@ import {
 import { resolveLocalTimestamp } from "@keepsake/routine";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeepsakeIcon } from "~/components/KeepsakeIcon";
 import { Body, MetaLabel } from "~/components/Screen";
 import { PillChip } from "~/components/PillChip";
 import { nativeFonts } from "~/theme/tokens";
@@ -168,9 +169,26 @@ export function MealForm({
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingHorizontal: theme.space.page }}
+      contentContainerStyle={{
+        paddingHorizontal: theme.space.page,
+        paddingBottom: theme.space.sheetBlock,
+      }}
     >
-      <MetaLabel>{initialMeal ? "Edit meal" : "Meal"}</MetaLabel>
+      <MetaLabel>{initialMeal ? "Edit entry" : "New entry"}</MetaLabel>
+      <Text
+        style={{
+          color: theme.colors.ink,
+          fontFamily: nativeFonts.serif,
+          fontSize: theme.typography.sheetTitle.fontSize,
+          fontWeight: String(theme.typography.sheetTitle.fontWeight) as "500",
+          paddingBottom: theme.space.sheetBlock,
+        }}
+      >
+        {initialMeal ? "Edit a " : "Log a "}
+        <Text style={{ color: theme.colors.accent, fontStyle: "italic" }}>
+          meal
+        </Text>
+      </Text>
       <FieldLabel label="Meal name" />
       <TextInput
         accessibilityLabel="Meal name"
@@ -200,19 +218,60 @@ export function MealForm({
       <View
         style={{
           flexDirection: "row",
-          flexWrap: "wrap",
-          gap: theme.space.fieldGap,
+          justifyContent: "center",
+          gap: theme.space.rowGap,
+          paddingVertical: theme.space.fieldGap,
         }}
       >
         {[1, 2, 3, 4, 5].map((value) => (
-          <PillChip
+          <Pressable
             key={value}
-            label={String(value)}
-            selected={amount === value}
+            accessibilityRole="button"
+            accessibilityLabel={`${value} of 5 eaten`}
+            accessibilityState={{ selected: amount === value }}
             onPress={() => setAmount(value)}
-          />
+            style={({ pressed }) => ({
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              borderColor:
+                value <= amount
+                  ? theme.colors.safeChip.border
+                  : theme.colors.chipBorder,
+              borderWidth: theme.rule.hairline,
+              backgroundColor:
+                value <= amount
+                  ? theme.colors.safeChip.background
+                  : "transparent",
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <KeepsakeIcon
+              name="check"
+              size={16}
+              color={
+                value <= amount
+                  ? theme.colors.safeChip.foreground
+                  : theme.colors.meta
+              }
+            />
+          </Pressable>
         ))}
       </View>
+      <Text
+        style={{
+          color: theme.colors.meta,
+          fontFamily: nativeFonts.sans,
+          fontSize: theme.typography.small.fontSize,
+          fontWeight: String(theme.typography.meta.fontWeight) as "600",
+          textAlign: "center",
+          paddingBottom: theme.space.fieldGap,
+        }}
+      >
+        {amount} of 5
+      </Text>
 
       <ChoiceGroup
         label="Food Categories"
@@ -256,69 +315,101 @@ export function MealForm({
         value={note}
       />
 
-      <FieldLabel label="Date" />
-      <TextInput
-        accessibilityLabel="Meal date"
-        onChangeText={(value) => {
-          setOccurredOn(value);
-          setUtcOffsetMinutes(undefined);
-        }}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={theme.colors.meta}
-        style={inputStyle(theme)}
-        value={occurredOn}
-      />
-      <FieldLabel label="Time" />
-      <TextInput
-        accessibilityLabel="Meal time"
-        onChangeText={(value) => {
-          setOccurredAt(value);
-          setUtcOffsetMinutes(undefined);
-        }}
-        placeholder="HH:mm"
-        placeholderTextColor={theme.colors.meta}
-        style={inputStyle(theme)}
-        value={occurredAt}
-      />
-      {timestampOptions.length > 1 ? (
-        <>
-          <FieldLabel label="Time zone offset" />
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: theme.space.fieldGap,
-            }}
-          >
-            {timestampOptions.map(({ utcOffsetMinutes: offset }) => (
-              <PillChip
-                key={offset}
-                label={formatUtcOffset(offset)}
-                selected={utcOffsetMinutes === offset}
-                onPress={() => setUtcOffsetMinutes(offset)}
-              />
-            ))}
-          </View>
-        </>
-      ) : null}
-      <Body dim>{timezone}</Body>
-
       {error ? <Body>{error}</Body> : null}
       <View
         style={{
+          borderTopColor: theme.colors.ruleThin,
+          borderBottomColor: theme.colors.ruleThin,
+          borderTopWidth: theme.rule.hairline,
+          borderBottomWidth: theme.rule.hairline,
+          marginTop: theme.space.sheetBlock,
+          paddingVertical: theme.space.fieldGap,
+        }}
+      >
+        <FieldLabel label="When" />
+        <FieldLabel label="Date" />
+        <TextInput
+          accessibilityLabel="Meal date"
+          onChangeText={(value) => {
+            setOccurredOn(value);
+            setUtcOffsetMinutes(undefined);
+          }}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={theme.colors.meta}
+          style={inputStyle(theme)}
+          value={occurredOn}
+        />
+        <FieldLabel label="Time" />
+        <TextInput
+          accessibilityLabel="Meal time"
+          onChangeText={(value) => {
+            setOccurredAt(value);
+            setUtcOffsetMinutes(undefined);
+          }}
+          placeholder="HH:mm"
+          placeholderTextColor={theme.colors.meta}
+          style={inputStyle(theme)}
+          value={occurredAt}
+        />
+        {timestampOptions.length > 1 ? (
+          <>
+            <FieldLabel label="Time zone offset" />
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: theme.space.fieldGap,
+              }}
+            >
+              {timestampOptions.map(({ utcOffsetMinutes: offset }) => (
+                <PillChip
+                  key={offset}
+                  label={formatUtcOffset(offset)}
+                  selected={utcOffsetMinutes === offset}
+                  onPress={() => setUtcOffsetMinutes(offset)}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
+        <Body dim>{timezone}</Body>
+      </View>
+      <View
+        style={{
           flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: theme.space.fieldGap,
-          paddingVertical: theme.space.rowBlock,
+          paddingTop: theme.space.sheetBlock,
         }}
       >
         {onCancel ? (
           <PillChip label="Cancel" selected={false} onPress={onCancel} />
         ) : null}
-        <PillChip
-          label={initialMeal ? "Save changes" : "Save meal"}
-          selected
+        <Pressable
+          accessibilityRole="button"
           onPress={save}
-        />
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: theme.colors.ink,
+            borderRadius: theme.radius.pill,
+            flex: 1,
+            paddingHorizontal: theme.space.buttonInset,
+            paddingVertical: theme.space.rowBlock,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text
+            style={{
+              color: theme.colors.paper,
+              fontFamily: nativeFonts.sans,
+              fontSize: theme.typography.body.fontSize,
+              fontWeight: String(theme.typography.meta.fontWeight) as "600",
+            }}
+          >
+            {initialMeal ? "Save changes" : "Save meal"}
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -367,6 +458,11 @@ function FieldLabel({ label }: { readonly label: string }) {
         color: theme.colors.ink,
         fontFamily: nativeFonts.sans,
         fontSize: theme.typography.meta.fontSize,
+        fontWeight: String(theme.typography.meta.fontWeight) as "600",
+        letterSpacing:
+          theme.typography.meta.letterSpacingEm *
+          theme.typography.meta.fontSize,
+        textTransform: "uppercase",
         paddingTop: theme.space.fieldGap,
         paddingBottom: theme.space.fieldGap,
       }}
@@ -378,12 +474,13 @@ function FieldLabel({ label }: { readonly label: string }) {
 
 function inputStyle(theme: ReturnType<typeof useTheme>) {
   return {
-    borderColor: theme.colors.chipBorder,
-    borderWidth: theme.rule.hairline,
+    borderBottomColor: theme.colors.ruleThin,
+    borderBottomWidth: theme.rule.hairline,
     color: theme.colors.ink,
     fontFamily: nativeFonts.sans,
     fontSize: theme.typography.body.fontSize,
-    padding: theme.space.fieldGap,
+    paddingHorizontal: 2,
+    paddingVertical: theme.space.fieldGap,
   };
 }
 
