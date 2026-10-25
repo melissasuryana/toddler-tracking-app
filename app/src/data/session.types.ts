@@ -24,7 +24,13 @@ import type {
   IntroductionHeadsUp,
   IntroductionHeadsUpOptions,
 } from "@keepsake/food-tracking";
-import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
+import type {
+  RoutineEntry,
+  RoutineEntryInput,
+  SleepQuality,
+} from "@keepsake/routine";
+
+import type { ImportOptions, ImportReport } from "@keepsake/import";
 
 export interface SleepSessionEditInput {
   readonly startAt: number;
@@ -34,6 +40,23 @@ export interface SleepSessionEditInput {
 }
 
 export interface DataSession {
+  readonly previewTriedFoods: (
+    csv: string,
+    options: ImportOptions
+  ) => ImportReport;
+  readonly commitTriedFoods: (
+    preview: ImportReport,
+    confirmFallback: boolean
+  ) => ImportReport;
+  readonly routineEntriesForChild: (childId: string) => readonly RoutineEntry[];
+  readonly createRoutineEntry: (input: RoutineEntryInput) => RoutineEntry;
+  readonly updateRoutineEntry: (
+    id: string,
+    input: RoutineEntryInput
+  ) => RoutineEntry | null;
+  readonly deleteRoutineEntry: (id: string) => boolean;
+  readonly deleteMeal: (id: string) => boolean;
+  readonly markFoodSafe: (childId: string, foodId: string) => FoodStatus | null;
   readonly foods: () => readonly Food[];
   readonly foodStatus: (
     childId: string,
@@ -70,7 +93,14 @@ export interface DataSession {
   readonly runningSleepTimer: () => RunningSleepTimer | null;
   readonly startSleepTimer: () => void;
   readonly cancelWake: () => void;
-  readonly stopSleepTimer: (quality: SleepQuality) => RoutineEntry;
+  readonly stopSleepTimer: (
+    quality: SleepQuality,
+    times?: {
+      readonly startAt: number;
+      readonly endedAt: number;
+      readonly factors?: readonly string[];
+    }
+  ) => RoutineEntry;
   readonly hasSleepSessionOverlap: (id: string) => boolean;
   readonly updateSleepSession: (
     id: string,

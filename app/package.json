@@ -13,6 +13,7 @@
   "dependencies": {
     "@keepsake/design-system": "*",
     "@keepsake/food-tracking": "*",
+    "@keepsake/import": "*",
     "@keepsake/local-data": "*",
     "@keepsake/routine": "*",
     "drizzle-orm": "0.45.2",

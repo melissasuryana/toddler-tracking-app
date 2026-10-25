@@ -22,7 +22,11 @@ export type FoodDraftAction =
       readonly foodId?: string;
     }
   | { readonly type: "saved"; readonly kind: FoodDraftKind }
-  | { readonly type: "meal-shortcut"; readonly draft: MealEntryInput };
+  | {
+      readonly type: "meal-shortcut";
+      readonly draft: MealEntryInput;
+      readonly preserveIntroductionDraft?: boolean;
+    };
 
 /** Cancel and tab changes do not discard a draft; only an explicit save resets it. */
 export function foodDraftsReducer(
@@ -30,10 +34,13 @@ export function foodDraftsReducer(
   action: FoodDraftAction
 ): FoodDrafts {
   if (action.type === "open") {
+    const changingContext =
+      action.foodId !== undefined &&
+      state.contextualFoods[action.kind] !== action.foodId;
     return {
       ...state,
       started: [...new Set([...state.started, action.kind])],
-      revisions: action.foodId
+      revisions: changingContext
         ? {
             ...state.revisions,
             [action.kind]: state.revisions[action.kind] + 1,
@@ -49,16 +56,23 @@ export function foodDraftsReducer(
       ...state,
       started: [
         ...new Set<FoodDraftKind>([
-          ...state.started.filter((kind) => kind !== "introduction"),
+          ...state.started.filter(
+            (kind) =>
+              kind !== "introduction" || action.preserveIntroductionDraft
+          ),
           "meal",
         ]),
       ],
       revisions: {
         ...state.revisions,
-        introduction: state.revisions.introduction + 1,
+        introduction:
+          state.revisions.introduction +
+          (action.preserveIntroductionDraft ? 0 : 1),
         meal: state.revisions.meal + 1,
       },
-      contextualFoods: { ...state.contextualFoods, introduction: undefined },
+      contextualFoods: action.preserveIntroductionDraft
+        ? state.contextualFoods
+        : { ...state.contextualFoods, introduction: undefined },
       mealPrefill: action.draft,
     };
   }

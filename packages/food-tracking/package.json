@@ -4,6 +4,9 @@
   "private": true,
   "description": "Food catalogue, Food Status, and Watch Period domain rules",
   "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
   "dependencies": {
     "@keepsake/local-data": "*"
   }

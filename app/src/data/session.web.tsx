@@ -4,6 +4,7 @@
  * the app importable/bundleable off-device. Nothing here persists.
  */
 import { uuidv7, validateEntryInput } from "@keepsake/local-data";
+import { TriedFoodImport } from "@keepsake/import";
 import {
   mealDefaultsFrom,
   mealNameSuggestionsFrom,
@@ -16,6 +17,7 @@ import {
   normalizeIntroductionContent,
   normalizeReactionContent,
   type FoodEntry,
+  type Food,
   type FoodStatus,
   type IntroductionEntry,
   type IntroductionEntryInput,
@@ -29,8 +31,14 @@ import type {
   ChildInput,
   RunningSleepTimer,
   TemperatureUnit,
+  ManualSafeMarker,
 } from "@keepsake/local-data";
-import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
+import {
+  normalizeRoutineContent,
+  type RoutineEntry,
+  type RoutineEntryInput,
+  type SleepQuality,
+} from "@keepsake/routine";
 import {
   createContext,
   useContext,
@@ -52,12 +60,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   >([]);
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
+  const [customFoods, setCustomFoods] = useState<Food[]>([]);
+  const latestCustomFoods = useRef(customFoods);
+  latestCustomFoods.current = customFoods;
+  const latestChild = useRef(child);
+  latestChild.current = child;
+  const foodImport = useRef<TriedFoodImport | null>(null);
+  const [routineEntries, setRoutineEntries] = useState<RoutineEntry[]>([]);
+  const [safeMarkers, setSafeMarkers] = useState<ManualSafeMarker[]>([]);
   // The shortcut reads the saved Introduction in the same turn, before React renders.
   const latestFoodEntries = useRef(foodEntries);
   latestFoodEntries.current = foodEntries;
 
   const session = useMemo<DataSession>(() => {
-    const foods = [...SEEDED_FOODS].sort(
+    const foods = [...SEEDED_FOODS, ...customFoods].sort(
       (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)
     );
     const statusFor = (
@@ -88,7 +104,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             associatedId,
           }));
         },
-        null,
+        safeMarkers.find(
+          (marker) => marker.childId === childId && marker.foodId === foodId
+        ) ?? null,
         now,
         excludeEntryId
       );
@@ -137,6 +155,71 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         throw new Error("Food does not exist.");
       return entry;
     };
+    if (!foodImport.current) {
+      foodImport.current = new TriedFoodImport({
+        child: (id) =>
+          latestChild.current?.id === id ? latestChild.current : null,
+        foods: () => [...SEEDED_FOODS, ...latestCustomFoods.current],
+        tracked: (childId, foodId) =>
+          latestFoodEntries.current.some(
+            (entry) =>
+              entry.childId === childId &&
+              (entry.kind === "introduction"
+                ? entry.content.foodId === foodId
+                : entry.content.foodIds.includes(foodId))
+          ),
+        createFood: (input) => {
+          const food: Food = {
+            id: uuidv7(),
+            name: input.name,
+            category: input.category ?? null,
+            allergenTags: [...(input.allergenTags ?? [])],
+            source: "custom",
+          };
+          latestCustomFoods.current = [...latestCustomFoods.current, food];
+          return food;
+        },
+        introduce: (input) => {
+          const validation = validateEntryInput({
+            ...input,
+            kind: "introduction",
+          });
+          if (!validation.ok || input.childId !== latestChild.current?.id) {
+            throw new Error("Check the Introduction date and Child.");
+          }
+          const now = Date.now();
+          latestFoodEntries.current = [
+            ...latestFoodEntries.current,
+            {
+              id: uuidv7(),
+              childId: input.childId,
+              kind: "introduction",
+              occurredAt: input.occurredAt,
+              occurredTz: input.occurredTz,
+              createdAt: now,
+              updatedAt: now,
+              deletedAt: null,
+              isSeed: false,
+              content: normalizeIntroductionContent(input),
+            },
+          ];
+        },
+        transaction: (operation) => {
+          const beforeFoods = latestCustomFoods.current;
+          const beforeEntries = latestFoodEntries.current;
+          try {
+            const result = operation();
+            setCustomFoods(latestCustomFoods.current);
+            setFoodEntries(latestFoodEntries.current);
+            return result;
+          } catch (error) {
+            latestCustomFoods.current = beforeFoods;
+            latestFoodEntries.current = beforeEntries;
+            throw error;
+          }
+        },
+      });
+    }
     const canUpdate = (
       existing: FoodEntry | undefined,
       input: IntroductionEntryInput | ReactionEntryInput
@@ -144,7 +227,108 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       existing &&
       existing.childId === input.childId &&
       existing.occurredTz === input.occurredTz;
+    const invalidateSafeMarkers = (entry: FoodEntry, previous?: FoodEntry) => {
+      const ids = (item: FoodEntry) =>
+        item.kind === "introduction"
+          ? [item.content.foodId]
+          : [...item.content.foodIds].sort();
+      if (
+        previous &&
+        previous.occurredAt === entry.occurredAt &&
+        JSON.stringify(ids(previous)) === JSON.stringify(ids(entry))
+      )
+        return;
+      const affected = new Set([
+        ...ids(entry),
+        ...(previous ? ids(previous) : []),
+      ]);
+      setSafeMarkers((current) =>
+        current.filter(
+          (marker) =>
+            marker.childId !== entry.childId || !affected.has(marker.foodId)
+        )
+      );
+    };
     return {
+      previewTriedFoods: (csv, options) =>
+        foodImport.current!.preview(csv, options),
+      commitTriedFoods: (preview, confirmFallback) =>
+        foodImport.current!.commit(preview, { confirmFallback }),
+      routineEntriesForChild: (childId) =>
+        [...routineEntries, ...sleepSessions]
+          .filter((entry) => entry.childId === childId)
+          .sort(
+            (a, b) =>
+              b.occurredAt - a.occurredAt ||
+              b.createdAt - a.createdAt ||
+              b.id.localeCompare(a.id)
+          ),
+      createRoutineEntry: (input) => {
+        const entry = toWebRoutine(input, unit ?? "C");
+        setRoutineEntries((current) => [...current, entry]);
+        return entry;
+      },
+      updateRoutineEntry: (id, input) => {
+        const existing = [...routineEntries, ...sleepSessions].find(
+          (entry) => entry.id === id
+        );
+        if (
+          !existing ||
+          existing.childId !== input.childId ||
+          existing.kind !== input.kind ||
+          existing.occurredTz !== input.occurredTz
+        )
+          return null;
+        const updated = toWebRoutine(input, unit ?? "C", existing);
+        setRoutineEntries((current) => [
+          ...current.filter((entry) => entry.id !== id),
+          updated,
+        ]);
+        setSleepSessions((current) =>
+          current.filter((entry) => entry.id !== id)
+        );
+        return updated;
+      },
+      deleteRoutineEntry: (id) => {
+        if (
+          ![...routineEntries, ...sleepSessions].some(
+            (entry) => entry.id === id
+          )
+        )
+          return false;
+        setRoutineEntries((current) =>
+          current.filter((entry) => entry.id !== id)
+        );
+        setSleepSessions((current) =>
+          current.filter((entry) => entry.id !== id)
+        );
+        return true;
+      },
+      deleteMeal: (id) => {
+        if (!meals.some((entry) => entry.id === id)) return false;
+        setMeals((current) => current.filter((entry) => entry.id !== id));
+        return true;
+      },
+      markFoodSafe: (childId, foodId) => {
+        const status = statusFor(childId, foodId);
+        if (status.status !== "trying" || !status.watchPeriod) return null;
+        setSafeMarkers((current) => [
+          ...current.filter(
+            (marker) => marker.childId !== childId || marker.foodId !== foodId
+          ),
+          {
+            childId,
+            foodId,
+            cycleEntryId: status.watchPeriod!.openingIntroductionId,
+          },
+        ]);
+        return {
+          ...status,
+          status: "safe",
+          watchPeriod: null,
+          safeReason: "manual",
+        };
+      },
       foods: () => foods,
       foodStatus: statusFor,
       introductionHeadsUps: (childId, foodId, occurredAt, options = {}) => {
@@ -194,6 +378,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           .map(({ food }) => food),
       createIntroduction: (input) => {
         const entry = toFoodEntry(input, "introduction") as IntroductionEntry;
+        invalidateSafeMarkers(entry);
         latestFoodEntries.current = [...latestFoodEntries.current, entry];
         setFoodEntries((current) => [...current, entry]);
         return entry;
@@ -208,6 +393,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           "introduction",
           existing
         ) as IntroductionEntry;
+        invalidateSafeMarkers(entry, existing);
         latestFoodEntries.current = latestFoodEntries.current.map((item) =>
           item.id === id ? entry : item
         );
@@ -218,6 +404,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       createReaction: (input) => {
         const entry = toFoodEntry(input, "reaction") as ReactionEntry;
+        invalidateSafeMarkers(entry);
         latestFoodEntries.current = [...latestFoodEntries.current, entry];
         setFoodEntries((current) => [...current, entry]);
         return entry;
@@ -228,6 +415,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         );
         if (!canUpdate(existing, input)) return null;
         const entry = toFoodEntry(input, "reaction", existing) as ReactionEntry;
+        invalidateSafeMarkers(entry, existing);
         latestFoodEntries.current = latestFoodEntries.current.map((item) =>
           item.id === id ? entry : item
         );
@@ -237,7 +425,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return entry;
       },
       deleteFoodEntry: (id) => {
-        if (!foodEntries.some((entry) => entry.id === id)) return false;
+        const existing = foodEntries.find((entry) => entry.id === id);
+        if (!existing) return false;
+        invalidateSafeMarkers(existing);
         latestFoodEntries.current = latestFoodEntries.current.filter(
           (entry) => entry.id !== id
         );
@@ -289,12 +479,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         });
       },
       cancelWake: () => undefined,
-      stopSleepTimer: (quality: SleepQuality): RoutineEntry => {
+      stopSleepTimer: (quality: SleepQuality, times): RoutineEntry => {
         if (!child || !sleepTimer) {
           throw new Error("There is no running Sleep timer for this Child.");
         }
-        const endedAt = Date.now();
-        if (endedAt <= sleepTimer.startedAt) {
+        const endedAt = times?.endedAt ?? Date.now();
+        const startAt = times?.startAt ?? sleepTimer.startedAt;
+        if (endedAt <= startAt) {
           throw new Error("Sleep must end after its start time.");
         }
         const entry: Extract<RoutineEntry, { kind: "sleep_session" }> = {
@@ -307,17 +498,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           updatedAt: endedAt,
           deletedAt: null,
           isSeed: false,
-          content: { startAt: sleepTimer.startedAt, quality },
+          content: normalizeRoutineContent({
+            kind: "sleep_session",
+            childId: child.id,
+            occurredAt: endedAt,
+            occurredTz: sleepTimer.startedTz,
+            startAt,
+            quality,
+            factors: times?.factors,
+          }) as Extract<RoutineEntry, { kind: "sleep_session" }>["content"],
         };
         setSleepTimer(null);
         setSleepSessions((current) => [...current, entry]);
         return entry;
       },
       hasSleepSessionOverlap: (id: string) => {
-        const target = sleepSessions.find((entry) => entry.id === id);
+        const sessions = [...sleepSessions, ...routineEntries].filter(
+          (entry) => entry.kind === "sleep_session"
+        );
+        const target = sessions.find((entry) => entry.id === id);
         return (
           target !== undefined &&
-          sleepSessions.some(
+          sessions.some(
             (entry) =>
               entry.id !== target.id &&
               entry.childId === target.childId &&
@@ -375,7 +577,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return updated;
       },
     };
-  }, [child, meals, foodEntries, sleepSessions, sleepTimer, unit]);
+  }, [
+    child,
+    meals,
+    foodEntries,
+    customFoods,
+    sleepSessions,
+    sleepTimer,
+    unit,
+    routineEntries,
+    safeMarkers,
+  ]);
 
   return (
     <DataContext.Provider value={session}>{children}</DataContext.Provider>
@@ -404,4 +616,27 @@ function toWebMeal(input: MealEntryInput, existing?: MealEntry): MealEntry {
     isSeed: false,
     content: normalizeMealContent(input),
   };
+}
+
+function toWebRoutine(
+  input: RoutineEntryInput,
+  unit: TemperatureUnit,
+  existing?: RoutineEntry
+): RoutineEntry {
+  const validation = validateEntryInput(input);
+  if (!validation.ok)
+    throw new Error("Check this Entry’s date, time and Child.");
+  const now = Date.now();
+  return {
+    id: existing?.id ?? uuidv7(),
+    childId: input.childId,
+    kind: input.kind,
+    occurredAt: input.occurredAt,
+    occurredTz: input.occurredTz,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: Math.max(now, (existing?.updatedAt ?? 0) + 1),
+    deletedAt: null,
+    isSeed: false,
+    content: normalizeRoutineContent(input, now, unit),
+  } as RoutineEntry;
 }

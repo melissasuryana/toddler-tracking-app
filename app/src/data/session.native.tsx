@@ -17,6 +17,7 @@ import {
   FoodTracking,
 } from "@keepsake/food-tracking";
 import { openAppDatabase } from "@keepsake/local-data/expo";
+import { TriedFoodImport, sqliteImportStore } from "@keepsake/import";
 import { RoutineEntries, type SleepQuality } from "@keepsake/routine";
 import {
   createContext,
@@ -38,11 +39,46 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [mealEntries] = useState(() => new MealEntries(db));
   const [foodEntries] = useState(() => new FoodEntries(db));
   const [foodTracking] = useState(() => new FoodTracking(db));
+  const [foodImport] = useState(
+    () => new TriedFoodImport(sqliteImportStore(db))
+  );
   const [foodVersion, setFoodVersion] = useState(0);
   const [mealVersion, setMealVersion] = useState(0);
 
   const session = useMemo<DataSession>(
     () => ({
+      previewTriedFoods: (csv, options) => foodImport.preview(csv, options),
+      commitTriedFoods: (preview, confirmFallback) => {
+        const report = foodImport.commit(preview, { confirmFallback });
+        setFoodVersion((version) => version + 1);
+        return report;
+      },
+      routineEntriesForChild: (childId) => routineEntries.listForChild(childId),
+      createRoutineEntry: (input) => {
+        const entry = routineEntries.create(input);
+        setSleepTimerVersion((version) => version + 1);
+        return entry;
+      },
+      updateRoutineEntry: (id, input) => {
+        const entry = routineEntries.update(id, input);
+        if (entry) setSleepTimerVersion((version) => version + 1);
+        return entry;
+      },
+      deleteRoutineEntry: (id) => {
+        const deleted = routineEntries.delete(id);
+        if (deleted) setSleepTimerVersion((version) => version + 1);
+        return deleted;
+      },
+      deleteMeal: (id) => {
+        const deleted = mealEntries.delete(id);
+        if (deleted) setMealVersion((version) => version + 1);
+        return deleted;
+      },
+      markFoodSafe: (childId, foodId) => {
+        const status = foodTracking.markSafe(childId, foodId);
+        if (status) setFoodVersion((version) => version + 1);
+        return status;
+      },
       foods: () => foodTracking.listFoods(),
       foodStatus: (childId, foodId, now) =>
         foodTracking.statusFor(childId, foodId, now),
@@ -107,10 +143,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       cancelWake: () => {
         if (child) routineEntries.cancelWake(child.id);
       },
-      stopSleepTimer: (quality: SleepQuality) => {
+      stopSleepTimer: (quality: SleepQuality, times) => {
         if (!child) throw new Error("A Child is required to stop Sleep.");
         const entry = routineEntries.stopSleepTimer(child.id, {
-          endedAt: Date.now(),
+          endedAt: times?.endedAt ?? Date.now(),
+          startAt: times?.startAt,
+          factors: times?.factors,
           quality,
         });
         setSleepTimerVersion((version) => version + 1);
@@ -131,7 +169,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       updateSleepSession: (id, input) => {
         const existing = routineEntries.get(id);
         if (!existing || existing.kind !== "sleep_session") return null;
-        return routineEntries.update(id, {
+        const updated = routineEntries.update(id, {
           childId: existing.childId,
           kind: "sleep_session",
           startAt: input.startAt,
@@ -140,6 +178,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           quality: input.quality,
           factors: input.factors ?? existing.content.factors,
         });
+        if (updated) setSleepTimerVersion((version) => version + 1);
+        return updated;
       },
       mealsForChild: (childId: string) => {
         void mealVersion;
@@ -171,6 +211,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       mealVersion,
       foodEntries,
       foodTracking,
+      foodImport,
       foodVersion,
       routineEntries,
       sleepTimerVersion,

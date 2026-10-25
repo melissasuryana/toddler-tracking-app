@@ -1,5 +1,6 @@
 export {
   RoutineEntries,
+  normalizeRoutineContent,
   RoutineValidationError,
   SleepTimerNotRunningError,
   SLEEP_QUALITIES,

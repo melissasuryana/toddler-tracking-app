@@ -1,0 +1,14 @@
+{
+  "name": "@keepsake/import",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "@keepsake/food-tracking": "*",
+    "@keepsake/local-data": "*",
+    "@keepsake/routine": "*"
+  }
+}

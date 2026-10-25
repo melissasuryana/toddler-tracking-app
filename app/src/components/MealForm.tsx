@@ -11,19 +11,15 @@ import {
   type MealSuggestionField,
   type MealSuggestionFields,
 } from "@keepsake/food-tracking";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { KeepsakeIcon } from "~/components/KeepsakeIcon";
 import { Body, MetaLabel } from "~/components/Screen";
 import { PillChip } from "~/components/PillChip";
 import { nativeFonts } from "~/theme/tokens";
 import { useTheme } from "~/theme/ThemeProvider";
-import {
-  formatUtcOffset,
-  localDateTime,
-  resolveEntryTimestamp,
-  timestampOptions as validTimestampOptions,
-} from "./entryTimestamp";
+import { localDateTime, resolveEntryTimestamp } from "./entryTimestamp";
+import { EntryTimestampFields } from "./EntryTimestampFields";
 
 export interface MealFormProps {
   readonly childId: string;
@@ -101,16 +97,7 @@ export function MealForm({
     () => new Set(Object.keys(prefilled) as MealSuggestionField[])
   );
   const [error, setError] = useState<string | null>(null);
-  const timezone =
-    initialMeal?.occurredTz ??
-    prefilledTimestamp?.occurredTz ??
-    currentTimezone();
   const suggestions = suggestionsFor(name);
-  const localTimestamp = `${occurredOn}T${occurredAt}`;
-  const timestampOptions = useMemo(
-    () => validTimestampOptions(localTimestamp, timezone),
-    [localTimestamp, timezone]
-  );
 
   function toggle<T extends string>(
     field: MealSuggestionField,
@@ -345,58 +332,27 @@ export function MealForm({
           paddingVertical: theme.space.fieldGap,
         }}
       >
-        <FieldLabel label="When" />
-        <FieldLabel label="Date" />
-        <TextInput
-          accessibilityLabel="Meal date"
-          onChangeText={(value) => {
+        <EntryTimestampFields
+          label="Meal"
+          original={originalTimestamp}
+          date={occurredOn}
+          time={occurredAt}
+          offset={utcOffsetMinutes}
+          setDate={(value) => {
             setTimestampEdited(true);
             setOccurredOn(value);
             setUtcOffsetMinutes(undefined);
           }}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={theme.colors.meta}
-          style={inputStyle(theme)}
-          value={occurredOn}
-        />
-        <FieldLabel label="Time" />
-        <TextInput
-          accessibilityLabel="Meal time"
-          onChangeText={(value) => {
+          setTime={(value) => {
             setTimestampEdited(true);
             setOccurredAt(value);
             setUtcOffsetMinutes(undefined);
           }}
-          placeholder="HH:mm"
-          placeholderTextColor={theme.colors.meta}
-          style={inputStyle(theme)}
-          value={occurredAt}
+          setOffset={(offset) => {
+            setTimestampEdited(true);
+            setUtcOffsetMinutes(offset);
+          }}
         />
-        {timestampOptions.length > 1 ? (
-          <>
-            <FieldLabel label="Time zone offset" />
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: theme.space.fieldGap,
-              }}
-            >
-              {timestampOptions.map(({ utcOffsetMinutes: offset }) => (
-                <PillChip
-                  key={offset}
-                  label={formatUtcOffset(offset)}
-                  selected={utcOffsetMinutes === offset}
-                  onPress={() => {
-                    setTimestampEdited(true);
-                    setUtcOffsetMinutes(offset);
-                  }}
-                />
-              ))}
-            </View>
-          </>
-        ) : null}
-        <Body dim>{timezone}</Body>
       </View>
       <View
         style={{
