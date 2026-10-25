@@ -35,6 +35,10 @@ Look for the originating spec, in this order:
 
 Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
 
+For dependency additions or updates, include `README.md#dependency-health` in the Standards sources and require dated primary-source evidence for each changed dependency. Cover published identity/version, release cadence, security-patch responsiveness, deprecation/archive status, downloads, and unresolved advisories. Report unverifiable evidence and policy exceptions explicitly; the pre-commit check supplies signals, not proof of maintenance.
+
+Every review includes the application-security requirements in `README.md#security-checks` as Standards sources, even when dependencies are unchanged.
+
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
@@ -61,6 +65,7 @@ Each smell reads _what it is_ → _how to fix_; match it against the diff:
 
 - The full diff command and commit list.
 - The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+- Apply each application-security requirement to the changed trust boundaries. Report exploitable findings with severity, file/line, attack path, impact, and remediation; distinguish verified findings, unverified concerns, and checks not run. Account for each security requirement as checked or not applicable, and inspect available Security workflow results and CodeQL alerts. Automated passes alone are not evidence that the application is secure.
 - The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
 
 **Spec sub-agent prompt** should include:

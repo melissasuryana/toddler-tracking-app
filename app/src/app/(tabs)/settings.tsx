@@ -10,7 +10,14 @@ import {
 } from "@keepsake/local-data";
 import { View } from "react-native";
 import { PillChip } from "~/components/PillChip";
-import { Body, MetaLabel, Row, Screen, ScreenTitle } from "~/components/Screen";
+import {
+  Body,
+  Hairline,
+  MetaLabel,
+  Row,
+  Screen,
+  ScreenTitle,
+} from "~/components/Screen";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
 
@@ -22,6 +29,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScreenTitle>Settings</ScreenTitle>
+      <Hairline style={{ marginTop: theme.space.sheetBlock }} />
 
       <MetaLabel>Preferences</MetaLabel>
       <Row>
@@ -43,8 +51,11 @@ export default function SettingsScreen() {
 
       <MetaLabel>Data</MetaLabel>
       <Row>
-        <Body>Import tried foods</Body>
-        <Body dim>Coming with the import ticket</Body>
+        <View style={{ flex: 1, gap: theme.space.fieldGap }}>
+          <Body>Import tried foods</Body>
+          <Body dim>Bring a food history into your journal.</Body>
+        </View>
+        <Body dim>Coming soon</Body>
       </Row>
     </Screen>
   );

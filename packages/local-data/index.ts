@@ -32,6 +32,39 @@ export {
   type Child,
 } from "./lib/repository.ts";
 export {
+  EntryRepository,
+  EntryValidationError,
+  FoodRepository,
+  MetadataRepository,
+  SeedRepository,
+  type EntryAssociation,
+  type EntryContent,
+  type EntryContentValue,
+  type ManualSafeMarker,
+  type SeedRow,
+  type SeedValue,
+  type StoredFood,
+  type StoredFoodInput,
+} from "./lib/foundation.ts";
+export type { LocalTransaction } from "./lib/database.ts";
+export {
+  RunningSleepTimerAlreadyExistsError,
+  SleepTimerRepository,
+  type RunningSleepTimer,
+} from "./lib/sleep-timer.ts";
+export {
+  ENTRY_KINDS,
+  isIanaTimezone,
+  isSlugId,
+  isUuidV7,
+  validateEntryInput,
+  type Entry,
+  type EntryFieldError,
+  type EntryInput,
+  type EntryKind,
+  type ValidEntryInput,
+} from "./lib/entry.ts";
+export {
   CHILD_SEXES,
   isIsoDate,
   todayIsoDate,
@@ -52,5 +85,16 @@ export {
   type PreferenceTypes,
   type TemperatureUnit,
 } from "./lib/preferences.ts";
-export { children, preferences } from "./lib/schema.ts";
+export {
+  children,
+  entries,
+  entryAssociations,
+  entryContent,
+  entryTimezones,
+  customFoods,
+  manualSafeMarkers,
+  metadata,
+  preferences,
+  runningSleepTimers,
+} from "./lib/schema.ts";
 export { createOrm, type LocalOrm } from "./lib/orm.ts";

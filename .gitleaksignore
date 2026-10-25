@@ -1,0 +1,7 @@
+# GitHub homepage analytics HMAC in an accidentally downloaded HTML page, not an API key.
+# cloudflared.deb was deleted in 519d143; ignore only these historical snapshots.
+60c235691572ef3fa794cde5e2ec5ee2efa59b38:cloudflared.deb:generic-api-key:372
+b1ff88f3abf80033b515513eed22440e1d491643:cloudflared.deb:generic-api-key:372
+b7c9cde16065e4bfd2a8703707eb9906cd6e9233:cloudflared.deb:generic-api-key:372
+6caf0ce66e3308ee521e43b9381a04ab0d2b99b2:cloudflared.deb:generic-api-key:372
+33bcd5e7e0dafaa2c864161d4bd726506ca018de:cloudflared.deb:generic-api-key:372

@@ -1,2 +1,11 @@
+npm run check:secrets || exit 1
+if ! git diff --quiet -- package.json app/package.json 'packages/*/package.json' package-lock.json; then
+  echo "Stage or stash all manifest and lockfile edits before the dependency audit." >&2
+  exit 1
+fi
+npm run check:security:dependencies || exit 1
+npm run check:dependencies
 npx lint-staged
+npm run typecheck
+npm run test
 node .husky/jev-hook.mjs pre-commit
