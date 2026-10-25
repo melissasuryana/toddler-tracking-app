@@ -20,6 +20,7 @@ export interface FoodStatusResult {
   readonly safeReason: "watch-expired" | "manual" | null;
 }
 
+/** Replay one Child's history at the requested instant. */
 export function deriveFoodStatus(
   foodId: string,
   entries: readonly Entry[],
@@ -32,6 +33,7 @@ export function deriveFoodStatus(
 ): FoodStatusResult {
   const evidence: FoodEvidence[] = [];
   for (const entry of entries) {
+    if (entry.deletedAt !== null || entry.occurredAt > now) continue;
     if (entry.kind !== "introduction" && entry.kind !== "reaction") continue;
     if (
       associationsFor(entry.id).some(

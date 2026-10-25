@@ -11,7 +11,11 @@ import type {
   LocalDatabase,
   TemperatureUnit,
 } from "@keepsake/local-data";
-import { MealEntries } from "@keepsake/food-tracking";
+import {
+  MealEntries,
+  FoodEntries,
+  FoodTracking,
+} from "@keepsake/food-tracking";
 import { openAppDatabase } from "@keepsake/local-data/expo";
 import { RoutineEntries, type SleepQuality } from "@keepsake/routine";
 import {
@@ -32,10 +36,50 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [sleepTimerVersion, setSleepTimerVersion] = useState(0);
   const [routineEntries] = useState(() => new RoutineEntries(db));
   const [mealEntries] = useState(() => new MealEntries(db));
+  const [foodEntries] = useState(() => new FoodEntries(db));
+  const [foodTracking] = useState(() => new FoodTracking(db));
+  const [foodVersion, setFoodVersion] = useState(0);
   const [mealVersion, setMealVersion] = useState(0);
 
   const session = useMemo<DataSession>(
     () => ({
+      foods: () => foodTracking.listFoods(),
+      foodStatus: (childId, foodId, now) =>
+        foodTracking.statusFor(childId, foodId, now),
+      introductionHeadsUps: (childId, foodId, occurredAt) =>
+        foodTracking.introductionHeadsUps(childId, foodId, occurredAt),
+      foodEntriesForChild: (childId) => {
+        void foodVersion;
+        return foodEntries.listForChild(childId);
+      },
+      reactionFoods: (childId, now) => foodEntries.reactionFoods(childId, now),
+      createIntroduction: (input) => {
+        const entry = foodEntries.createIntroduction(input);
+        setFoodVersion((version) => version + 1);
+        return entry;
+      },
+      updateIntroduction: (id, input) => {
+        const entry = foodEntries.updateIntroduction(id, input);
+        if (entry) setFoodVersion((version) => version + 1);
+        return entry;
+      },
+      createReaction: (input) => {
+        const entry = foodEntries.createReaction(input);
+        setFoodVersion((version) => version + 1);
+        return entry;
+      },
+      updateReaction: (id, input) => {
+        const entry = foodEntries.updateReaction(id, input);
+        if (entry) setFoodVersion((version) => version + 1);
+        return entry;
+      },
+      deleteFoodEntry: (id) => {
+        const deleted = foodEntries.delete(id);
+        if (deleted) setFoodVersion((version) => version + 1);
+        return deleted;
+      },
+      mealDraftForIntroduction: (id) =>
+        foodEntries.mealDraftForIntroduction(id),
       child,
       createChild: (input: ChildInput) => {
         setChild(db.children.create(input));
@@ -125,6 +169,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       db,
       mealEntries,
       mealVersion,
+      foodEntries,
+      foodTracking,
+      foodVersion,
       routineEntries,
       sleepTimerVersion,
       unitVersion,
