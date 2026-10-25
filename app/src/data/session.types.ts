@@ -22,6 +22,7 @@ import type {
   ReactionEntry,
   ReactionEntryInput,
   IntroductionHeadsUp,
+  IntroductionHeadsUpOptions,
 } from "@keepsake/food-tracking";
 import type { RoutineEntry, SleepQuality } from "@keepsake/routine";
 
@@ -42,7 +43,8 @@ export interface DataSession {
   readonly introductionHeadsUps: (
     childId: string,
     foodId: string,
-    occurredAt: number
+    occurredAt: number,
+    options?: IntroductionHeadsUpOptions
   ) => readonly IntroductionHeadsUp[];
   readonly foodEntriesForChild: (childId: string) => readonly FoodEntry[];
   readonly reactionFoods: (childId: string, now?: number) => readonly Food[];

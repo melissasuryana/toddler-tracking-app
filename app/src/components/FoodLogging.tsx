@@ -1,17 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type {
-  FoodEntry,
-  MealEntry,
-  MealEntryInput,
-} from "@keepsake/food-tracking";
+import type { FoodEntry, MealEntry } from "@keepsake/food-tracking";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
 import { Body, MetaLabel } from "./Screen";
 import { PillChip } from "./PillChip";
 import { MealForm } from "./MealForm";
 import { FoodEntryForm } from "./FoodEntryForm";
+import { EMPTY_FOOD_DRAFTS, foodDraftsReducer } from "./foodDrafts";
 
 export function FoodLogging({ childId }: { readonly childId: string }) {
   const data = useData();
@@ -19,15 +16,11 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
   const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<"meal" | "introduction" | "reaction">("meal");
-  const [startedDrafts, setStartedDrafts] = useState<ReadonlySet<typeof tab>>(
-    new Set()
+  const [drafts, dispatchDraft] = useReducer(
+    foodDraftsReducer,
+    EMPTY_FOOD_DRAFTS
   );
   const [editing, setEditing] = useState<FoodEntry | MealEntry | null>(null);
-  const [introductionDraft, setIntroductionDraft] = useState(0);
-  const [reactionDraft, setReactionDraft] = useState(0);
-  const [mealDraft, setMealDraft] = useState(0);
-  const [contextualFood, setContextualFood] = useState<string | undefined>();
-  const [mealPrefill, setMealPrefill] = useState<MealEntryInput | undefined>();
   const [now, setNow] = useState(Date.now);
   const statusTime = Math.max(now, Date.now());
   const [message, setMessage] = useState<string | null>(null);
@@ -72,52 +65,27 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
 
   function open(kind: typeof tab, foodId?: string) {
     setEditing(null);
-    selectTab(kind);
-    if (foodId) {
-      setContextualFood(foodId);
-      if (kind === "reaction") setReactionDraft((value) => value + 1);
-      else setIntroductionDraft((value) => value + 1);
-    }
+    setTab(kind);
+    dispatchDraft({ type: "open", kind, foodId });
     setVisible(true);
   }
 
   function selectTab(kind: typeof tab) {
     setTab(kind);
-    setStartedDrafts((current) => new Set(current).add(kind));
+    dispatchDraft({ type: "open", kind });
   }
 
   function saved(kind: typeof tab) {
     setVisible(false);
     setEditing(null);
-    setStartedDrafts((current) => {
-      const next = new Set(current);
-      next.delete(kind);
-      return next;
-    });
-    setContextualFood(undefined);
-    if (kind === "meal") {
-      setMealDraft((value) => value + 1);
-      setMealPrefill(undefined);
-    } else if (kind === "introduction") {
-      setIntroductionDraft((value) => value + 1);
-    } else {
-      setReactionDraft((value) => value + 1);
-    }
+    dispatchDraft({ type: "saved", kind });
     setMessage("Entry saved.");
   }
 
   function alsoMeal(entry: Extract<FoodEntry, { kind: "introduction" }>) {
     // The Introduction is already durable; abandoning this draft never removes it.
     const draft = data.mealDraftForIntroduction(entry.id);
-    setIntroductionDraft((value) => value + 1);
-    setMealPrefill(draft);
-    setMealDraft((value) => value + 1);
-    setStartedDrafts((current) => {
-      const next = new Set(current);
-      next.delete("introduction");
-      return next.add("meal");
-    });
-    setContextualFood(undefined);
+    dispatchDraft({ type: "meal-shortcut", draft });
     setEditing(null);
     setTab("meal");
     setMessage("Introduction saved. The Meal is a separate, editable draft.");
@@ -248,13 +216,13 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
               display: !editing && tab === "meal" ? "flex" : "none",
             }}
           >
-            {startedDrafts.has("meal") ? (
+            {drafts.started.includes("meal") ? (
               <MealForm
-                key={`meal-${mealDraft}`}
+                key={`meal-${drafts.revisions.meal}`}
                 childId={childId}
                 defaults={data.mealDefaultsForChild(childId)}
-                prefilled={mealPrefill}
-                prefilledTimestamp={mealPrefill}
+                prefilled={drafts.mealPrefill}
+                prefilledTimestamp={drafts.mealPrefill}
                 suggestionsFor={(query) =>
                   data.mealNameSuggestions(childId, query)
                 }
@@ -272,12 +240,12 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
               display: !editing && tab === "introduction" ? "flex" : "none",
             }}
           >
-            {startedDrafts.has("introduction") ? (
+            {drafts.started.includes("introduction") ? (
               <FoodEntryForm
-                key={`introduction-${introductionDraft}`}
+                key={`introduction-${drafts.revisions.introduction}`}
                 childId={childId}
                 kind="introduction"
-                contextualFoodId={contextualFood}
+                contextualFoodId={drafts.contextualFoods.introduction}
                 onSaved={() => saved("introduction")}
                 onAlsoMeal={alsoMeal}
                 onCancel={() => setVisible(false)}
@@ -290,12 +258,12 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
               display: !editing && tab === "reaction" ? "flex" : "none",
             }}
           >
-            {startedDrafts.has("reaction") ? (
+            {drafts.started.includes("reaction") ? (
               <FoodEntryForm
-                key={`reaction-${reactionDraft}`}
+                key={`reaction-${drafts.revisions.reaction}`}
                 childId={childId}
                 kind="reaction"
-                contextualFoodId={contextualFood}
+                contextualFoodId={drafts.contextualFoods.reaction}
                 onSaved={() => saved("reaction")}
                 onAlsoMeal={alsoMeal}
                 onCancel={() => setVisible(false)}

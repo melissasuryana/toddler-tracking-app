@@ -63,7 +63,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const statusFor = (
       childId: string,
       foodId: string,
-      now = Date.now()
+      now = Date.now(),
+      excludeEntryId?: string
     ): FoodStatus => {
       if (!foods.some((food) => food.id === foodId))
         throw new Error("Food does not exist.");
@@ -88,7 +89,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           }));
         },
         null,
-        now
+        now,
+        excludeEntryId
       );
     };
     const toFoodEntry = (
@@ -145,7 +147,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return {
       foods: () => foods,
       foodStatus: statusFor,
-      introductionHeadsUps: (childId, foodId, occurredAt) => {
+      introductionHeadsUps: (childId, foodId, occurredAt, options = {}) => {
         const food = foods.find((item) => item.id === foodId);
         if (!food) throw new Error("Food does not exist.");
         const statuses = [
@@ -158,11 +160,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                   : entry.content.foodIds
               )
           ),
-        ].map((id) => statusFor(childId, id, occurredAt));
+        ].map((id) =>
+          statusFor(childId, id, occurredAt, options.excludeEntryId)
+        );
         return introductionHeadsUpsFrom(
           food,
-          statusFor(childId, foodId, occurredAt),
-          statuses
+          statusFor(childId, foodId, occurredAt, options.excludeEntryId),
+          statuses,
+          options
         );
       },
       foodEntriesForChild: (childId) =>

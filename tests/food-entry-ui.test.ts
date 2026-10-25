@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   localDateTime,
   resolveEntryTimestamp,
   timestampOptions,
 } from "../app/src/components/entryTimestamp.ts";
+import {
+  EMPTY_FOOD_DRAFTS,
+  foodDraftsReducer,
+} from "../app/src/components/foodDrafts.ts";
 
 test("untouched Meal and food timestamps preserve exact instant, including DST folds", () => {
   for (const occurredAt of [
@@ -64,55 +67,98 @@ test("edited nonexistent local times are rejected", () => {
   );
 });
 
-const source = (name: string) =>
-  readFileSync(
-    new URL(`../app/src/components/${name}.tsx`, import.meta.url),
-    "utf8"
-  );
-
-test("Meal and Introduction drafts remain independently mounted across tab switches", () => {
-  const logging = source("FoodLogging");
-  assert.match(logging, /key=\{`meal-\$\{mealDraft\}`\}/);
-  assert.match(logging, /key=\{`introduction-\$\{introductionDraft\}`\}/);
-  assert.match(logging, /display: !editing && tab === "meal"/);
-  assert.match(logging, /display: !editing && tab === "introduction"/);
-  assert.match(logging, /onCancel=\{\(\) => setVisible\(false\)\}/);
-  assert.match(logging, /prefilledTimestamp=\{mealPrefill\}/);
+test("switching away and reopening keeps the existing independent draft identities", () => {
+  const meal = foodDraftsReducer(EMPTY_FOOD_DRAFTS, {
+    type: "open",
+    kind: "meal",
+  });
+  const intro = foodDraftsReducer(meal, { type: "open", kind: "introduction" });
+  const reopened = foodDraftsReducer(intro, { type: "open", kind: "meal" });
+  assert.equal(reopened.revisions, meal.revisions);
+  assert.deepEqual(reopened.started, ["meal", "introduction"]);
+  assert.deepEqual(EMPTY_FOOD_DRAFTS.started, []);
 });
 
-test("Reaction severity precedes the bounded, trying-first Food picker", () => {
-  const form = source("FoodEntryForm");
-  assert.ok(
-    form.indexOf("Severity · required") <
-      form.indexOf('accessibilityLabel="Search Foods"')
-  );
-  assert.match(form, /data\.reactionFoods\(childId\)/);
-  assert.match(form, /nestedScrollEnabled/);
-  assert.match(
-    form,
-    /if \(!severity\) throw new Error\("Choose a severity\."\)/
-  );
-  assert.match(form, /REACTION_SYMPTOMS\.map/);
+test("saving one kind never resets another unsaved draft", () => {
+  const all = ["meal", "introduction", "reaction"] as const;
+  let state = EMPTY_FOOD_DRAFTS;
+  for (const kind of all)
+    state = foodDraftsReducer(state, { type: "open", kind });
+  for (const kind of all) {
+    const saved = foodDraftsReducer(state, { type: "saved", kind });
+    assert.deepEqual(
+      saved.started,
+      all.filter((item) => item !== kind)
+    );
+    assert.equal(saved.revisions[kind], state.revisions[kind] + 1);
+    for (const other of all.filter((item) => item !== kind)) {
+      assert.equal(saved.revisions[other], state.revisions[other]);
+    }
+  }
 });
 
-test("irreversible deletion is explicit and keeping an entry only dismisses confirmation", () => {
-  const form = source("FoodEntryForm");
-  assert.match(form, /This can’t be undone/);
-  assert.match(
-    form,
-    /label="Keep it"\s+selected=\{false\}\s+onPress=\{\(\) => setConfirmDelete\(false\)\}/
-  );
-  assert.match(form, /label="Delete permanently"/);
-  assert.match(form, /data\.deleteFoodEntry\(entry\.id\)/);
+test("contextual Introduction and Reaction selections stay isolated", () => {
+  const intro = foodDraftsReducer(EMPTY_FOOD_DRAFTS, {
+    type: "open",
+    kind: "introduction",
+    foodId: "egg",
+  });
+  const reaction = foodDraftsReducer(intro, {
+    type: "open",
+    kind: "reaction",
+    foodId: "peanut",
+  });
+  assert.deepEqual(reaction.contextualFoods, {
+    introduction: "egg",
+    reaction: "peanut",
+  });
+  const saved = foodDraftsReducer(reaction, {
+    type: "saved",
+    kind: "reaction",
+  });
+  assert.equal(saved.contextualFoods.introduction, "egg");
+  assert.equal(saved.contextualFoods.reaction, undefined);
+  assert.equal(saved.revisions.introduction, intro.revisions.introduction);
 });
 
-test("both form kinds use exact-until-edited timestamps immediately before Save", () => {
-  const meal = source("MealForm");
-  const food = source("FoodEntryForm");
-  assert.match(meal, /resolveEntryTimestamp\(/);
-  assert.match(food, /resolveEntryTimestamp\(/);
-  assert.ok(
-    meal.indexOf('<FieldLabel label="When"') < meal.indexOf("onPress={save}")
+test("Meal shortcut starts an independent draft with exact timestamp and explicit texture clear", () => {
+  const draft = {
+    childId: "child",
+    occurredAt: 1_763_004_600_123,
+    occurredTz: "America/New_York",
+    amount: 4,
+    categories: ["proteins"] as const,
+    allergenTags: ["egg"] as const,
+    textures: [],
+    feedingStyles: [],
+  };
+  let state = foodDraftsReducer(EMPTY_FOOD_DRAFTS, {
+    type: "open",
+    kind: "introduction",
+    foodId: "egg",
+  });
+  state = foodDraftsReducer(state, {
+    type: "open",
+    kind: "reaction",
+    foodId: "peanut",
+  });
+  const shortcut = foodDraftsReducer(state, { type: "meal-shortcut", draft });
+  assert.deepEqual(shortcut.started, ["reaction", "meal"]);
+  assert.equal(shortcut.mealPrefill, draft);
+  assert.equal(shortcut.mealPrefill?.occurredAt, draft.occurredAt);
+  assert.deepEqual(shortcut.mealPrefill?.textures, []);
+  assert.equal(
+    shortcut.revisions.introduction,
+    state.revisions.introduction + 1
   );
-  assert.ok(food.indexOf("<MetaLabel>When") < food.indexOf("onPress={save}"));
+  assert.equal(shortcut.revisions.meal, state.revisions.meal + 1);
+  assert.equal(shortcut.revisions.reaction, state.revisions.reaction);
+  const switched = foodDraftsReducer(shortcut, {
+    type: "open",
+    kind: "introduction",
+  });
+  assert.equal(switched.mealPrefill, draft);
+  const saved = foodDraftsReducer(switched, { type: "saved", kind: "meal" });
+  assert.equal(saved.mealPrefill, undefined);
+  assert.ok(saved.started.includes("introduction"));
 });

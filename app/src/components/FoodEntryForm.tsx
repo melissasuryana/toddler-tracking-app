@@ -91,8 +91,16 @@ export function FoodEntryForm({
     offset
   );
   const headsUps =
-    kind === "introduction" && !entry && foodIds[0] && resolved.ok
-      ? data.introductionHeadsUps(childId, foodIds[0], resolved.occurredAt)
+    kind === "introduction" &&
+    foodIds[0] &&
+    resolved.ok &&
+    (!entry ||
+      (entry.kind === "introduction" &&
+        (entry.content.foodId !== foodIds[0] ||
+          entry.occurredAt !== resolved.occurredAt)))
+      ? data.introductionHeadsUps(childId, foodIds[0], resolved.occurredAt, {
+          excludeEntryId: entry?.id,
+        })
       : [];
   const inputStyle = {
     color: theme.colors.ink,

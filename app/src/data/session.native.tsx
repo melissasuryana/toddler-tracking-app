@@ -46,8 +46,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       foods: () => foodTracking.listFoods(),
       foodStatus: (childId, foodId, now) =>
         foodTracking.statusFor(childId, foodId, now),
-      introductionHeadsUps: (childId, foodId, occurredAt) =>
-        foodTracking.introductionHeadsUps(childId, foodId, occurredAt),
+      introductionHeadsUps: (childId, foodId, occurredAt, options) =>
+        foodTracking.introductionHeadsUps(childId, foodId, occurredAt, options),
       foodEntriesForChild: (childId) => {
         void foodVersion;
         return foodEntries.listForChild(childId);

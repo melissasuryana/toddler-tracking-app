@@ -36,6 +36,7 @@ export interface FoodStatus {
 
 export interface IntroductionHeadsUpOptions {
   readonly suppress?: boolean;
+  readonly excludeEntryId?: string;
 }
 
 export class FoodTracking {
@@ -138,12 +139,24 @@ export class FoodTracking {
     if (options.suppress) return [];
 
     const transaction: LocalTransaction = this.database;
-    const targetStatus = statusFor(transaction, childId, foodId, occurredAt);
+    const targetStatus = statusFor(
+      transaction,
+      childId,
+      foodId,
+      occurredAt,
+      options.excludeEntryId
+    );
     return introductionHeadsUpsFrom(
       this.getFood(foodId)!,
       targetStatus,
       foodIdsInHistory(transaction, childId).map((otherFoodId) =>
-        statusFor(transaction, childId, otherFoodId, occurredAt)
+        statusFor(
+          transaction,
+          childId,
+          otherFoodId,
+          occurredAt,
+          options.excludeEntryId
+        )
       ),
       options
     );

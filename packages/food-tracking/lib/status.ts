@@ -29,10 +29,12 @@ export function deriveFoodStatus(
     associatedId: string;
   }[],
   marker: ManualSafeMarker | null,
-  now: number
+  now: number,
+  excludeEntryId?: string
 ): FoodStatusResult {
   const evidence: FoodEvidence[] = [];
   for (const entry of entries) {
+    if (entry.id === excludeEntryId) continue;
     if (entry.deletedAt !== null || entry.occurredAt > now) continue;
     if (entry.kind !== "introduction" && entry.kind !== "reaction") continue;
     if (
@@ -118,7 +120,8 @@ export function statusFor(
   transaction: Pick<LocalTransaction, "entries" | "foods">,
   childId: string,
   foodId: string,
-  now: number
+  now: number,
+  excludeEntryId?: string
 ): FoodStatusResult {
   const entries = transaction.entries
     .listForChild(childId)
@@ -128,7 +131,8 @@ export function statusFor(
     entries,
     (entryId) => transaction.entries.associationsFor(entryId),
     transaction.foods.manualSafeMarker(childId, foodId),
-    now
+    now,
+    excludeEntryId
   );
 }
 

@@ -737,6 +737,113 @@ test("public Introduction writes feed existing suppressible heads-ups using back
   database.close();
 });
 
+test("editing Food previews first-allergen heads-ups without the original Food or writes", () => {
+  const { database, child, entries, foods } = setup();
+  const original = entries.createIntroduction(
+    introduction(child.id, { note: "Original note" })
+  );
+  const history = database.entries.listForChild(child.id);
+  const associations = database.entries.associationsFor(original.id);
+  const options = { excludeEntryId: original.id };
+  const expected = [{ kind: "first-allergen-food", foodId: "peanut" }];
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "peanut", T0, options),
+    expected
+  );
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "peanut", T0, {
+      ...options,
+      suppress: true,
+    }),
+    []
+  );
+  assert.deepEqual(database.entries.listForChild(child.id), history);
+  assert.deepEqual(database.entries.associationsFor(original.id), associations);
+  assert.deepEqual(entries.get(original.id), original);
+
+  const edited = entries.updateIntroduction(
+    original.id,
+    introduction(child.id, { foodId: "peanut", note: "Edited note" })
+  )!;
+  assert.equal(edited.id, original.id);
+  assert.equal(edited.content.foodId, "peanut");
+  assert.equal(edited.content.note, "Edited note");
+  assert.equal(original.content.foodId, "apple");
+  assert.equal(original.content.note, "Original note");
+  assert.equal(foods.statusFor(child.id, "apple", T0).status, "untried");
+  assert.equal(foods.statusFor(child.id, "peanut", T0).exposureCount, 1);
+  assert.deepEqual(foods.introductionHeadsUps(child.id, "peanut", T0), []);
+  database.close();
+});
+
+test("backdating an Introduction previews another Food's watch and saves without blocking", () => {
+  const { database, child, entries, foods } = setup();
+  entries.createIntroduction(introduction(child.id));
+  const original = entries.createIntroduction(
+    introduction(child.id, { foodId: "banana", occurredAt: T0 + 5 * DAY })
+  );
+  const options = { excludeEntryId: original.id };
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "banana", original.occurredAt, options),
+    []
+  );
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "banana", T0 + DAY, options),
+    [{ kind: "overlapping-introductions", foodId: "apple" }]
+  );
+  assert.equal(entries.get(original.id)!.occurredAt, T0 + 5 * DAY);
+  const edited = entries.updateIntroduction(
+    original.id,
+    introduction(child.id, { foodId: "banana", occurredAt: T0 + DAY })
+  )!;
+  assert.equal(edited.occurredAt, T0 + DAY);
+  assert.equal(original.occurredAt, T0 + 5 * DAY);
+  assert.equal(foods.statusFor(child.id, "banana", T0 + DAY).status, "trying");
+  database.close();
+});
+
+test("edit previews exclude only themselves and share canonical pure history replay", () => {
+  const { database, child, entries, foods } = setup();
+  const original = entries.createIntroduction(
+    introduction(child.id, { foodId: "peanut" })
+  );
+  const options = { excludeEntryId: original.id };
+  const occurredAt = T0 + DAY;
+  const pureStatus = (foodId: string) =>
+    deriveFoodStatus(
+      foodId,
+      database.entries.listForChild(child.id),
+      (entryId) => database.entries.associationsFor(entryId),
+      database.foods.manualSafeMarker(child.id, foodId),
+      occurredAt,
+      original.id
+    );
+  assert.equal(pureStatus("peanut").exposureCount, 0);
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "peanut", occurredAt, options),
+    [{ kind: "first-allergen-food", foodId: "peanut" }]
+  );
+  assert.deepEqual(
+    introductionHeadsUpsFrom(
+      foods.getFood("peanut")!,
+      pureStatus("peanut"),
+      [pureStatus("peanut")],
+      options
+    ),
+    foods.introductionHeadsUps(child.id, "peanut", occurredAt, options)
+  );
+  entries.createIntroduction(
+    introduction(child.id, { foodId: "peanut", occurredAt: T0 - DAY })
+  );
+  assert.equal(pureStatus("peanut").exposureCount, 1);
+  assert.deepEqual(
+    foods.introductionHeadsUps(child.id, "peanut", occurredAt, options),
+    []
+  );
+  assert.equal(foods.statusFor(child.id, "peanut", occurredAt).exposureCount, 2);
+  database.close();
+});
+
 test("pure preview helpers share persisted status, heads-ups, and shortcut behavior", () => {
   const { database, child, entries, foods } = setup();
   const intro = entries.createIntroduction(
