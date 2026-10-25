@@ -156,6 +156,7 @@ export class TriedFoodImport {
     );
     if (
       fallbackInstant === null ||
+      fallbackInstant < 0 ||
       fallbackInstant > now ||
       options.fallbackDate > civilDateAt(now, options.timeZone)
     ) {
@@ -268,7 +269,7 @@ export class TriedFoodImport {
         if (!dateCache.has(rawDate))
           dateCache.set(rawDate, firstInstantOfDate(rawDate, options.timeZone));
         const instant = dateCache.get(rawDate) ?? null;
-        const useFallback = instant === null || instant > now;
+        const useFallback = instant === null || instant < 0 || instant > now;
         if (useFallback)
           warnings.push(
             "Missing, invalid, nonexistent or future date: use confirmed fallback."

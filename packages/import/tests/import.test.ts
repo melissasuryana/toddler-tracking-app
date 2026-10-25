@@ -37,6 +37,81 @@ function fixture() {
   };
 }
 
+test("date mapping obeys the ordinary Entry epoch boundary on both midnight paths", () => {
+  assert.equal(firstInstantOfDate("1969-12-31", "UTC"), null);
+  assert.equal(firstInstantOfDate("1970-01-01", "Asia/Tokyo"), null);
+  assert.equal(firstInstantOfDate("1965-12-01", "America/Sao_Paulo"), null);
+  assert.equal(firstInstantOfDate("1970-01-01", "UTC"), 0);
+  assert.equal(
+    firstInstantOfDate("1970-01-01", "America/New_York"),
+    18_000_000
+  );
+});
+
+test("pre-epoch source dates warn and commit with the explicitly confirmed valid fallback", () => {
+  for (const [date, timeZone] of [
+    ["1969-12-31", "UTC"],
+    ["1970-01-01", "Asia/Tokyo"],
+    ["1965-12-01", "America/Sao_Paulo"],
+  ]) {
+    const { database, importer, options, entries } = fixture();
+    try {
+      const report = importer.preview(`name,date\nHistorical food,${date}`, {
+        ...options,
+        timeZone: timeZone!,
+      });
+      assert.equal(report.abortReason, null);
+      assert.equal(report.counts.toImport, 1);
+      assert.equal(report.counts.warned, 1);
+      assert.equal(report.rows[0]!.date, options.fallbackDate);
+      assert.equal(
+        report.rows[0]!.occurredAt,
+        firstInstantOfDate(options.fallbackDate, timeZone!)
+      );
+      assert.throws(
+        () => importer.commit(report, { confirmFallback: false }),
+        /Confirm/
+      );
+      importer.commit(report, { confirmFallback: true });
+      const saved = entries.listForChild(options.childId);
+      assert.equal(saved.length, 1);
+      assert.equal(saved[0]!.occurredAt, report.rows[0]!.occurredAt);
+      assert.ok(saved[0]!.occurredAt >= 0);
+    } finally {
+      database.close();
+    }
+  }
+});
+
+test("pre-epoch fallback instants are rejected before preview, including timezone-shifted midnight", () => {
+  const { database, importer, options } = fixture();
+  try {
+    for (const [fallbackDate, timeZone] of [
+      ["1969-12-31", "UTC"],
+      ["1970-01-01", "Asia/Tokyo"],
+      ["1965-12-01", "America/Sao_Paulo"],
+    ]) {
+      assert.throws(
+        () =>
+          importer.preview("Historical food", {
+            ...options,
+            fallbackDate: fallbackDate!,
+            timeZone: timeZone!,
+          }),
+        /Fallback/
+      );
+    }
+    const epoch = importer.preview("Historical food", {
+      ...options,
+      fallbackDate: "1970-01-01",
+    });
+    assert.equal(epoch.rows[0]!.occurredAt, 0);
+    importer.commit(epoch, { confirmFallback: true });
+  } finally {
+    database.close();
+  }
+});
+
 test("case/whitespace headers, reordered columns, CRLF, BOM, quoted commas, escaped quotes and multiline names", () => {
   const { database, importer, options } = fixture();
   try {

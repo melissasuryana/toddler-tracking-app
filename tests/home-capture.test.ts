@@ -9,7 +9,7 @@ import {
   FoodTracking,
   MealEntries,
 } from "@keepsake/food-tracking";
-import { openTestDriver } from "../packages/routine/tests/helpers.ts";
+import { openTestDriver } from "./fixtures/sqlite.ts";
 import {
   routineDraft,
   routineInput,

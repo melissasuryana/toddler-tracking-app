@@ -41,7 +41,7 @@ export function firstInstantOfDate(
     undefined,
     Number.MAX_SAFE_INTEGER
   );
-  if (midnight.ok) return midnight.occurredAt;
+  if (midnight.ok) return midnight.occurredAt >= 0 ? midnight.occurredAt : null;
 
   // Midnight may be skipped or repeated. Locate the first real instant of the
   // civil day, not a JS Date's silently shifted midnight (e.g. Apia's lost day).
