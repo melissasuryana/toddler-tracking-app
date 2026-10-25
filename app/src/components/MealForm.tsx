@@ -11,7 +11,6 @@ import {
   type MealSuggestionField,
   type MealSuggestionFields,
 } from "@keepsake/food-tracking";
-import { resolveLocalTimestamp } from "@keepsake/routine";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { KeepsakeIcon } from "~/components/KeepsakeIcon";
@@ -19,6 +18,12 @@ import { Body, MetaLabel } from "~/components/Screen";
 import { PillChip } from "~/components/PillChip";
 import { nativeFonts } from "~/theme/tokens";
 import { useTheme } from "~/theme/ThemeProvider";
+import {
+  formatUtcOffset,
+  localDateTime,
+  resolveEntryTimestamp,
+  timestampOptions as validTimestampOptions,
+} from "./entryTimestamp";
 
 export interface MealFormProps {
   readonly childId: string;
@@ -47,6 +52,15 @@ export function MealForm({
   onCancel,
 }: MealFormProps) {
   const theme = useTheme();
+  const [originalTimestamp] = useState(() => ({
+    occurredAt:
+      initialMeal?.occurredAt ?? prefilledTimestamp?.occurredAt ?? Date.now(),
+    occurredTz:
+      initialMeal?.occurredTz ??
+      prefilledTimestamp?.occurredTz ??
+      currentTimezone(),
+  }));
+  const [timestampEdited, setTimestampEdited] = useState(false);
   const timestamp = initialMeal
     ? localDateTime(initialMeal.occurredAt, initialMeal.occurredTz)
     : prefilledTimestamp
@@ -54,7 +68,10 @@ export function MealForm({
           prefilledTimestamp.occurredAt,
           prefilledTimestamp.occurredTz
         )
-      : localDateTime(Date.now(), currentTimezone());
+      : localDateTime(
+          originalTimestamp.occurredAt,
+          originalTimestamp.occurredTz
+        );
   const [occurredOn, setOccurredOn] = useState(timestamp.date);
   const [occurredAt, setOccurredAt] = useState(timestamp.time);
   const [utcOffsetMinutes, setUtcOffsetMinutes] = useState<
@@ -133,9 +150,11 @@ export function MealForm({
   }
 
   function save() {
-    const timestampResult = resolveLocalTimestamp(
-      localTimestamp,
-      timezone,
+    const timestampResult = resolveEntryTimestamp(
+      originalTimestamp,
+      timestampEdited,
+      occurredOn,
+      occurredAt,
       utcOffsetMinutes
     );
     if (!timestampResult.ok) {
@@ -331,6 +350,7 @@ export function MealForm({
         <TextInput
           accessibilityLabel="Meal date"
           onChangeText={(value) => {
+            setTimestampEdited(true);
             setOccurredOn(value);
             setUtcOffsetMinutes(undefined);
           }}
@@ -343,6 +363,7 @@ export function MealForm({
         <TextInput
           accessibilityLabel="Meal time"
           onChangeText={(value) => {
+            setTimestampEdited(true);
             setOccurredAt(value);
             setUtcOffsetMinutes(undefined);
           }}
@@ -366,7 +387,10 @@ export function MealForm({
                   key={offset}
                   label={formatUtcOffset(offset)}
                   selected={utcOffsetMinutes === offset}
-                  onPress={() => setUtcOffsetMinutes(offset)}
+                  onPress={() => {
+                    setTimestampEdited(true);
+                    setUtcOffsetMinutes(offset);
+                  }}
                 />
               ))}
             </View>
@@ -486,83 +510,4 @@ function inputStyle(theme: ReturnType<typeof useTheme>) {
 
 function currentTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-function localDateTime(epoch: number, timezone: string) {
-  const parts = new Map(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    })
-      .formatToParts(epoch)
-      .map(({ type, value }) => [type, value])
-  );
-  return {
-    date: `${parts.get("year")}-${parts.get("month")}-${parts.get("day")}`,
-    time: `${parts.get("hour")}:${parts.get("minute")}`,
-  };
-}
-
-function validTimestampOptions(localDateTime: string, timezone: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(localDateTime);
-  if (!match) return [];
-
-  const nominalEpoch = Date.UTC(
-    Number(match[1]),
-    Number(match[2]) - 1,
-    Number(match[3]),
-    Number(match[4]),
-    Number(match[5])
-  );
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  const offsets = new Set<number>();
-  for (let hours = -48; hours <= 48; hours += 3) {
-    const instant = nominalEpoch + hours * 60 * 60 * 1_000;
-    const parts = new Map(
-      formatter.formatToParts(instant).map(({ type, value }) => [type, value])
-    );
-    const localEpoch = Date.UTC(
-      Number(parts.get("year")),
-      Number(parts.get("month")) - 1,
-      Number(parts.get("day")),
-      Number(parts.get("hour")),
-      Number(parts.get("minute"))
-    );
-    offsets.add(Math.round((localEpoch - instant) / 60_000));
-  }
-
-  return [...offsets]
-    .map((offset) =>
-      resolveLocalTimestamp(
-        localDateTime,
-        timezone,
-        offset,
-        Number.MAX_SAFE_INTEGER
-      )
-    )
-    .filter((result) => result.ok)
-    .sort((left, right) =>
-      left.ok && right.ok ? left.occurredAt - right.occurredAt : 0
-    );
-}
-
-function formatUtcOffset(offsetMinutes: number): string {
-  const sign = offsetMinutes < 0 ? "−" : "+";
-  const absolute = Math.abs(offsetMinutes);
-  const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
-  const minutes = String(absolute % 60).padStart(2, "0");
-  return `UTC${sign}${hours}:${minutes}`;
 }

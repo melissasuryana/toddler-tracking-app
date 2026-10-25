@@ -6,7 +6,7 @@ import {
   type SleepQuality,
 } from "@keepsake/routine";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { MealForm } from "~/components/MealForm";
+import { FoodLogging } from "~/components/FoodLogging";
 import { PillChip } from "~/components/PillChip";
 import { SleepSessionEditor } from "~/components/SleepSessionEditor";
 import {
@@ -30,11 +30,6 @@ export default function HomeScreen() {
     stopSleepTimer,
     hasSleepSessionOverlap,
     updateSleepSession,
-    mealsForChild,
-    mealDefaultsForChild,
-    mealNameSuggestions,
-    createMeal,
-    updateMeal,
   } = useData();
   const timer = runningSleepTimer();
   const [now, setNow] = useState(Date.now);
@@ -48,10 +43,6 @@ export default function HomeScreen() {
   > | null>(null);
   const [sleepSessionOverlaps, setSleepSessionOverlaps] = useState(false);
   const [sleepEditorVisible, setSleepEditorVisible] = useState(false);
-  const [mealFormVisible, setMealFormVisible] = useState(false);
-  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
-  const meals = child ? mealsForChild(child.id) : [];
-  const selectedMeal = meals.find((meal) => meal.id === selectedMealId) ?? null;
 
   useEffect(() => {
     if (!timer) return;
@@ -241,59 +232,7 @@ export default function HomeScreen() {
         </View>
       ) : null}
       <Hairline />
-      {mealFormVisible && child ? (
-        <MealForm
-          childId={child.id}
-          initialMeal={selectedMeal}
-          defaults={mealDefaultsForChild(child.id)}
-          suggestionsFor={(query) => mealNameSuggestions(child.id, query)}
-          onCancel={() => {
-            setMealFormVisible(false);
-            setSelectedMealId(null);
-          }}
-          onSave={(input, id) => {
-            if (id) {
-              if (!updateMeal(id, input)) {
-                throw new Error("This Meal is no longer available.");
-              }
-              setSelectedMealId(id);
-            } else {
-              const meal = createMeal(input);
-              setSelectedMealId(meal.id);
-            }
-            setMealFormVisible(false);
-          }}
-        />
-      ) : (
-        <View style={{ padding: theme.space.page, gap: theme.space.fieldGap }}>
-          <PillChip
-            label="Log a meal"
-            selected
-            onPress={() => {
-              setSelectedMealId(null);
-              setMealFormVisible(true);
-            }}
-          />
-          {meals.length > 0 ? <MetaLabel>Recent Meals</MetaLabel> : null}
-          {meals.slice(0, 5).map((meal) => (
-            <Pressable
-              key={meal.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${meal.content.name || "Meal"}`}
-              onPress={() => {
-                setSelectedMealId(meal.id);
-                setMealFormVisible(true);
-              }}
-              style={{ paddingVertical: theme.space.fieldGap }}
-            >
-              <Body>
-                {meal.content.name || "Meal"} · {meal.content.amount}/5
-              </Body>
-            </Pressable>
-          ))}
-          <Body dim>Other quick logging lands here next.</Body>
-        </View>
-      )}
+      {child ? <FoodLogging childId={child.id} /> : null}
       <Modal
         visible={wakePromptVisible}
         transparent

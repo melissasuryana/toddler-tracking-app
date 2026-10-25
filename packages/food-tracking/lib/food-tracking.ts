@@ -36,6 +36,7 @@ export interface FoodStatus {
 
 export interface IntroductionHeadsUpOptions {
   readonly suppress?: boolean;
+  readonly excludeEntryId?: string;
 }
 
 export class FoodTracking {
@@ -138,36 +139,55 @@ export class FoodTracking {
     if (options.suppress) return [];
 
     const transaction: LocalTransaction = this.database;
-    const targetStatus = statusFor(transaction, childId, foodId, occurredAt);
-    const targetFood = this.getFood(foodId)!;
-    const headsUps: IntroductionHeadsUp[] = [];
-
-    if (
-      targetStatus.exposureCount === 0 &&
-      targetFood.allergenTags.length > 0
-    ) {
-      headsUps.push({ kind: "first-allergen-food", foodId });
-    }
-
-    const overlappingFoodIds = foodIdsInHistory(transaction, childId).filter(
-      (otherFoodId) =>
-        otherFoodId !== foodId &&
-        statusFor(transaction, childId, otherFoodId, occurredAt).status ===
-          "trying"
+    const targetStatus = statusFor(
+      transaction,
+      childId,
+      foodId,
+      occurredAt,
+      options.excludeEntryId
     );
-    for (const overlappingFoodId of overlappingFoodIds) {
-      headsUps.push({
-        kind: "overlapping-introductions",
-        foodId: overlappingFoodId,
-      });
-    }
-    return headsUps;
+    return introductionHeadsUpsFrom(
+      this.getFood(foodId)!,
+      targetStatus,
+      foodIdsInHistory(transaction, childId).map((otherFoodId) =>
+        statusFor(
+          transaction,
+          childId,
+          otherFoodId,
+          occurredAt,
+          options.excludeEntryId
+        )
+      ),
+      options
+    );
   }
 
   private assertFoodExists(foodId: string): void {
     if (!this.getFood(foodId))
       throw new Error(`Food does not exist: ${foodId}`);
   }
+}
+
+export function introductionHeadsUpsFrom(
+  food: Food,
+  targetStatus: FoodStatus,
+  otherStatuses: readonly FoodStatus[],
+  options: IntroductionHeadsUpOptions = {}
+): IntroductionHeadsUp[] {
+  if (options.suppress) return [];
+  const headsUps: IntroductionHeadsUp[] = [];
+  if (targetStatus.exposureCount === 0 && food.allergenTags.length > 0) {
+    headsUps.push({ kind: "first-allergen-food", foodId: food.id });
+  }
+  for (const status of otherStatuses) {
+    if (status.foodId !== food.id && status.status === "trying") {
+      headsUps.push({
+        kind: "overlapping-introductions",
+        foodId: status.foodId,
+      });
+    }
+  }
+  return headsUps;
 }
 
 function normalizeCustomFood(

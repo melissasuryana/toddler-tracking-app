@@ -1,4 +1,26 @@
-export { FoodTracking } from "./lib/food-tracking.ts";
+export { FoodTracking, introductionHeadsUpsFrom } from "./lib/food-tracking.ts";
+export { deriveFoodStatus } from "./lib/status.ts";
+export type { FoodStatusResult } from "./lib/status.ts";
+export {
+  FoodEntries,
+  FoodEntryValidationError,
+  REACTION_SEVERITIES,
+  REACTION_SYMPTOMS,
+  mealDraftFromIntroduction,
+  normalizeIntroductionContent,
+  normalizeReactionContent,
+} from "./lib/food-entries.ts";
+export type {
+  FoodEntry,
+  IntroductionContent,
+  IntroductionEntry,
+  IntroductionEntryInput,
+  ReactionContent,
+  ReactionEntry,
+  ReactionEntryInput,
+  ReactionSeverity,
+  ReactionSymptom,
+} from "./lib/food-entries.ts";
 export {
   MealEntries,
   MealValidationError,
