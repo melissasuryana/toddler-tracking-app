@@ -8,25 +8,23 @@ import {
   type ReactionSeverity,
   type ReactionSymptom,
 } from "@keepsake/food-tracking";
-import { useMemo, useState } from "react";
-import { Modal, ScrollView, TextInput, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, TextInput, View } from "react-native";
 import { Body, MetaLabel } from "./Screen";
 import { PillChip } from "./PillChip";
 import { KeepsakeIcon } from "./KeepsakeIcon";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
-import {
-  formatUtcOffset,
-  localDateTime,
-  resolveEntryTimestamp,
-  timestampOptions,
-} from "./entryTimestamp";
+import { localDateTime, resolveEntryTimestamp } from "./entryTimestamp";
+import { EntryTimestampFields } from "./EntryTimestampFields";
+import { DeleteEntryConfirm } from "./DeleteEntryConfirm";
 
 export function FoodEntryForm({
   childId,
   kind,
   entry,
   contextualFoodId,
+  hideDelete = false,
   onSaved,
   onAlsoMeal,
   onCancel,
@@ -35,6 +33,7 @@ export function FoodEntryForm({
   readonly kind: "introduction" | "reaction";
   readonly entry?: FoodEntry;
   readonly contextualFoodId?: string;
+  readonly hideDelete?: boolean;
   readonly onSaved: () => void;
   readonly onAlsoMeal: (entry: IntroductionEntry) => void;
   readonly onCancel: () => void;
@@ -79,10 +78,6 @@ export function FoodEntryForm({
   >(new Set());
   const foods =
     kind === "reaction" ? data.reactionFoods(childId) : data.foods();
-  const options = useMemo(
-    () => timestampOptions(`${date}T${time}`, original.occurredTz),
-    [date, time, original.occurredTz]
-  );
   const resolved = resolveEntryTimestamp(
     original,
     timestampEdited,
@@ -326,7 +321,7 @@ export function FoodEntryForm({
           onPress={() => setAlsoMeal(!alsoMeal)}
         />
       ) : null}
-      {entry ? (
+      {entry && !hideDelete ? (
         <PillChip
           label="Delete entry"
           selected={false}
@@ -334,45 +329,27 @@ export function FoodEntryForm({
         />
       ) : null}
       {error ? <Body>{error}</Body> : null}
-      <MetaLabel>When</MetaLabel>
-      <TextInput
-        accessibilityLabel={`${kind} date`}
-        placeholder="YYYY-MM-DD"
-        style={inputStyle}
-        value={date}
-        onChangeText={(value) => {
+      <EntryTimestampFields
+        label={kind}
+        original={original}
+        date={date}
+        time={time}
+        offset={offset}
+        setDate={(value) => {
           setDate(value);
           setTimestampEdited(true);
           setOffset(undefined);
         }}
-      />
-      <TextInput
-        accessibilityLabel={`${kind} time`}
-        placeholder="HH:mm"
-        style={inputStyle}
-        value={time}
-        onChangeText={(value) => {
+        setTime={(value) => {
           setTime(value);
           setTimestampEdited(true);
           setOffset(undefined);
         }}
+        setOffset={(value) => {
+          setTimestampEdited(true);
+          setOffset(value);
+        }}
       />
-      {options.length > 1 ? (
-        <View style={choicesStyle}>
-          {options.map(({ utcOffsetMinutes }) => (
-            <PillChip
-              key={utcOffsetMinutes}
-              label={formatUtcOffset(utcOffsetMinutes)}
-              selected={offset === utcOffsetMinutes}
-              onPress={() => {
-                setTimestampEdited(true);
-                setOffset(utcOffsetMinutes);
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-      <Body dim>{original.occurredTz}</Body>
       <View style={choicesStyle}>
         <PillChip label="Cancel" selected={false} onPress={onCancel} />
         <PillChip
@@ -381,53 +358,25 @@ export function FoodEntryForm({
           onPress={save}
         />
       </View>
-      <Modal
+      <DeleteEntryConfirm
         visible={confirmDelete}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setConfirmDelete(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            padding: theme.space.page,
-            backgroundColor: theme.colors.paper,
-          }}
-        >
-          <View
-            accessibilityViewIsModal
-            style={{ gap: theme.space.sheetBlock }}
-          >
-            <Body>This can’t be undone</Body>
-            <Body>Delete this entry permanently?</Body>
-            <PillChip
-              label="Keep it"
-              selected={false}
-              onPress={() => setConfirmDelete(false)}
-            />
-            <PillChip
-              label="Delete permanently"
-              selected
-              onPress={() => {
-                try {
-                  if (!entry || !data.deleteFoodEntry(entry.id))
-                    throw new Error("This entry is no longer available.");
-                  setConfirmDelete(false);
-                  onSaved();
-                } catch (caught) {
-                  setConfirmDelete(false);
-                  setError(
-                    caught instanceof Error
-                      ? caught.message
-                      : "Entry could not be deleted."
-                  );
-                }
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+        onKeep={() => setConfirmDelete(false)}
+        onDelete={() => {
+          try {
+            if (!entry || !data.deleteFoodEntry(entry.id))
+              throw new Error("This entry is no longer available.");
+            setConfirmDelete(false);
+            onSaved();
+          } catch (caught) {
+            setConfirmDelete(false);
+            setError(
+              caught instanceof Error
+                ? caught.message
+                : "Entry could not be deleted."
+            );
+          }
+        }}
+      />
     </ScrollView>
   );
 }

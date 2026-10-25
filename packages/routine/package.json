@@ -4,6 +4,9 @@
   "private": true,
   "description": "Routine Entry validation, timestamp resolution, and persistence",
   "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
   "dependencies": {
     "@keepsake/local-data": "*"
   }

@@ -23,6 +23,7 @@ export interface StartSleepTimerInput {
 }
 
 export interface StopSleepTimerInput {
+  readonly startAt?: number;
   readonly endedAt: number;
   readonly quality: SleepQuality;
   readonly factors?: readonly string[];
@@ -201,7 +202,7 @@ export class RoutineEntries {
   }
 
   create(input: RoutineEntryInput): RoutineEntry {
-    const content = validateAndNormalize(
+    const content = normalizeRoutineContent(
       input,
       this.now(),
       this.temperatureUnitDefault()
@@ -276,7 +277,7 @@ export class RoutineEntries {
       const entry = this.create({
         childId,
         kind: "sleep_session",
-        startAt: timer.startedAt,
+        startAt: input.startAt ?? timer.startedAt,
         occurredAt: input.endedAt,
         occurredTz: timer.startedTz,
         quality: input.quality,
@@ -420,7 +421,7 @@ export class RoutineEntries {
       (existingEntry.content.unit === "C" || existingEntry.content.unit === "F")
         ? existingEntry.content.unit
         : this.temperatureUnitDefault();
-    const content = validateAndNormalize(input, this.now(), existingUnit);
+    const content = normalizeRoutineContent(input, this.now(), existingUnit);
     const updated = this.database.transaction((transaction) => {
       let entry: Entry | null;
       try {
@@ -455,10 +456,10 @@ export class RoutineEntries {
   }
 }
 
-function validateAndNormalize(
+export function normalizeRoutineContent(
   input: RoutineEntryInput,
-  now: number,
-  defaultTemperatureUnit: TemperatureUnit
+  now: number = Date.now(),
+  defaultTemperatureUnit: TemperatureUnit = DEFAULT_TEMPERATURE_UNIT
 ): RoutineEntryContent {
   const errors: RoutineFieldError[] = [];
   if (!Number.isSafeInteger(input.occurredAt) || input.occurredAt < 0) {

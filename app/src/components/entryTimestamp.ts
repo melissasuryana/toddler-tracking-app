@@ -1,4 +1,4 @@
-import { resolveLocalTimestamp } from "@keepsake/routine/index.ts";
+import { resolveLocalTimestamp } from "@keepsake/routine";
 
 export interface EntryTimestamp {
   readonly occurredAt: number;

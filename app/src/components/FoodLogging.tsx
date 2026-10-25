@@ -1,4 +1,10 @@
-import { useEffect, useReducer, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useReducer,
+  useState,
+} from "react";
 import { BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { FoodEntry, MealEntry } from "@keepsake/food-tracking";
@@ -10,7 +16,18 @@ import { MealForm } from "./MealForm";
 import { FoodEntryForm } from "./FoodEntryForm";
 import { EMPTY_FOOD_DRAFTS, foodDraftsReducer } from "./foodDrafts";
 
-export function FoodLogging({ childId }: { readonly childId: string }) {
+export interface FoodLoggingHandle {
+  open: (kind: "meal" | "introduction" | "reaction", foodId?: string) => void;
+  alsoMeal: (entry: Extract<FoodEntry, { kind: "introduction" }>) => void;
+}
+
+export const FoodLogging = forwardRef<
+  FoodLoggingHandle,
+  {
+    readonly childId: string;
+    readonly hideDefaultContent?: boolean;
+  }
+>(function FoodLogging({ childId, hideDefaultContent = false }, ref) {
   const data = useData();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -24,9 +41,11 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
   const [now, setNow] = useState(Date.now);
   const statusTime = Math.max(now, Date.now());
   const [message, setMessage] = useState<string | null>(null);
-  const meals = data.mealsForChild(childId);
-  const foodEntries = data.foodEntriesForChild(childId);
-  const foods = data.foods();
+  const meals = hideDefaultContent ? [] : data.mealsForChild(childId);
+  const foodEntries = hideDefaultContent
+    ? []
+    : data.foodEntriesForChild(childId);
+  const foods = hideDefaultContent ? [] : data.foods();
   const introducedFoodIds = new Set(
     foodEntries.flatMap((entry) =>
       entry.kind === "introduction" ? [entry.content.foodId] : []
@@ -82,91 +101,123 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
     setMessage("Entry saved.");
   }
 
-  function alsoMeal(entry: Extract<FoodEntry, { kind: "introduction" }>) {
+  function alsoMeal(
+    entry: Extract<FoodEntry, { kind: "introduction" }>,
+    preserveIntroductionDraft = Boolean(editing)
+  ) {
     // The Introduction is already durable; abandoning this draft never removes it.
     const draft = data.mealDraftForIntroduction(entry.id);
-    dispatchDraft({ type: "meal-shortcut", draft });
+    dispatchDraft({ type: "meal-shortcut", draft, preserveIntroductionDraft });
     setEditing(null);
     setTab("meal");
+    setVisible(true);
     setMessage("Introduction saved. The Meal is a separate, editable draft.");
   }
 
+  useImperativeHandle(ref, () => ({
+    open,
+    alsoMeal: (entry) => alsoMeal(entry, true),
+  }));
+
   return (
     <>
-      <ScrollView
-        contentContainerStyle={{
-          padding: theme.space.page,
-          gap: theme.space.fieldGap,
-        }}
-      >
-        <View style={rowStyle}>
-          <PillChip label="Log a meal" selected onPress={() => open("meal")} />
-          <PillChip
-            label="Log an Introduction"
-            selected={false}
-            onPress={() => open("introduction")}
-          />
-          <PillChip
-            label="Log a Reaction"
-            selected={false}
-            onPress={() => open("reaction")}
-          />
-        </View>
-        {message ? <Body dim>{message}</Body> : null}
-        {watches.length ? <MetaLabel>Active watches</MetaLabel> : null}
-        {watches.map(({ food, watch }) => (
-          <View
-            key={food.id}
-            style={{
-              gap: theme.space.fieldGap,
-              paddingVertical: theme.space.fieldGap,
-            }}
-          >
-            <Body>
-              {food.name} · watching until{" "}
-              {new Date(watch.endsAt).toLocaleString()}
-            </Body>
-            <View style={rowStyle}>
-              <PillChip
-                label={`Log ${food.name} again`}
-                selected={false}
-                onPress={() => open("introduction", food.id)}
-              />
-              <PillChip
-                label={`Reaction to ${food.name}`}
-                selected={false}
-                onPress={() => open("reaction", food.id)}
-              />
-            </View>
+      {!hideDefaultContent ? (
+        <ScrollView
+          contentContainerStyle={{
+            padding: theme.space.page,
+            gap: theme.space.fieldGap,
+          }}
+        >
+          <View style={rowStyle}>
+            <PillChip
+              label="Log a meal"
+              selected
+              onPress={() => open("meal")}
+            />
+            <PillChip
+              label="Log an Introduction"
+              selected={false}
+              onPress={() => open("introduction")}
+            />
+            <PillChip
+              label="Log a Reaction"
+              selected={false}
+              onPress={() => open("reaction")}
+            />
           </View>
-        ))}
-        {meals.length || foodEntries.length ? (
-          <MetaLabel>Recent food Entries</MetaLabel>
-        ) : null}
-        {[...meals, ...foodEntries]
-          .sort((a, b) => b.occurredAt - a.occurredAt)
-          .slice(0, 10)
-          .map((entry) => {
-            const label =
-              entry.kind === "meal"
-                ? `${entry.content.name || "Meal"} · ${entry.content.amount}/5`
-                : entry.kind === "introduction"
-                  ? `Introduction · ${foods.find((food) => food.id === entry.content.foodId)?.name ?? "Food"}`
-                  : `Reaction · ${entry.content.severity} · ${entry.content.foodIds.map((id) => foods.find((food) => food.id === id)?.name ?? "Food").join(", ")}`;
-            return (
-              <PillChip
-                key={entry.id}
-                label={`Edit ${label}`}
-                selected={false}
-                onPress={() => {
-                  setEditing(entry);
-                  setTab(entry.kind);
-                  setVisible(true);
-                }}
-              />
-            );
-          })}
-      </ScrollView>
+          {message ? <Body dim>{message}</Body> : null}
+          {watches.length ? <MetaLabel>Active watches</MetaLabel> : null}
+          {watches.map(({ food, watch }) => (
+            <View
+              key={food.id}
+              style={{
+                gap: theme.space.fieldGap,
+                paddingVertical: theme.space.fieldGap,
+              }}
+            >
+              <Body>
+                {food.name} · watching until{" "}
+                {new Date(watch.endsAt).toLocaleString()}
+              </Body>
+              <View style={rowStyle}>
+                <PillChip
+                  label={`Log ${food.name} again`}
+                  selected={false}
+                  onPress={() => open("introduction", food.id)}
+                />
+                <PillChip
+                  label={`Reaction to ${food.name}`}
+                  selected={false}
+                  onPress={() => open("reaction", food.id)}
+                />
+                <PillChip
+                  label={`Mark ${food.name} safe`}
+                  selected={false}
+                  onPress={() => {
+                    try {
+                      if (!data.markFoodSafe(childId, food.id))
+                        throw new Error("This Watch Period has already ended.");
+                      setMessage(`${food.name} marked safe.`);
+                    } catch (error) {
+                      setMessage(
+                        error instanceof Error
+                          ? error.message
+                          : "Food could not be marked safe."
+                      );
+                    }
+                  }}
+                />
+              </View>
+            </View>
+          ))}
+          {meals.length || foodEntries.length ? (
+            <MetaLabel>Recent food Entries</MetaLabel>
+          ) : null}
+          {[...meals, ...foodEntries]
+            .sort((a, b) => b.occurredAt - a.occurredAt)
+            .slice(0, 10)
+            .map((entry) => {
+              const label =
+                entry.kind === "meal"
+                  ? `${entry.content.name || "Meal"} · ${entry.content.amount}/5`
+                  : entry.kind === "introduction"
+                    ? `Introduction · ${foods.find((food) => food.id === entry.content.foodId)?.name ?? "Food"}`
+                    : `Reaction · ${entry.content.severity} · ${entry.content.foodIds.map((id) => foods.find((food) => food.id === id)?.name ?? "Food").join(", ")}`;
+              return (
+                <PillChip
+                  key={entry.id}
+                  label={`Edit ${label}`}
+                  selected={false}
+                  onPress={() => {
+                    setEditing(entry);
+                    setTab(entry.kind);
+                    setVisible(true);
+                  }}
+                />
+              );
+            })}
+        </ScrollView>
+      ) : null}
       {/* A mounted overlay keeps both unsaved drafts through Cancel, unlike a hidden native Modal. */}
       <View
         accessibilityViewIsModal={visible}
@@ -306,4 +357,4 @@ export function FoodLogging({ childId }: { readonly childId: string }) {
       </View>
     </>
   );
-}
+});

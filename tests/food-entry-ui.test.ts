@@ -119,6 +119,12 @@ test("contextual Introduction and Reaction selections stay isolated", () => {
   assert.equal(saved.contextualFoods.introduction, "egg");
   assert.equal(saved.contextualFoods.reaction, undefined);
   assert.equal(saved.revisions.introduction, intro.revisions.introduction);
+  const reopened = foodDraftsReducer(reaction, {
+    type: "open",
+    kind: "reaction",
+    foodId: "peanut",
+  });
+  assert.equal(reopened.revisions, reaction.revisions);
 });
 
 test("Meal shortcut starts an independent draft with exact timestamp and explicit texture clear", () => {
@@ -136,6 +142,34 @@ test("Meal shortcut starts an independent draft with exact timestamp and explici
     type: "open",
     kind: "introduction",
     foodId: "egg",
+  });
+
+  test("shortcut from an existing Introduction preserves an unrelated unsaved Introduction draft", () => {
+    const state = foodDraftsReducer(EMPTY_FOOD_DRAFTS, {
+      type: "open",
+      kind: "introduction",
+      foodId: "egg",
+    });
+    const draft = {
+      childId: "child",
+      occurredAt: 1_763_004_600_123,
+      occurredTz: "UTC",
+      amount: 4,
+      categories: [],
+      allergenTags: [],
+      textures: [],
+      feedingStyles: [],
+    };
+    const shortcut = foodDraftsReducer(state, {
+      type: "meal-shortcut",
+      draft,
+      preserveIntroductionDraft: true,
+    });
+    assert.ok(shortcut.started.includes("introduction"));
+    assert.equal(shortcut.revisions.introduction, state.revisions.introduction);
+    assert.equal(shortcut.contextualFoods, state.contextualFoods);
+    assert.equal(shortcut.contextualFoods.introduction, "egg");
+    assert.equal(shortcut.mealPrefill, draft);
   });
   state = foodDraftsReducer(state, {
     type: "open",
