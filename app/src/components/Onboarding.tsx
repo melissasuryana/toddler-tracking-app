@@ -81,6 +81,7 @@ function Field({
         {label}
       </Text>
       {children}
+      <Hairline />
     </View>
   );
 }
@@ -126,11 +127,10 @@ export function Onboarding() {
     color: theme.colors.ink,
     fontFamily: nativeFonts.sans,
     fontSize: theme.typography.body.fontSize,
-    backgroundColor: theme.colors.sheet,
-    borderColor: theme.colors.chipBorder,
-    borderWidth: theme.rule.hairline,
-    paddingHorizontal: theme.space.rowBlock,
-    paddingVertical: theme.space.rowBlock,
+    borderBottomColor: theme.colors.ruleThin,
+    borderBottomWidth: theme.rule.hairline,
+    paddingHorizontal: 2,
+    paddingVertical: theme.space.fieldGap,
   } as const;
 
   return (
@@ -141,13 +141,19 @@ export function Onboarding() {
       >
         <ScrollView keyboardShouldPersistTaps="handled">
           <ScreenTitle>Welcome</ScreenTitle>
-          <MetaLabel>Set up your Child</MetaLabel>
-          <View style={{ paddingHorizontal: theme.space.page }}>
+          <MetaLabel>A little about your Child</MetaLabel>
+          <View
+            style={{
+              paddingHorizontal: theme.space.page,
+              paddingBottom: theme.space.rowBlock,
+            }}
+          >
             <Body dim>
               Before any tracking, create your Child. Everything stays on this
               device — no account, no network.
             </Body>
           </View>
+          <Hairline />
 
           <Field label="Name (required)">
             <TextInput
