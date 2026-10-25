@@ -16,7 +16,7 @@
     "@keepsake/import": "*",
     "@keepsake/local-data": "*",
     "@keepsake/routine": "*",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "0.45.4",
     "expo": "~54.0.16",
     "expo-constants": "~18.0.9",
     "expo-file-system": "~19.0.17",
