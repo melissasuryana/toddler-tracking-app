@@ -38,24 +38,25 @@ export default function TabsLayout() {
         tabBarActiveTintColor: theme.colors.ink,
         tabBarInactiveTintColor: theme.colors.meta,
         tabBarStyle: {
-          backgroundColor: theme.colors.sheet,
-          borderTopColor: theme.colors.ruleThin,
+          backgroundColor: theme.colors.paper,
+          borderTopColor: theme.colors.ruleStrong,
           borderTopWidth: theme.rule.hairline,
         },
         tabBarLabelStyle: {
-          fontSize: theme.typography.meta.fontSize,
-          fontWeight: String(theme.typography.meta.fontWeight) as "600",
-          letterSpacing:
-            theme.typography.meta.letterSpacingEm *
-            theme.typography.meta.fontSize,
-          textTransform: theme.typography.meta.textTransform,
+          fontSize: 10,
+          fontWeight: "600",
+          letterSpacing: 0.6,
         },
-        tabBarIcon: ({ color }) => (
-          <TabIcon route={route.name} color={color} size={theme.size.tabIcon} />
+        tabBarIcon: ({ focused, color }) => (
+          <TabIcon
+            route={route.name}
+            color={focused ? theme.colors.accent : color}
+            size={17}
+          />
         ),
       })}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="index" options={{ title: "Now" }} />
       <Tabs.Screen name="timeline" options={{ title: "Timeline" }} />
       <Tabs.Screen name="foods" options={{ title: "Foods" }} />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />

@@ -1,12 +1,19 @@
 /**
  * Keepsake screen scaffolding — the Ledger grid look from
- * prototypes/mvp-end-to-end.html: paper background, serif display heading,
- * uppercase meta labels, hairline rules, strict page margin. Every value
- * resolves to a design-system token via useTheme().
+ * prototypes/mvp-end-to-end.html and docs/design/design-directions.html#dir-d:
+ * paper background, serif display heading, uppercase meta labels, hairline
+ * rules, strict page margin. Every value resolves to a design-system token via
+ * useTheme().
  */
 import type { ReactNode } from "react";
-import type { IconName, TrackerKey } from "@keepsake/design-system";
+import type {
+  DiscTint,
+  IconName,
+  PillTint,
+  TrackerKey,
+} from "@keepsake/design-system";
 import {
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -19,7 +26,13 @@ import { nativeFonts } from "../theme/tokens";
 import { KeepsakeIcon } from "./KeepsakeIcon";
 
 /** Paper background with safe-area padding. Wraps every screen. */
-export function Screen({ children }: { children: ReactNode }) {
+export function Screen({
+  children,
+  style,
+}: {
+  readonly children: ReactNode;
+  readonly style?: StyleProp<ViewStyle>;
+}) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -31,9 +44,273 @@ export function Screen({ children }: { children: ReactNode }) {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
         },
+        style,
       ]}
     >
       {children}
+    </View>
+  );
+}
+
+/** Direction D masthead: serif display heading with terracotta italic emphasis + kicker. */
+export function Masthead({
+  title,
+  emphasis,
+  suffix = "",
+  kicker,
+  onKickerPress,
+}: {
+  readonly title?: string;
+  readonly emphasis?: string;
+  readonly suffix?: string;
+  readonly kicker?: string;
+  readonly onKickerPress?: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <View>
+      <View
+        style={{
+          paddingHorizontal: theme.space.page,
+          paddingTop: 10,
+          paddingBottom: 12,
+          backgroundColor: theme.colors.paper,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: nativeFonts.serif,
+            fontSize: theme.typography.display.fontSize,
+            fontWeight: String(theme.typography.display.fontWeight) as "500",
+            letterSpacing: -0.26,
+            color: theme.colors.ink,
+            flexShrink: 1,
+          }}
+        >
+          {title}
+          {emphasis ? (
+            <Text style={{ fontStyle: "italic", color: theme.colors.accent }}>
+              {emphasis}
+            </Text>
+          ) : null}
+          {suffix}
+        </Text>
+        {kicker ? (
+          onKickerPress ? (
+            <Pressable onPress={onKickerPress} accessibilityRole="button">
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: theme.typography.meta.fontSize,
+                  fontWeight: String(theme.typography.meta.fontWeight) as "600",
+                  letterSpacing:
+                    theme.typography.meta.letterSpacingEm *
+                    theme.typography.meta.fontSize,
+                  textTransform: theme.typography.meta.textTransform,
+                  color: theme.colors.accent,
+                  marginLeft: 8,
+                }}
+              >
+                {kicker}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: theme.typography.meta.fontSize,
+                fontWeight: String(theme.typography.meta.fontWeight) as "600",
+                letterSpacing:
+                  theme.typography.meta.letterSpacingEm *
+                  theme.typography.meta.fontSize,
+                textTransform: theme.typography.meta.textTransform,
+                color: theme.colors.meta,
+                marginLeft: 8,
+              }}
+            >
+              {kicker}
+            </Text>
+          )
+        ) : null}
+      </View>
+      <Hairline strong />
+    </View>
+  );
+}
+
+/** Direction D 36px icon disc (.d-orb) */
+export function Orb({
+  icon,
+  tracker,
+  tint,
+  size = 36,
+  iconSize = 17,
+}: {
+  readonly icon: IconName;
+  readonly tracker?: TrackerKey;
+  readonly tint?: DiscTint;
+  readonly size?: number;
+  readonly iconSize?: number;
+}) {
+  const theme = useTheme();
+  const resolvedTint =
+    tint ??
+    (tracker
+      ? theme.discTint(tracker)
+      : { background: theme.colors.paper, foreground: theme.colors.ink });
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: theme.radius.pill,
+        backgroundColor: resolvedTint.background,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <KeepsakeIcon
+        name={icon}
+        color={resolvedTint.foreground}
+        size={iconSize}
+      />
+    </View>
+  );
+}
+
+/** Direction D uppercase section header (.d-section) */
+export function SectionHeader({ title }: { readonly title: string }) {
+  const theme = useTheme();
+  return (
+    <Text
+      style={{
+        fontFamily: nativeFonts.sans,
+        fontSize: 10,
+        fontWeight: "600",
+        letterSpacing: 1.4,
+        textTransform: "uppercase",
+        color: theme.colors.meta,
+        paddingHorizontal: theme.space.page,
+        paddingTop: 12,
+        paddingBottom: 6,
+      }}
+    >
+      {title}
+    </Text>
+  );
+}
+
+/** Direction D quiet ledger row (.d-row) */
+export function LedgerRow({
+  icon,
+  tracker,
+  tint,
+  title,
+  subtitle,
+  right,
+  onPress,
+}: {
+  readonly icon?: IconName;
+  readonly tracker?: TrackerKey;
+  readonly tint?: DiscTint;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly right?: ReactNode;
+  readonly onPress?: () => void;
+}) {
+  const theme = useTheme();
+  const content = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: theme.space.page,
+        paddingVertical: 10,
+        gap: 12,
+        borderTopWidth: theme.rule.hairline,
+        borderTopColor: theme.colors.ruleThin,
+        backgroundColor: theme.colors.paper,
+      }}
+    >
+      {icon ? <Orb icon={icon} tracker={tracker} tint={tint} /> : null}
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: nativeFonts.sans,
+            fontSize: 13,
+            fontWeight: "600",
+            color: theme.colors.ink,
+          }}
+        >
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              fontFamily: nativeFonts.sans,
+              fontSize: 10.5,
+              color: theme.colors.meta,
+              marginTop: 1,
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {right}
+    </View>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
+}
+
+/** Direction D status pill (.d-pill) */
+export function Pill({
+  label,
+  tint,
+}: {
+  readonly label: string;
+  readonly tint: PillTint;
+}) {
+  const theme = useTheme();
+  return (
+    <View
+      style={{
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: theme.radius.pill,
+        backgroundColor: tint.background,
+        borderColor: tint.border,
+        borderWidth: theme.rule.hairline,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: nativeFonts.sans,
+          fontSize: 9,
+          fontWeight: "700",
+          letterSpacing: 0.72,
+          textTransform: "uppercase",
+          color: tint.foreground,
+        }}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
