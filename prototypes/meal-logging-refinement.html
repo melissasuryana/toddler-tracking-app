@@ -1,0 +1,1793 @@
+<!doctype html>
+<!--
+  PROTOTYPE (throwaway) — Meal logging form refinement: 1-5 amount scale & lozenge reduction
+  Question: How do we eliminate the "wall of 25+ lozenges" (8 categories + 9 big-9 allergens +
+  4 textures + 4 feeding styles) while preserving fast caregiver entry, and what are the best
+  visual designs for the 1-5 amount eaten scale?
+
+  Three radically different variants, switchable via ?variant=A|B|C, the floating bar at
+  the bottom, or Left/Right arrow keys:
+
+  Variant A — Bento Grid & Safety Shield:
+    - Amount: Connected tactile stepped fullness bar (1: Taste, 2: Little, 3: Half, 4: Most, 5: All)
+    - Categories: 4×2 iconographic grid tiles with subtle stroke icons (not lozenges)
+    - Allergens: Expandable Safety Shield drawer (0 flagged in default view; expands into clay warning matrix)
+    - Textures: Connected segmented control track for texture + feeding style
+
+  Variant B — Plate Compartment & Tag Tray:
+    - Amount: Interactive toddler plate graphic with 5 portion wedges that fill visually
+    - Categories: Macro-grouped compartments (Produce, Staples, Proteins) in structured cards
+    - Allergens: Search & add tag tray with dismissible hazard badges (zero clutter when none flagged)
+    - Textures: 2-column compact split matrix with icon toggles
+
+  Variant C — Minimalist Swiss Ledger:
+    - Amount: Micro-bowl fullness stepper with 5 visual fill levels and fraction pills
+    - Categories: Swiss Ledger 2-column ruled checklist with check rows and hairline rules
+    - Allergens: Dedicated safety banner with Yes/No toggle revealing a 3-column check grid
+    - Textures: Hairline slide rail selector with active indicator
+
+  Design Tokens: Keepsake direction D (Ledger grid × Bloom palette), Day / Night 3am surface.
+  Invariants preserved: editable timestamp row directly precedes Save button.
+  All state is in-memory. Reload = fresh day. No persistence, no tests, no polish.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prototype: Meal Logging Form Refinement</title>
+    <style>
+      :root {
+        --keepsake-paper: #fbf6ee;
+        --keepsake-sheet: #fffdf8;
+        --keepsake-ink: #33302a;
+        --keepsake-meta: #8b8375;
+        --keepsake-rule-strong: #33302a;
+        --keepsake-rule-thin: #e9dfcd;
+        --keepsake-chip-border: #e5d9c4;
+        --keepsake-accent: #c96f4a;
+        --keepsake-accent-ink: #8a5a3d;
+        --keepsake-accent-soft: #e8a582;
+        --keepsake-accent-wash: #fdf1e7;
+        --keepsake-accent-wash-ink: #a5775c;
+        --keepsake-danger: #b4552e;
+        --keepsake-danger-ink: #8a4526;
+        --keepsake-danger-soft: #e07b52;
+        --keepsake-danger-wash: #f3ddd4;
+
+        --keepsake-accent-chip-bg: #f3e3d3;
+        --keepsake-accent-chip-border: #d8b794;
+        --keepsake-accent-chip-fg: #8a5a3d;
+
+        --keepsake-safe-chip-bg: #d9e4d0;
+        --keepsake-safe-chip-border: #a9c19d;
+        --keepsake-safe-chip-fg: #4c6a43;
+
+        --keepsake-tracker-meal-bg: #e2ecd8;
+        --keepsake-tracker-meal-fg: #55694e;
+
+        --keepsake-font-serif:
+          "Iowan Old Style", Palatino, "Palatino Linotype", ui-serif, Georgia,
+          serif;
+        --keepsake-font-sans:
+          "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
+
+        --proto-bg: #f5efe6;
+        --proto-card: #ffffff;
+      }
+
+      [data-theme="night"] {
+        --keepsake-paper: #24211c;
+        --keepsake-sheet: #2b2721;
+        --keepsake-ink: #f0e9da;
+        --keepsake-meta: #9a917e;
+        --keepsake-rule-strong: #f0e9da;
+        --keepsake-rule-thin: #3d382f;
+        --keepsake-chip-border: #4a4438;
+        --keepsake-accent: #e8a582;
+        --keepsake-accent-ink: #d9b598;
+        --keepsake-accent-soft: #e8a582;
+        --keepsake-accent-wash: #332418;
+        --keepsake-accent-wash-ink: #b08a6f;
+        --keepsake-danger: #e07b52;
+        --keepsake-danger-ink: #e07b52;
+        --keepsake-danger-soft: #e07b52;
+        --keepsake-danger-wash: #332418;
+
+        --keepsake-accent-chip-bg: #453526;
+        --keepsake-accent-chip-border: #6b4a38;
+        --keepsake-accent-chip-fg: #d9b598;
+
+        --keepsake-safe-chip-bg: #3f4a37;
+        --keepsake-safe-chip-border: #6b7a58;
+        --keepsake-safe-chip-fg: #c8d4b8;
+
+        --keepsake-tracker-meal-bg: #333a2c;
+        --keepsake-tracker-meal-fg: #a9b39b;
+
+        --proto-bg: #1c1a16;
+        --proto-card: #26231e;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--keepsake-font-sans);
+        background: var(--proto-bg);
+        color: var(--keepsake-ink);
+        padding: 24px 16px 110px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Header banner */
+      .proto-header {
+        max-width: 680px;
+        width: 100%;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .proto-kicker {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--keepsake-accent);
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .proto-title {
+        font-family: var(--keepsake-font-serif);
+        font-size: 28px;
+        font-weight: 400;
+        margin-bottom: 8px;
+        color: var(--keepsake-ink);
+      }
+      .proto-title em {
+        font-style: italic;
+        color: var(--keepsake-accent);
+      }
+      .proto-desc {
+        font-size: 13.5px;
+        color: var(--keepsake-meta);
+        line-height: 1.5;
+        margin-bottom: 14px;
+      }
+
+      /* Phone container */
+      .phone {
+        width: 375px;
+        min-height: 780px;
+        background: var(--keepsake-paper);
+        border-radius: 44px;
+        box-shadow:
+          0 16px 48px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        border: 8px solid #201e19;
+      }
+      .phone-notch {
+        width: 140px;
+        height: 24px;
+        background: #201e19;
+        margin: 0 auto;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+        position: relative;
+        z-index: 10;
+      }
+      .phone-status {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 24px 6px;
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+      }
+      .phone-screen {
+        flex: 1;
+        padding: 12px 18px 24px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      /* Masthead */
+      .d-masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-bottom: 6px;
+      }
+      .d-h1 {
+        font-family: var(--keepsake-font-serif);
+        font-size: 20px;
+        color: var(--keepsake-ink);
+      }
+      .d-h1 em {
+        font-style: italic;
+        color: var(--keepsake-accent);
+      }
+      .d-kicker {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+      }
+      .d-rule {
+        height: 1px;
+        background: var(--keepsake-rule-thin);
+        margin-bottom: 12px;
+      }
+
+      /* Sheet card */
+      .d-sheet {
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 18px;
+        padding: 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .d-sheet-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .form-title {
+        font-family: var(--keepsake-font-serif);
+        font-size: 20px;
+        font-weight: normal;
+        color: var(--keepsake-ink);
+      }
+      .form-title em {
+        font-style: italic;
+        color: var(--keepsake-accent);
+      }
+      .d-orb {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+      }
+      .d-step-note {
+        font-size: 12px;
+        color: var(--keepsake-meta);
+        margin-top: -6px;
+      }
+
+      /* Form labels */
+      .form-lbl {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--keepsake-meta);
+        font-weight: 700;
+        margin-top: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .form-lbl small {
+        font-size: 10px;
+        text-transform: none;
+        letter-spacing: normal;
+        font-weight: normal;
+        color: var(--keepsake-meta);
+      }
+
+      /* Inputs */
+      .d-input {
+        width: 100%;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: var(--keepsake-ink);
+        font-family: inherit;
+        outline: none;
+      }
+      .d-input:focus {
+        border-color: var(--keepsake-accent);
+      }
+      .d-note-input {
+        width: 100%;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--keepsake-ink);
+        font-style: italic;
+        font-family: var(--keepsake-font-serif);
+        outline: none;
+      }
+
+      /* Timestamp invariant */
+      .d-ts {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 12px;
+        background: var(--keepsake-paper);
+        border-radius: 8px;
+        border: 1px solid var(--keepsake-rule-thin);
+        font-size: 11.5px;
+        color: var(--keepsake-ink);
+      }
+      .d-ts .e {
+        color: var(--keepsake-accent);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .d-save {
+        width: 100%;
+        background: var(--keepsake-rule-strong);
+        color: var(--keepsake-paper);
+        border: none;
+        border-radius: 999px;
+        padding: 12px;
+        font-size: 13.5px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .d-save:hover {
+        opacity: 0.9;
+      }
+
+      /* ============================================================
+         AMOUNT SCALE EXPLORATIONS (1-5)
+         ============================================================ */
+
+      /* Variant A Amount: Connected tactile stepped fullness bar */
+      .stepped-bar-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .stepped-bar {
+        display: flex;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 10px;
+        overflow: hidden;
+        height: 38px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .stepped-seg {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-radius: 7px;
+        transition: all 0.15s ease;
+        position: relative;
+      }
+      .stepped-seg .seg-num {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--keepsake-meta);
+      }
+      .stepped-seg.active {
+        background: var(--keepsake-safe-chip-bg);
+      }
+      .stepped-seg.active .seg-num {
+        color: var(--keepsake-safe-chip-fg);
+      }
+      .stepped-bar-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        padding: 0 4px;
+      }
+      .stepped-bar-meta .badge {
+        color: var(--keepsake-safe-chip-fg);
+        font-weight: 700;
+      }
+
+      /* Variant B Amount: Interactive Toddler Plate Graphic */
+      .plate-amount-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 6px 4px;
+      }
+      .plate-graphic {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: var(--keepsake-paper);
+        border: 3px solid var(--keepsake-chip-border);
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+      }
+      .plate-inner-rim {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        border: 1px dashed var(--keepsake-chip-border);
+        position: relative;
+        overflow: hidden;
+        background: var(--keepsake-sheet);
+      }
+      .plate-fill-pie {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        transition: all 0.25s ease;
+      }
+      .plate-desc-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .plate-val-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--keepsake-ink);
+      }
+      .plate-val-sub {
+        font-size: 11.5px;
+        color: var(--keepsake-meta);
+        line-height: 1.35;
+      }
+      .plate-tap-strip {
+        display: flex;
+        gap: 5px;
+        margin-top: 4px;
+      }
+      .plate-tap-btn {
+        flex: 1;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-paper);
+        border-radius: 6px;
+        padding: 4px 2px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        text-align: center;
+      }
+      .plate-tap-btn.active {
+        background: var(--keepsake-safe-chip-bg);
+        border-color: var(--keepsake-safe-chip-border);
+        color: var(--keepsake-safe-chip-fg);
+      }
+
+      /* Variant C Amount: Micro-bowl Fullness Stepper */
+      .bowl-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 10px;
+        padding: 6px 8px;
+      }
+      .bowl-step-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 8px;
+        transition: background 0.15s;
+      }
+      .bowl-step-btn.active {
+        background: var(--keepsake-safe-chip-bg);
+      }
+      .bowl-step-btn.active .bowl-lbl {
+        color: var(--keepsake-safe-chip-fg);
+        font-weight: 700;
+      }
+      .bowl-icon {
+        width: 22px;
+        height: 16px;
+      }
+      .bowl-lbl {
+        font-size: 10px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+      }
+
+      /* ============================================================
+         CATEGORIES EXPLORATIONS (No more flat lozenge soup!)
+         ============================================================ */
+
+      /* Variant A: 4×2 Iconographic Bento Grid */
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+      .bento-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 7px 4px;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+      }
+      .bento-tile svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 1.7;
+        color: var(--keepsake-meta);
+      }
+      .bento-tile .tile-name {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--keepsake-ink);
+        line-height: 1.1;
+      }
+      .bento-tile.sel {
+        background: var(--keepsake-accent-wash);
+        border-color: var(--keepsake-accent-soft);
+      }
+      .bento-tile.sel svg {
+        color: var(--keepsake-accent);
+      }
+      .bento-tile.sel .tile-name {
+        color: var(--keepsake-accent-ink);
+        font-weight: 700;
+      }
+
+      /* Variant B: Macro-Grouped Compartments */
+      .macro-box {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: var(--keepsake-paper);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .macro-header {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--keepsake-meta);
+        display: flex;
+        justify-content: space-between;
+      }
+      .macro-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .macro-tag {
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 11.5px;
+        color: var(--keepsake-ink);
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .macro-tag.sel {
+        background: var(--keepsake-accent-chip-bg);
+        border-color: var(--keepsake-accent-chip-border);
+        color: var(--keepsake-accent-chip-fg);
+        font-weight: 600;
+      }
+
+      /* Variant C: Swiss Ledger Ruled Checklist */
+      .ledger-table {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 8px;
+        background: var(--keepsake-sheet);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow: hidden;
+      }
+      .ledger-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        font-size: 12px;
+        cursor: pointer;
+        color: var(--keepsake-ink);
+      }
+      .ledger-row:nth-child(odd) {
+        border-right: 1px solid var(--keepsake-rule-thin);
+      }
+      .ledger-check {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid var(--keepsake-chip-border);
+        display: grid;
+        place-items: center;
+        background: var(--keepsake-paper);
+      }
+      .ledger-row.sel .ledger-check {
+        background: var(--keepsake-accent);
+        border-color: var(--keepsake-accent);
+        color: #fff;
+      }
+      .ledger-row.sel {
+        background: var(--keepsake-accent-wash);
+        font-weight: 600;
+      }
+
+      /* ============================================================
+         ALLERGEN EXPLORATIONS (Separated safety signal)
+         ============================================================ */
+
+      /* Variant A: Expandable Safety Shield Drawer */
+      .safety-drawer {
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 10px;
+        background: var(--keepsake-paper);
+        overflow: hidden;
+      }
+      .safety-drawer-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .safety-drawer-toggle .flag-count {
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: var(--keepsake-danger-wash);
+        color: var(--keepsake-danger-ink);
+        font-weight: 700;
+      }
+      .safety-drawer-content {
+        padding: 8px 10px 10px;
+        border-top: 1px solid var(--keepsake-rule-thin);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      .safety-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 4px;
+        border-radius: 6px;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        text-align: center;
+      }
+      .safety-badge.sel {
+        background: var(--keepsake-danger-wash);
+        border-color: #dcaea0;
+        color: var(--keepsake-danger-ink);
+        font-weight: 700;
+      }
+
+      /* Variant B: Search & Add Tag Tray */
+      .tag-tray-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .tag-tray-active {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 28px;
+        align-items: center;
+      }
+      .hazard-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--keepsake-danger-wash);
+        border: 1px solid #dcaea0;
+        color: var(--keepsake-danger-ink);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+      }
+      .hazard-tag .rm {
+        cursor: pointer;
+        font-weight: bold;
+        opacity: 0.7;
+      }
+      .tag-quick-add {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tag-quick-select {
+        flex: 1;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 11.5px;
+        color: var(--keepsake-ink);
+        outline: none;
+      }
+
+      /* Variant C: Dedicated Alert Card with Yes/No Toggle */
+      .alert-card {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: var(--keepsake-paper);
+      }
+      .alert-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .toggle-switch {
+        display: flex;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .toggle-opt {
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--keepsake-meta);
+      }
+      .toggle-opt.sel {
+        background: var(--keepsake-danger);
+        color: #fff;
+      }
+      .alert-grid {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+      }
+
+      /* ============================================================
+         TEXTURES & FEEDING STYLE EXPLORATIONS
+         ============================================================ */
+
+      /* Variant A: Segmented Control Bars */
+      .seg-control {
+        display: flex;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg-item {
+        flex: 1;
+        text-align: center;
+        padding: 6px 2px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .seg-item.sel {
+        background: var(--keepsake-sheet);
+        color: var(--keepsake-ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Variant B: 2-Column Split Matrix */
+      .split-matrix {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .split-col {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .split-pill {
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-paper);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .split-pill.sel {
+        background: var(--keepsake-accent-wash);
+        border-color: var(--keepsake-accent-soft);
+        color: var(--keepsake-accent-ink);
+      }
+
+      /* Variant C: Hairline Slide Rail */
+      .rail-selector {
+        display: flex;
+        border-bottom: 2px solid var(--keepsake-rule-thin);
+      }
+      .rail-opt {
+        flex: 1;
+        text-align: center;
+        padding: 6px 4px;
+        font-size: 11.5px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        position: relative;
+        margin-bottom: -2px;
+      }
+      .rail-opt.sel {
+        color: var(--keepsake-accent);
+        border-bottom: 2px solid var(--keepsake-accent);
+      }
+
+      /* ============================================================
+         STATE INSPECTOR (Surface the state)
+         ============================================================ */
+      .state-panel {
+        max-width: 680px;
+        width: 100%;
+        margin-top: 24px;
+        background: var(--proto-card);
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 12.5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      .state-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--keepsake-accent);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .state-dump {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11.5px;
+        color: var(--keepsake-ink);
+        background: var(--keepsake-paper);
+        border-radius: 8px;
+        padding: 10px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        border: 1px solid var(--keepsake-rule-thin);
+      }
+
+      /* ============================================================
+         FLOATING SWITCHER BAR (Skill requirement)
+         ============================================================ */
+      .switcher {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1d1b16;
+        color: #fff;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px;
+        font-size: 13.5px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+        z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .switcher button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 0;
+        color: #fff;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 14px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        transition: background 0.15s;
+      }
+      .switcher button:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .switcher .label {
+        min-width: 260px;
+        text-align: center;
+      }
+      .switcher .label strong {
+        display: block;
+        font-size: 13px;
+        color: #ffffff;
+      }
+      .switcher .label small {
+        color: #b5b0a4;
+        display: block;
+        font-size: 10.5px;
+        margin-top: 1px;
+      }
+      .switcher .theme-toggle {
+        border-left: 1px solid rgba(255, 255, 255, 0.2);
+        padding-left: 10px;
+        font-size: 11px;
+        cursor: pointer;
+        color: #e8a582;
+        font-weight: 600;
+        background: transparent;
+        border-top: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .ic {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SVG Icon definitions -->
+    <svg style="display: none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="i-meal" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </symbol>
+        <!-- Food Category icons -->
+        <symbol id="i-fruit" viewBox="0 0 24 24">
+          <circle cx="12" cy="14" r="7" />
+          <path d="M12 7V3M12 3c3 0 5 2 5 4" />
+        </symbol>
+        <symbol id="i-grain" viewBox="0 0 24 24">
+          <path
+            d="M12 22V8M12 8c-3-2-3-5 0-6 3 1 3 4 0 6zM8 12c-2-2-2-4 0-5 2 1 2 3 0 5zM16 12c2-2 2-4 0-5-2 1-2 3 0 5z"
+          />
+        </symbol>
+        <symbol id="i-veggie" viewBox="0 0 24 24">
+          <path d="M7 21L17 11c2-2 1-6-2-6s-5 0-7 2L2 14c-1 3 2 6 5 7z" />
+          <path d="M16 5l3-3M19 8l3-3" />
+        </symbol>
+        <symbol id="i-dairy" viewBox="0 0 24 24">
+          <path d="M8 3h8v3H8zM6 6h12v15H6zM10 11h4" />
+        </symbol>
+        <symbol id="i-meat" viewBox="0 0 24 24">
+          <circle cx="8" cy="16" r="3" />
+          <path d="M10.5 14.5L17 8c2.5-2.5 5 0 5 0s2.5 2.5 0 5L15.5 19.5" />
+        </symbol>
+        <symbol id="i-fish" viewBox="0 0 24 24">
+          <path d="M3 12c5-7 15-4 18 0-3 4-13 7-18 0z" />
+          <path d="M18 12l4-3v6l-4-3zM8 10v.01" />
+        </symbol>
+        <symbol id="i-egg" viewBox="0 0 24 24">
+          <path d="M12 3c-4 0-7 5-7 11 0 4 3 7 7 7s7-3 7-7c0-6-3-11-7-11z" />
+        </symbol>
+        <symbol id="i-legume" viewBox="0 0 24 24">
+          <ellipse cx="9" cy="14" rx="4" ry="6" transform="rotate(-20 9 14)" />
+          <ellipse
+            cx="15"
+            cy="10"
+            rx="4"
+            ry="6"
+            transform="rotate(-20 15 10)"
+          />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="proto-header">
+      <div class="proto-kicker">
+        Interactive Design Prototype · Throwaway UI
+      </div>
+      <h1 class="proto-title">
+        Meal Form: <em>Lozenge Reduction &amp; 1-5 Scale</em>
+      </h1>
+      <p class="proto-desc">
+        Exploring 3 radically different architectures to replace the 25-lozenge
+        wall with structured, high-signal controls, paired with tactile
+        alternatives to the check-disc amount scale.
+      </p>
+    </div>
+
+    <!-- Phone Simulator -->
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status"><span>9:41</span><span>●●● 5G</span></div>
+      <div class="phone-screen" id="app-screen">
+        <!-- Rendered dynamically per variant -->
+      </div>
+    </div>
+
+    <!-- Live State Panel -->
+    <div class="state-panel">
+      <div class="state-title">
+        <span>Current Form State</span>
+        <span id="active-variant-badge">Variant A</span>
+      </div>
+      <div class="state-dump" id="state-dump"></div>
+    </div>
+
+    <!-- Floating Variant Switcher -->
+    <div class="switcher">
+      <button id="btn-prev" aria-label="Previous variant">◀</button>
+      <div class="label" id="switcher-label">
+        <strong id="sw-title"
+          >Variant A · Bento Grid &amp; Safety Shield</strong
+        >
+        <small id="sw-sub"
+          >Iconographic tiles + collapsible allergen drawer</small
+        >
+      </div>
+      <button id="btn-next" aria-label="Next variant">▶</button>
+      <button class="theme-toggle" id="btn-theme" onclick="toggleTheme()">
+        ☀️ Day
+      </button>
+    </div>
+
+    <script>
+      // ============================================================
+      // 1. PROTOTYPE DATA & OPTIONS
+      // ============================================================
+      const VARIANTS = [
+        {
+          key: "A",
+          title: "Variant A · Bento Grid & Safety Shield",
+          desc: "Stepped fullness bar · 4×2 icon tiles · safety shield drawer · segmented rails",
+          amountType: "stepped-bar",
+          catType: "bento-grid",
+          algType: "safety-drawer",
+          texType: "seg-track",
+        },
+        {
+          key: "B",
+          title: "Variant B · Plate Compartment & Tag Tray",
+          desc: "Interactive toddler plate · macro food groups · search/tag tray · 2-col split",
+          amountType: "plate-pie",
+          catType: "macro-boxes",
+          algType: "tag-tray",
+          texType: "split-matrix",
+        },
+        {
+          key: "C",
+          title: "Variant C · Minimalist Swiss Ledger",
+          desc: "Micro-bowl stepper · 2-column checklist table · Yes/No safety card · slide rail",
+          amountType: "bowl-stepper",
+          catType: "ledger-table",
+          algType: "alert-card",
+          texType: "slide-rail",
+        },
+      ];
+
+      const FOOD_CATS = [
+        { id: "fruit", name: "Fruit", icon: "i-fruit", group: "Produce" },
+        {
+          id: "vegetables",
+          name: "Vegetables",
+          icon: "i-veggie",
+          group: "Produce",
+        },
+        { id: "grains", name: "Grains", icon: "i-grain", group: "Staples" },
+        { id: "dairy", name: "Dairy", icon: "i-dairy", group: "Staples" },
+        {
+          id: "meat",
+          name: "Meat & poultry",
+          icon: "i-meat",
+          group: "Proteins",
+        },
+        {
+          id: "fish",
+          name: "Fish & seafood",
+          icon: "i-fish",
+          group: "Proteins",
+        },
+        { id: "egg", name: "Egg", icon: "i-egg", group: "Proteins" },
+        { id: "legumes", name: "Legumes", icon: "i-legume", group: "Proteins" },
+      ];
+
+      const BIG_9 = [
+        "Peanut",
+        "Tree nut",
+        "Milk",
+        "Egg",
+        "Wheat",
+        "Soy",
+        "Fish",
+        "Shellfish",
+        "Sesame",
+      ];
+
+      const TEXTURES = ["Purée", "Mashed", "Soft finger", "Whole pieces"];
+      const FEEDING_STYLES = ["Spoon-fed", "Self-fed"];
+
+      const AMOUNT_LABELS = [
+        { val: 1, label: "Tasted", sub: "A tiny nibble / lick", pct: "10%" },
+        { val: 2, label: "Little", sub: "A few bites (< 25%)", pct: "25%" },
+        { val: 3, label: "Half", sub: "About half eaten (~50%)", pct: "50%" },
+        {
+          val: 4,
+          label: "Most",
+          sub: "Ate most of the plate (~75%)",
+          pct: "75%",
+        },
+        {
+          val: 5,
+          label: "Cleaned plate",
+          sub: "Finished everything! (100%)",
+          pct: "100%",
+        },
+      ];
+
+      // ============================================================
+      // 2. STATE STORE (In-memory)
+      // ============================================================
+      const state = {
+        dishName: "Warm oat porridge with blueberries",
+        amount: 4,
+        categories: new Set(["fruit", "grains"]),
+        allergenFlags: new Set(["Milk"]),
+        texture: "Mashed",
+        feedingStyle: "Spoon-fed",
+        note: "finished entire bowl with enthusiasm",
+        timestamp: "This morning, 8:10 AM",
+        // UI-only states
+        safetyDrawerOpen: false,
+        algYesNo: true,
+        theme: "day",
+      };
+
+      // Determine initial variant from URL param ?variant=
+      function getActiveVariantKey() {
+        const p = new URLSearchParams(window.location.search).get("variant");
+        if (p && ["A", "B", "C"].includes(p.toUpperCase())) {
+          return p.toUpperCase();
+        }
+        return "A";
+      }
+
+      let activeVariantKey = getActiveVariantKey();
+
+      function getVariant() {
+        return VARIANTS.find((v) => v.key === activeVariantKey) || VARIANTS[0];
+      }
+
+      function setVariant(key) {
+        activeVariantKey = key;
+        const url = new URL(window.location);
+        url.searchParams.set("variant", key);
+        window.history.replaceState({}, "", url);
+        render();
+      }
+
+      function prevVariant() {
+        const idx = VARIANTS.findIndex((v) => v.key === activeVariantKey);
+        const nextIdx = (idx - 1 + VARIANTS.length) % VARIANTS.length;
+        setVariant(VARIANTS[nextIdx].key);
+      }
+
+      function nextVariant() {
+        const idx = VARIANTS.findIndex((v) => v.key === activeVariantKey);
+        const nextIdx = (idx + 1) % VARIANTS.length;
+        setVariant(VARIANTS[nextIdx].key);
+      }
+
+      function toggleTheme() {
+        state.theme = state.theme === "day" ? "night" : "day";
+        document.documentElement.setAttribute("data-theme", state.theme);
+        const btn = document.getElementById("btn-theme");
+        btn.textContent = state.theme === "day" ? "☀️ Day" : "🌙 Night";
+      }
+
+      // Keyboard navigation ← / →
+      window.addEventListener("keydown", (e) => {
+        const tag = document.activeElement
+          ? document.activeElement.tagName.toLowerCase()
+          : "";
+        if (["input", "textarea", "select"].includes(tag)) return;
+        if (e.key === "ArrowLeft") prevVariant();
+        if (e.key === "ArrowRight") nextVariant();
+      });
+
+      document.getElementById("btn-prev").onclick = prevVariant;
+      document.getElementById("btn-next").onclick = nextVariant;
+
+      // ============================================================
+      // 3. COMPONENT RENDERERS
+      // ============================================================
+
+      // Amount: Variant A (Connected Stepped Fullness Bar)
+      function renderAmountVariantA() {
+        const cur = AMOUNT_LABELS[state.amount - 1];
+        return `
+          <div class="form-lbl">
+            <span>How much eaten</span>
+            <small class="badge" style="color:var(--keepsake-safe-chip-fg);font-weight:700">${state.amount} of 5 · ${cur.label}</small>
+          </div>
+          <div class="stepped-bar-wrap">
+            <div class="stepped-bar">
+              ${[1, 2, 3, 4, 5]
+                .map(
+                  (v) => `
+                <button class="stepped-seg ${v <= state.amount ? "active" : ""}" onclick="setAmount(${v})">
+                  <span class="seg-num">${v}</span>
+                </button>
+              `
+                )
+                .join("")}
+            </div>
+            <div class="stepped-bar-meta">
+              <span>Bite (1)</span>
+              <span>Half (3)</span>
+              <span>Clean plate (5)</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Amount: Variant B (Interactive Toddler Plate Graphic)
+      function renderAmountVariantB() {
+        const cur = AMOUNT_LABELS[state.amount - 1];
+        const degrees =
+          state.amount === 1
+            ? 36
+            : state.amount === 2
+              ? 90
+              : state.amount === 3
+                ? 180
+                : state.amount === 4
+                  ? 270
+                  : 360;
+        const color = "var(--keepsake-safe-chip-border)";
+        return `
+          <div class="form-lbl">
+            <span>Plate eaten portion</span>
+            <small>${cur.pct}</small>
+          </div>
+          <div class="plate-amount-wrap">
+            <div class="plate-graphic" onclick="cycleAmount()" title="Click plate to advance portion">
+              <div class="plate-inner-rim">
+                <div class="plate-fill-pie" style="background: conic-gradient(var(--keepsake-safe-chip-bg) 0deg ${degrees}deg, transparent ${degrees}deg 360deg);"></div>
+              </div>
+            </div>
+            <div class="plate-desc-col">
+              <div class="plate-val-title">${cur.label} (${state.amount}/5)</div>
+              <div class="plate-val-sub">${cur.sub}</div>
+              <div class="plate-tap-strip">
+                ${[1, 2, 3, 4, 5]
+                  .map(
+                    (v) => `
+                  <button class="plate-tap-btn ${state.amount === v ? "active" : ""}" onclick="setAmount(${v})">${v}/5</button>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Amount: Variant C (Micro-bowl Stepper)
+      function renderAmountVariantC() {
+        const cur = AMOUNT_LABELS[state.amount - 1];
+        return `
+          <div class="form-lbl">
+            <span>Amount eaten <small>· 5-step fraction scale</small></span>
+            <small style="color:var(--keepsake-safe-chip-fg);font-weight:700">${cur.label}</small>
+          </div>
+          <div class="bowl-stepper">
+            ${[1, 2, 3, 4, 5]
+              .map((v) => {
+                const lbl =
+                  v === 1
+                    ? "Taste"
+                    : v === 2
+                      ? "¼"
+                      : v === 3
+                        ? "½"
+                        : v === 4
+                          ? "¾"
+                          : "All";
+                const fillPct = (v / 5) * 100;
+                return `
+                <button class="bowl-step-btn ${state.amount === v ? "active" : ""}" onclick="setAmount(${v})">
+                  <svg class="bowl-icon" viewBox="0 0 24 16">
+                    <path d="M2 3h20c0 8-4.5 11-10 11S2 11 2 3z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                    <rect x="4" y="${14 - fillPct * 0.1}" width="16" height="${fillPct * 0.1}" rx="1" fill="${v <= state.amount ? "var(--keepsake-safe-chip-fg)" : "none"}"/>
+                  </svg>
+                  <span class="bowl-lbl">${lbl}</span>
+                </button>
+              `;
+              })
+              .join("")}
+          </div>
+        `;
+      }
+
+      // Categories: Variant A (4×2 Iconographic Bento Grid)
+      function renderCategoriesVariantA() {
+        return `
+          <div class="form-lbl">
+            <span>Plate food groups</span>
+            <small>${state.categories.size} selected</small>
+          </div>
+          <div class="bento-grid">
+            ${FOOD_CATS.map(
+              (c) => `
+              <div class="bento-tile ${state.categories.has(c.id) ? "sel" : ""}" onclick="toggleCategory('${c.id}')">
+                <svg class="ic"><use href="#${c.icon}"/></svg>
+                <span class="tile-name">${c.name}</span>
+              </div>
+            `
+            ).join("")}
+          </div>
+        `;
+      }
+
+      // Categories: Variant B (Macro-Grouped Compartments)
+      function renderCategoriesVariantB() {
+        const groups = ["Produce", "Staples", "Proteins"];
+        return `
+          <div class="form-lbl">
+            <span>Food groups <small>· grouped plate sections</small></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${groups
+              .map((g) => {
+                const items = FOOD_CATS.filter((c) => c.group === g);
+                return `
+                <div class="macro-box">
+                  <div class="macro-header">
+                    <span>${g}</span>
+                    <span style="font-weight:normal">${items.filter((c) => state.categories.has(c.id)).length} selected</span>
+                  </div>
+                  <div class="macro-row">
+                    ${items
+                      .map(
+                        (c) => `
+                      <button class="macro-tag ${state.categories.has(c.id) ? "sel" : ""}" onclick="toggleCategory('${c.id}')">
+                        ${c.name}
+                      </button>
+                    `
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              `;
+              })
+              .join("")}
+          </div>
+        `;
+      }
+
+      // Categories: Variant C (Swiss Ledger Ruled Checklist)
+      function renderCategoriesVariantC() {
+        return `
+          <div class="form-lbl">
+            <span>Food categories <small>· Swiss checklist</small></span>
+          </div>
+          <div class="ledger-table">
+            ${FOOD_CATS.map(
+              (c) => `
+              <div class="ledger-row ${state.categories.has(c.id) ? "sel" : ""}" onclick="toggleCategory('${c.id}')">
+                <div class="ledger-check">
+                  ${state.categories.has(c.id) ? "✓" : ""}
+                </div>
+                <span>${c.name}</span>
+              </div>
+            `
+            ).join("")}
+          </div>
+        `;
+      }
+
+      // Allergens: Variant A (Safety Shield Drawer)
+      function renderAllergensVariantA() {
+        const count = state.allergenFlags.size;
+        return `
+          <div class="form-lbl">
+            <span>Allergy safety check</span>
+            <small>Big-9 flags</small>
+          </div>
+          <div class="safety-drawer">
+            <div class="safety-drawer-toggle" onclick="toggleSafetyDrawer()">
+              <span style="display:flex;align-items:center;gap:6px">
+                <span>🛡️</span>
+                <span>${count > 0 ? Array.from(state.allergenFlags).join(", ") : "No big-9 allergens flagged"}</span>
+              </span>
+              <span class="flag-count">${count > 0 ? `${count} flagged ⚠️` : "+ Flag"}</span>
+            </div>
+            ${
+              state.safetyDrawerOpen
+                ? `
+              <div class="safety-drawer-content">
+                ${BIG_9.map(
+                  (a) => `
+                  <div class="safety-badge ${state.allergenFlags.has(a) ? "sel" : ""}" onclick="toggleAllergen('${a}')">
+                    ${state.allergenFlags.has(a) ? "⚠️ " : ""}${a}
+                  </div>
+                `
+                ).join("")}
+              </div>
+            `
+                : ""
+            }
+          </div>
+        `;
+      }
+
+      // Allergens: Variant B (Search & Add Tag Tray)
+      function renderAllergensVariantB() {
+        const unselected = BIG_9.filter((a) => !state.allergenFlags.has(a));
+        return `
+          <div class="form-lbl">
+            <span>Contains allergens <small>· clean tag tray</small></span>
+          </div>
+          <div class="tag-tray-wrap">
+            <div class="tag-tray-active">
+              ${
+                state.allergenFlags.size === 0
+                  ? `
+                <span style="font-size:11.5px;color:var(--keepsake-meta);font-style:italic">None tagged — plate is safe</span>
+              `
+                  : Array.from(state.allergenFlags)
+                      .map(
+                        (a) => `
+                <span class="hazard-tag">
+                  ⚠️ ${a}
+                  <span class="rm" onclick="toggleAllergen('${a}')">✕</span>
+                </span>
+              `
+                      )
+                      .join("")
+              }
+            </div>
+            <div class="tag-quick-add">
+              <select class="tag-quick-select" onchange="if(this.value){toggleAllergen(this.value);this.value='';}">
+                <option value="">+ Flag a big-9 allergen...</option>
+                ${unselected.map((a) => `<option value="${a}">${a}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+        `;
+      }
+
+      // Allergens: Variant C (Dedicated Alert Card with Yes/No Toggle)
+      function renderAllergensVariantC() {
+        return `
+          <div class="alert-card">
+            <div class="alert-card-head">
+              <span style="font-size:12px;font-weight:600;color:var(--keepsake-ink)">
+                Contains big-9 allergens?
+              </span>
+              <div class="toggle-switch">
+                <button class="toggle-opt ${!state.algYesNo ? "sel" : ""}" onclick="setAlgYesNo(false)">No</button>
+                <button class="toggle-opt ${state.algYesNo ? "sel" : ""}" onclick="setAlgYesNo(true)">Yes ⚠️</button>
+              </div>
+            </div>
+            ${
+              state.algYesNo
+                ? `
+              <div class="alert-grid">
+                ${BIG_9.map(
+                  (a) => `
+                  <button class="safety-badge ${state.allergenFlags.has(a) ? "sel" : ""}" onclick="toggleAllergen('${a}')">
+                    ${a}
+                  </button>
+                `
+                ).join("")}
+              </div>
+            `
+                : ""
+            }
+          </div>
+        `;
+      }
+
+      // Textures & Feeding Style: Variant A (Segmented Control Bars)
+      function renderTexturesVariantA() {
+        return `
+          <div class="form-lbl">
+            <span>Texture &amp; feeding style <small>· segmented rails</small></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="seg-control">
+              ${TEXTURES.map(
+                (t) => `
+                <button class="seg-item ${state.texture === t ? "sel" : ""}" onclick="setTexture('${t}')">${t}</button>
+              `
+              ).join("")}
+            </div>
+            <div class="seg-control">
+              ${FEEDING_STYLES.map(
+                (s) => `
+                <button class="seg-item ${state.feedingStyle === s ? "sel" : ""}" onclick="setStyle('${s}')">${s === "Spoon-fed" ? "🥄 Spoon" : "🤲 Self"}</button>
+              `
+              ).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      // Textures & Feeding Style: Variant B (2-Column Split Matrix)
+      function renderTexturesVariantB() {
+        return `
+          <div class="form-lbl">
+            <span>Texture &amp; feeding style <small>· split matrix</small></span>
+          </div>
+          <div class="split-matrix">
+            <div class="split-col">
+              <span style="font-size:10px;text-transform:uppercase;color:var(--keepsake-meta);font-weight:700">Texture</span>
+              ${TEXTURES.map(
+                (t) => `
+                <div class="split-pill ${state.texture === t ? "sel" : ""}" onclick="setTexture('${t}')">
+                  <span>●</span> <span>${t}</span>
+                </div>
+              `
+              ).join("")}
+            </div>
+            <div class="split-col">
+              <span style="font-size:10px;text-transform:uppercase;color:var(--keepsake-meta);font-weight:700">Feeding</span>
+              ${FEEDING_STYLES.map(
+                (s) => `
+                <div class="split-pill ${state.feedingStyle === s ? "sel" : ""}" onclick="setStyle('${s}')">
+                  <span>${s === "Spoon-fed" ? "🥄" : "🤲"}</span> <span>${s}</span>
+                </div>
+              `
+              ).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      // Textures & Feeding Style: Variant C (Hairline Slide Rail)
+      function renderTexturesVariantC() {
+        return `
+          <div class="form-lbl">
+            <span>Texture <small>· slide rail</small></span>
+          </div>
+          <div class="rail-selector">
+            ${TEXTURES.map(
+              (t) => `
+              <button class="rail-opt ${state.texture === t ? "sel" : ""}" onclick="setTexture('${t}')">${t}</button>
+            `
+            ).join("")}
+          </div>
+          <div class="form-lbl" style="margin-top:6px">
+            <span>Feeding style</span>
+          </div>
+          <div class="rail-selector">
+            ${FEEDING_STYLES.map(
+              (s) => `
+              <button class="rail-opt ${state.feedingStyle === s ? "sel" : ""}" onclick="setStyle('${s}')">${s}</button>
+            `
+            ).join("")}
+          </div>
+        `;
+      }
+
+      // ============================================================
+      // 4. ACTION DISPATCHERS
+      // ============================================================
+      function setAmount(val) {
+        state.amount = val;
+        render();
+      }
+      function cycleAmount() {
+        state.amount = (state.amount % 5) + 1;
+        render();
+      }
+      function toggleCategory(id) {
+        if (state.categories.has(id)) {
+          state.categories.delete(id);
+        } else {
+          state.categories.add(id);
+        }
+        render();
+      }
+      function toggleAllergen(alg) {
+        if (state.allergenFlags.has(alg)) {
+          state.allergenFlags.delete(alg);
+        } else {
+          state.allergenFlags.add(alg);
+        }
+        render();
+      }
+      function toggleSafetyDrawer() {
+        state.safetyDrawerOpen = !state.safetyDrawerOpen;
+        render();
+      }
+      function setAlgYesNo(yes) {
+        state.algYesNo = yes;
+        if (!yes) state.allergenFlags.clear();
+        render();
+      }
+      function setTexture(t) {
+        state.texture = t;
+        render();
+      }
+      function setStyle(s) {
+        state.feedingStyle = s;
+        render();
+      }
+
+      // ============================================================
+      // 5. MASTER RENDER LOOP
+      // ============================================================
+      function render() {
+        const variant = getVariant();
+
+        // Update floating switcher label
+        document.getElementById("sw-title").textContent = variant.title;
+        document.getElementById("sw-sub").textContent = variant.desc;
+        document.getElementById("active-variant-badge").textContent =
+          `${variant.key}: ${variant.title.split("·")[1]?.trim() || ""}`;
+
+        // Pick amount section
+        let amountHTML = "";
+        if (variant.amountType === "stepped-bar")
+          amountHTML = renderAmountVariantA();
+        else if (variant.amountType === "plate-pie")
+          amountHTML = renderAmountVariantB();
+        else amountHTML = renderAmountVariantC();
+
+        // Pick category section
+        let catHTML = "";
+        if (variant.catType === "bento-grid")
+          catHTML = renderCategoriesVariantA();
+        else if (variant.catType === "macro-boxes")
+          catHTML = renderCategoriesVariantB();
+        else catHTML = renderCategoriesVariantC();
+
+        // Pick allergen section
+        let algHTML = "";
+        if (variant.algType === "safety-drawer")
+          algHTML = renderAllergensVariantA();
+        else if (variant.algType === "tag-tray")
+          algHTML = renderAllergensVariantB();
+        else algHTML = renderAllergensVariantC();
+
+        // Pick texture section
+        let texHTML = "";
+        if (variant.texType === "seg-track") texHTML = renderTexturesVariantA();
+        else if (variant.texType === "split-matrix")
+          texHTML = renderTexturesVariantB();
+        else texHTML = renderTexturesVariantC();
+
+        const screen = document.getElementById("app-screen");
+        screen.innerHTML = `
+          <div class="d-masthead">
+            <span class="d-h1">Milo's <em>Friday</em></span>
+            <span class="d-kicker">Oct 27</span>
+          </div>
+          <div class="d-rule"></div>
+
+          <div class="d-sheet">
+            <div class="d-sheet-head">
+              <div>
+                <div class="d-kicker">Refined Plate Log</div>
+                <h4 class="form-title">Log a <em>meal</em></h4>
+              </div>
+              <span class="d-orb" style="background:var(--keepsake-tracker-meal-bg);color:var(--keepsake-tracker-meal-fg)">
+                <svg class="ic"><use href="#i-meal"/></svg>
+              </span>
+            </div>
+            <div class="d-step-note">
+              No wall of pills: structured groups, visual portion, and dedicated safety drawer.
+            </div>
+
+            <!-- Optional Dish Name -->
+            <div class="form-lbl">Dish name <small>· optional description</small></div>
+            <input class="d-input" id="in-dish" placeholder="e.g. Oatmeal with banana" value="${state.dishName}" oninput="state.dishName=this.value;renderState()"/>
+
+            <!-- 1-5 Amount Scale Exploration -->
+            ${amountHTML}
+
+            <!-- Food Categories Exploration -->
+            ${catHTML}
+
+            <!-- Allergens Exploration -->
+            ${algHTML}
+
+            <!-- Textures & Feeding Style Exploration -->
+            ${texHTML}
+
+            <!-- Optional Note -->
+            <input class="d-note-input" placeholder="Note (optional)" value="${state.note}" oninput="state.note=this.value;renderState()"/>
+
+            <!-- Timestamp Invariant directly preceding Save -->
+            <div class="d-ts">
+              <span>When · ${state.timestamp}</span>
+              <span class="e">Change</span>
+            </div>
+            <button class="d-save" onclick="alert('Meal saved in memory: ' + state.amount + '/5 eaten!')">Save meal</button>
+          </div>
+        `;
+
+        renderState();
+      }
+
+      function renderState() {
+        const dump = {
+          variant: activeVariantKey,
+          dishName: state.dishName,
+          amount: state.amount,
+          amountLabel: AMOUNT_LABELS[state.amount - 1].label,
+          categories: Array.from(state.categories),
+          allergenFlags: Array.from(state.allergenFlags),
+          texture: state.texture,
+          feedingStyle: state.feedingStyle,
+          note: state.note,
+          occurredAt: state.timestamp,
+        };
+        document.getElementById("state-dump").textContent = JSON.stringify(
+          dump,
+          null,
+          2
+        );
+      }
+
+      // Initial render
+      render();
+    </script>
+  </body>
+</html>

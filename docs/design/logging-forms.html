@@ -630,6 +630,523 @@
         font-weight: 600;
       }
 
+      /* Meal Form Refinement & Exploration Styles */
+      .meal-variant-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .meal-vtab {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .meal-vtab.sel {
+        background: var(--keepsake-accent);
+        border-color: var(--keepsake-accent);
+        color: #fff;
+      }
+
+      /* Variant A: Stepped tactile fullness bar */
+      .stepped-bar-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .stepped-bar {
+        display: flex;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        overflow: hidden;
+        height: 34px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .stepped-seg {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--keepsake-meta);
+        transition: all 0.15s;
+      }
+      .stepped-seg.active {
+        background: var(--keepsake-safe-chip-bg);
+        color: var(--keepsake-safe-chip-fg);
+      }
+      .stepped-bar-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--keepsake-meta);
+        padding: 0 4px;
+      }
+
+      /* Variant B: Interactive Plate Graphic */
+      .plate-amount-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 2px;
+      }
+      .plate-graphic {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: var(--keepsake-paper);
+        border: 2.5px solid var(--keepsake-chip-border);
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+      }
+      .plate-inner-rim {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 1px dashed var(--keepsake-chip-border);
+        position: relative;
+        overflow: hidden;
+        background: var(--keepsake-sheet);
+      }
+      .plate-fill-pie {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+      }
+      .plate-desc-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .plate-val-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--keepsake-ink);
+      }
+      .plate-val-sub {
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        line-height: 1.3;
+      }
+      .plate-tap-strip {
+        display: flex;
+        gap: 4px;
+        margin-top: 3px;
+      }
+      .plate-tap-btn {
+        flex: 1;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-paper);
+        border-radius: 5px;
+        padding: 3px 2px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        text-align: center;
+      }
+      .plate-tap-btn.active {
+        background: var(--keepsake-safe-chip-bg);
+        border-color: var(--keepsake-safe-chip-border);
+        color: var(--keepsake-safe-chip-fg);
+      }
+
+      /* Variant C: Micro-bowl stepper */
+      .bowl-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 4px 6px;
+      }
+      .bowl-step-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 6px;
+        transition: background 0.15s;
+      }
+      .bowl-step-btn.active {
+        background: var(--keepsake-safe-chip-bg);
+      }
+      .bowl-step-btn.active .bowl-lbl {
+        color: var(--keepsake-safe-chip-fg);
+        font-weight: 700;
+      }
+      .bowl-lbl {
+        font-size: 9.5px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+      }
+
+      /* Category Refinement: 4×2 Bento Grid (Variant A) */
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+      }
+      .bento-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 6px 3px;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 7px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+      }
+      .bento-tile svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 1.8;
+        color: var(--keepsake-meta);
+      }
+      .bento-tile .tile-name {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--keepsake-ink);
+        line-height: 1.1;
+      }
+      .bento-tile.sel {
+        background: var(--keepsake-accent-wash);
+        border-color: var(--keepsake-accent-soft);
+      }
+      .bento-tile.sel svg {
+        color: var(--keepsake-accent);
+      }
+      .bento-tile.sel .tile-name {
+        color: var(--keepsake-accent-ink);
+        font-weight: 700;
+      }
+
+      /* Category Refinement: Macro Boxes (Variant B) */
+      .macro-box {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 8px;
+        padding: 6px 8px;
+        background: var(--keepsake-paper);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .macro-header {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--keepsake-meta);
+        display: flex;
+        justify-content: space-between;
+      }
+      .macro-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .macro-tag {
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        border-radius: 5px;
+        padding: 3px 7px;
+        font-size: 11px;
+        color: var(--keepsake-ink);
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .macro-tag.sel {
+        background: var(--keepsake-accent-chip-bg);
+        border-color: var(--keepsake-accent-chip-border);
+        color: var(--keepsake-accent-chip-fg);
+        font-weight: 600;
+      }
+
+      /* Category Refinement: Swiss Ledger Table (Variant C) */
+      .ledger-table {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 7px;
+        background: var(--keepsake-sheet);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow: hidden;
+      }
+      .ledger-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        font-size: 11.5px;
+        cursor: pointer;
+        color: var(--keepsake-ink);
+      }
+      .ledger-row:nth-child(odd) {
+        border-right: 1px solid var(--keepsake-rule-thin);
+      }
+      .ledger-check {
+        width: 13px;
+        height: 13px;
+        border-radius: 3px;
+        border: 1px solid var(--keepsake-chip-border);
+        display: grid;
+        place-items: center;
+        background: var(--keepsake-paper);
+        font-size: 9px;
+      }
+      .ledger-row.sel .ledger-check {
+        background: var(--keepsake-accent);
+        border-color: var(--keepsake-accent);
+        color: #fff;
+      }
+      .ledger-row.sel {
+        background: var(--keepsake-accent-wash);
+        font-weight: 600;
+      }
+
+      /* Allergen Refinement: Safety Shield Drawer (Variant A) */
+      .safety-drawer {
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        background: var(--keepsake-paper);
+        overflow: hidden;
+      }
+      .safety-drawer-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 9px;
+        cursor: pointer;
+        font-size: 11.5px;
+        font-weight: 600;
+      }
+      .safety-drawer-toggle .flag-count {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: var(--keepsake-danger-wash);
+        color: var(--keepsake-danger-ink);
+        font-weight: 700;
+      }
+      .safety-drawer-content {
+        padding: 7px 8px 8px;
+        border-top: 1px solid var(--keepsake-rule-thin);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+      }
+      .safety-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 3px;
+        border-radius: 5px;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        text-align: center;
+      }
+      .safety-badge.sel {
+        background: var(--keepsake-danger-wash);
+        border-color: #dcaea0;
+        color: var(--keepsake-danger-ink);
+        font-weight: 700;
+      }
+
+      /* Allergen Refinement: Tag Tray (Variant B) */
+      .tag-tray-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .tag-tray-active {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        min-height: 24px;
+        align-items: center;
+      }
+      .hazard-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: var(--keepsake-danger-wash);
+        border: 1px solid #dcaea0;
+        color: var(--keepsake-danger-ink);
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10.5px;
+        font-weight: 600;
+      }
+      .hazard-tag .rm {
+        cursor: pointer;
+        font-weight: bold;
+        opacity: 0.7;
+      }
+      .tag-quick-add {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .tag-quick-select {
+        flex: 1;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 5px;
+        padding: 5px 7px;
+        font-size: 11px;
+        color: var(--keepsake-ink);
+        outline: none;
+      }
+
+      /* Allergen Refinement: Alert Card (Variant C) */
+      .alert-card {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 8px;
+        padding: 7px 9px;
+        background: var(--keepsake-paper);
+      }
+      .alert-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .toggle-switch {
+        display: flex;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      .toggle-opt {
+        padding: 2px 7px;
+        font-size: 10px;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--keepsake-meta);
+      }
+      .toggle-opt.sel {
+        background: var(--keepsake-danger);
+        color: #fff;
+      }
+      .alert-grid {
+        margin-top: 7px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+
+      /* Texture & Feeding Refinements */
+      .seg-control {
+        display: flex;
+        background: var(--keepsake-paper);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 7px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg-item {
+        flex: 1;
+        text-align: center;
+        padding: 5px 2px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        border-radius: 5px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .seg-item.sel {
+        background: var(--keepsake-sheet);
+        color: var(--keepsake-ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .split-matrix {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .split-col {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .split-pill {
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-paper);
+        border-radius: 5px;
+        padding: 5px 7px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .split-pill.sel {
+        background: var(--keepsake-accent-wash);
+        border-color: var(--keepsake-accent-soft);
+        color: var(--keepsake-accent-ink);
+      }
+
+      .rail-selector {
+        display: flex;
+        border-bottom: 2px solid var(--keepsake-rule-thin);
+      }
+      .rail-opt {
+        flex: 1;
+        text-align: center;
+        padding: 5px 3px;
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        position: relative;
+        margin-bottom: -2px;
+      }
+      .rail-opt.sel {
+        color: var(--keepsake-accent);
+        border-bottom: 2px solid var(--keepsake-accent);
+      }
+
       /* Inputs */
       .d-input {
         width: 100%;
@@ -1005,6 +1522,44 @@
         <symbol id="i-search" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7" />
           <path d="M20 20l-3.8-3.8" />
+        </symbol>
+        <!-- Category icons for Meal refinement -->
+        <symbol id="i-fruit" viewBox="0 0 24 24">
+          <circle cx="12" cy="14" r="7" />
+          <path d="M12 7V3M12 3c3 0 5 2 5 4" />
+        </symbol>
+        <symbol id="i-grain" viewBox="0 0 24 24">
+          <path
+            d="M12 22V8M12 8c-3-2-3-5 0-6 3 1 3 4 0 6zM8 12c-2-2-2-4 0-5 2 1 2 3 0 5zM16 12c2-2 2-4 0-5-2 1-2 3 0 5z"
+          />
+        </symbol>
+        <symbol id="i-veggie" viewBox="0 0 24 24">
+          <path d="M7 21L17 11c2-2 1-6-2-6s-5 0-7 2L2 14c-1 3 2 6 5 7z" />
+          <path d="M16 5l3-3M19 8l3-3" />
+        </symbol>
+        <symbol id="i-dairy" viewBox="0 0 24 24">
+          <path d="M8 3h8v3H8zM6 6h12v15H6zM10 11h4" />
+        </symbol>
+        <symbol id="i-meat" viewBox="0 0 24 24">
+          <circle cx="8" cy="16" r="3" />
+          <path d="M10.5 14.5L17 8c2.5-2.5 5 0 5 0s2.5 2.5 0 5L15.5 19.5" />
+        </symbol>
+        <symbol id="i-fish" viewBox="0 0 24 24">
+          <path d="M3 12c5-7 15-4 18 0-3 4-13 7-18 0z" />
+          <path d="M18 12l4-3v6l-4-3zM8 10v.01" />
+        </symbol>
+        <symbol id="i-egg" viewBox="0 0 24 24">
+          <path d="M12 3c-4 0-7 5-7 11 0 4 3 7 7 7s7-3 7-7c0-6-3-11-7-11z" />
+        </symbol>
+        <symbol id="i-legume" viewBox="0 0 24 24">
+          <ellipse cx="9" cy="14" rx="4" ry="6" transform="rotate(-20 9 14)" />
+          <ellipse
+            cx="15"
+            cy="10"
+            rx="4"
+            ry="6"
+            transform="rotate(-20 15 10)"
+          />
         </symbol>
       </defs>
     </svg>
@@ -1498,9 +2053,35 @@
               <span class="phone-card-tag">Form 04 · Meal</span>
               <h3 class="phone-card-title">Meal (Plate Contents)</h3>
               <p class="phone-card-note">
-                Optional dish name, 5-point check-disc amount, multi-select
-                category flags, big-9 allergen chips, texture, feeding style.
+                Optional dish name, 5-point scale, food category flags, big-9
+                allergens, texture, and feeding style.
               </p>
+              <div class="meal-variant-tabs" id="meal-vtabs">
+                <button
+                  class="meal-vtab sel"
+                  onclick="switchMealFormVariant('baseline', this)"
+                >
+                  Baseline (Pills)
+                </button>
+                <button
+                  class="meal-vtab"
+                  onclick="switchMealFormVariant('a', this)"
+                >
+                  A · Bento &amp; Shield
+                </button>
+                <button
+                  class="meal-vtab"
+                  onclick="switchMealFormVariant('b', this)"
+                >
+                  B · Plate &amp; Tray
+                </button>
+                <button
+                  class="meal-vtab"
+                  onclick="switchMealFormVariant('c', this)"
+                >
+                  C · Swiss Ledger
+                </button>
+              </div>
             </div>
             <div class="phone">
               <div class="phone-notch"></div>
@@ -1554,154 +2135,1035 @@
                     happened, not when you save.
                   </div>
 
-                  <!-- ADR-0002 Optional Meal Dish Name -->
-                  <div class="form-lbl">
-                    Dish name <small>· optional description</small>
-                  </div>
-                  <input
-                    class="d-input"
-                    placeholder="e.g. Oatmeal with banana &amp; chia"
-                    value="Warm oat porridge with blueberries"
-                  />
-
-                  <!-- 5-Point Amount Selector -->
-                  <div class="form-lbl">
-                    How much was eaten <small>· 5-point scale</small>
-                  </div>
-                  <div class="d-amount">
-                    <div class="d-amount-btn on" onclick="setAmount(1, this)">
-                      <svg class="ic"><use href="#i-check" /></svg>
+                  <!-- ==========================================
+                       MEAL VIEW: BASELINE (25+ Chip Lozenge Wall)
+                       ========================================== -->
+                  <div id="meal-view-baseline">
+                    <div class="form-lbl">
+                      Dish name <small>· optional description</small>
                     </div>
-                    <div class="d-amount-btn on" onclick="setAmount(2, this)">
-                      <svg class="ic"><use href="#i-check" /></svg>
+                    <input
+                      class="d-input"
+                      placeholder="e.g. Oatmeal with banana &amp; chia"
+                      value="Warm oat porridge with blueberries"
+                    />
+
+                    <!-- 5-Point Amount Selector -->
+                    <div class="form-lbl">
+                      How much was eaten <small>· 5-point scale</small>
                     </div>
-                    <div class="d-amount-btn on" onclick="setAmount(3, this)">
-                      <svg class="ic"><use href="#i-check" /></svg>
+                    <div class="d-amount">
+                      <div class="d-amount-btn on" onclick="setAmount(1, this)">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on" onclick="setAmount(2, this)">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on" onclick="setAmount(3, this)">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on" onclick="setAmount(4, this)">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div
+                        class="d-amount-btn off"
+                        onclick="setAmount(5, this)"
+                      >
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
                     </div>
-                    <div class="d-amount-btn on" onclick="setAmount(4, this)">
-                      <svg class="ic"><use href="#i-check" /></svg>
+                    <div class="d-amount-lbl">4 of 5 · ate most</div>
+
+                    <!-- Food Categories -->
+                    <div class="form-lbl">
+                      Food categories <small>· pick any</small>
                     </div>
-                    <div class="d-amount-btn off" onclick="setAmount(5, this)">
-                      <svg class="ic"><use href="#i-check" /></svg>
+                    <div class="chip-row">
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Fruit
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Grains
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Vegetables
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Dairy
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Meat &amp; poultry
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Fish &amp; seafood
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Egg
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Legumes
+                      </button>
                     </div>
-                  </div>
-                  <div class="d-amount-lbl">4 of 5 · ate most</div>
 
-                  <!-- Food Categories -->
-                  <div class="form-lbl">
-                    Food categories <small>· pick any</small>
-                  </div>
-                  <div class="chip-row">
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Fruit
-                    </button>
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Grains
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Vegetables
-                    </button>
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Dairy
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Meat &amp; poultry
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Fish &amp; seafood
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Egg
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Legumes
-                    </button>
-                  </div>
+                    <!-- Allergen Tags (Big-9) -->
+                    <div class="form-lbl">
+                      Contains allergens <small>· Big-9 tags</small>
+                    </div>
+                    <div class="chip-row">
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Peanut
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Tree nut
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Milk
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Egg
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Wheat
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Soy
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Fish
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Sesame
+                      </button>
+                    </div>
 
-                  <!-- Allergen Tags (Big-9) -->
-                  <div class="form-lbl">
-                    Contains allergens <small>· Big-9 tags</small>
-                  </div>
-                  <div class="chip-row">
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Peanut
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Tree nut
-                    </button>
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Milk
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Egg
-                    </button>
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Wheat
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Soy
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Fish
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Sesame
-                    </button>
-                  </div>
+                    <!-- Texture & Feeding style -->
+                    <div class="form-lbl">
+                      Texture &amp; feeding style
+                      <small>· remembered from last meal</small>
+                    </div>
+                    <div class="chip-row">
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Mashed
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Soft finger food
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Spoon-fed
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        Self-fed
+                      </button>
+                    </div>
 
-                  <!-- Texture & Feeding style -->
-                  <div class="form-lbl">
-                    Texture &amp; feeding style
-                    <small>· remembered from last meal</small>
-                  </div>
-                  <div class="chip-row">
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Mashed
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Soft finger food
-                    </button>
-                    <button
-                      class="chip sel"
-                      onclick="this.classList.toggle('sel')"
-                    >
-                      Spoon-fed
-                    </button>
-                    <button class="chip" onclick="this.classList.toggle('sel')">
-                      Self-fed
-                    </button>
+                    <input
+                      class="d-note-input"
+                      placeholder="Note (optional)"
+                      value="finished entire bowl with enthusiasm"
+                    />
+
+                    <!-- Shared Timestamp Rule directly above Save -->
+                    <div class="d-ts">
+                      <span>When · This morning, 8:10 AM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save save-btn">Save meal</button>
                   </div>
 
-                  <input
-                    class="d-note-input"
-                    placeholder="Note (optional)"
-                    value="finished entire bowl with enthusiasm"
-                  />
+                  <!-- ==========================================
+                       MEAL VIEW: VARIANT A (Bento Grid & Safety Shield)
+                       ========================================== -->
+                  <div id="meal-view-a" style="display: none">
+                    <div class="form-lbl">
+                      Dish name <small>· optional description</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      placeholder="e.g. Oatmeal with banana &amp; chia"
+                      value="Warm oat porridge with blueberries"
+                    />
 
-                  <!-- Shared Timestamp Rule directly above Save -->
-                  <div class="d-ts">
-                    <span>When · This morning, 8:10 AM</span>
-                    <span class="e">Change</span>
+                    <!-- Stepped Fullness Bar -->
+                    <div class="form-lbl">
+                      How much was eaten <small>· stepped fullness bar</small>
+                    </div>
+                    <div class="stepped-bar-wrap">
+                      <div class="stepped-bar" id="stepped-bar-a">
+                        <button
+                          class="stepped-seg active"
+                          onclick="setDocSteppedAmount(1, this)"
+                        >
+                          1 · Taste
+                        </button>
+                        <button
+                          class="stepped-seg active"
+                          onclick="setDocSteppedAmount(2, this)"
+                        >
+                          2 · Little
+                        </button>
+                        <button
+                          class="stepped-seg active"
+                          onclick="setDocSteppedAmount(3, this)"
+                        >
+                          3 · Half
+                        </button>
+                        <button
+                          class="stepped-seg active"
+                          onclick="setDocSteppedAmount(4, this)"
+                        >
+                          4 · Most
+                        </button>
+                        <button
+                          class="stepped-seg"
+                          onclick="setDocSteppedAmount(5, this)"
+                        >
+                          5 · Clean
+                        </button>
+                      </div>
+                      <div class="stepped-bar-meta">
+                        <span id="stepped-bar-lbl-a"
+                          >4 of 5 · ate most of plate (~75%)</span
+                        >
+                        <span style="font-weight: 700">75%</span>
+                      </div>
+                    </div>
+
+                    <!-- 4×2 Iconographic Bento Grid -->
+                    <div class="form-lbl">
+                      Food categories <small>· 4×2 iconographic bento</small>
+                    </div>
+                    <div class="bento-grid">
+                      <button
+                        class="bento-tile sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-fruit" /></svg>
+                        <span class="tile-name">Fruit</span>
+                      </button>
+                      <button
+                        class="bento-tile"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-veggie" /></svg>
+                        <span class="tile-name">Veggie</span>
+                      </button>
+                      <button
+                        class="bento-tile sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-grain" /></svg>
+                        <span class="tile-name">Grains</span>
+                      </button>
+                      <button
+                        class="bento-tile sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-dairy" /></svg>
+                        <span class="tile-name">Dairy</span>
+                      </button>
+                      <button
+                        class="bento-tile"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-meat" /></svg>
+                        <span class="tile-name">Meat</span>
+                      </button>
+                      <button
+                        class="bento-tile"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-fish" /></svg>
+                        <span class="tile-name">Fish</span>
+                      </button>
+                      <button
+                        class="bento-tile"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-egg" /></svg>
+                        <span class="tile-name">Egg</span>
+                      </button>
+                      <button
+                        class="bento-tile"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <svg><use href="#i-legume" /></svg>
+                        <span class="tile-name">Legumes</span>
+                      </button>
+                    </div>
+
+                    <!-- Safety Shield Drawer -->
+                    <div class="form-lbl">
+                      Safety shield <small>· big-9 hazard drawer</small>
+                    </div>
+                    <div class="safety-drawer">
+                      <div
+                        class="safety-drawer-toggle"
+                        onclick="toggleDocSafetyDrawer(this)"
+                      >
+                        <span
+                          style="display: flex; align-items: center; gap: 6px"
+                        >
+                          <svg
+                            class="ic"
+                            style="
+                              width: 14px;
+                              height: 14px;
+                              color: var(--keepsake-danger);
+                            "
+                          >
+                            <use href="#i-flag" />
+                          </svg>
+                          <span>Allergen flags</span>
+                        </span>
+                        <span class="flag-count" id="shield-count-doc"
+                          >1 flagged (Milk)</span
+                        >
+                      </div>
+                      <div
+                        class="safety-drawer-content"
+                        id="shield-content-doc"
+                      >
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Peanut
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Tree nut
+                        </button>
+                        <button
+                          class="safety-badge sel"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Milk
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Egg
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Wheat
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Soy
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Fish
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Shellfish
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="toggleDocBadge(this)"
+                        >
+                          Sesame
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Segmented Rails for Texture & Feeding -->
+                    <div class="form-lbl">
+                      Texture <small>· segmented rail</small>
+                    </div>
+                    <div class="seg-control">
+                      <button class="seg-item" onclick="toggleDocSeg(this)">
+                        Purée
+                      </button>
+                      <button class="seg-item sel" onclick="toggleDocSeg(this)">
+                        Mashed
+                      </button>
+                      <button class="seg-item" onclick="toggleDocSeg(this)">
+                        Soft finger
+                      </button>
+                      <button class="seg-item" onclick="toggleDocSeg(this)">
+                        Whole
+                      </button>
+                    </div>
+                    <div class="form-lbl" style="margin-top: 8px">
+                      Feeding style
+                    </div>
+                    <div class="seg-control">
+                      <button class="seg-item sel" onclick="toggleDocSeg(this)">
+                        Spoon-fed
+                      </button>
+                      <button class="seg-item" onclick="toggleDocSeg(this)">
+                        Self-fed
+                      </button>
+                    </div>
+
+                    <input
+                      class="d-note-input"
+                      placeholder="Note (optional)"
+                      value="finished entire bowl with enthusiasm"
+                    />
+
+                    <!-- Shared Timestamp Rule directly above Save -->
+                    <div class="d-ts">
+                      <span>When · This morning, 8:10 AM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save save-btn">Save meal</button>
                   </div>
-                  <button class="d-save save-btn">Save meal</button>
+
+                  <!-- ==========================================
+                       MEAL VIEW: VARIANT B (Plate Compartment & Tag Tray)
+                       ========================================== -->
+                  <div id="meal-view-b" style="display: none">
+                    <div class="form-lbl">
+                      Dish name <small>· optional description</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      placeholder="e.g. Oatmeal with banana &amp; chia"
+                      value="Warm oat porridge with blueberries"
+                    />
+
+                    <!-- Interactive Toddler Plate Graphic -->
+                    <div class="form-lbl">
+                      How much was eaten <small>· toddler plate graphic</small>
+                    </div>
+                    <div class="plate-amount-wrap">
+                      <div class="plate-graphic" onclick="cycleDocPlate()">
+                        <div class="plate-inner-rim">
+                          <div
+                            class="plate-fill-pie"
+                            id="plate-fill-doc"
+                            style="
+                              background: conic-gradient(
+                                var(--keepsake-safe-chip-fg) 0% 75%,
+                                transparent 75% 100%
+                              );
+                            "
+                          ></div>
+                        </div>
+                      </div>
+                      <div class="plate-desc-col">
+                        <div class="plate-val-title" id="plate-title-doc">
+                          4 of 5 · Ate most (~75%)
+                        </div>
+                        <div class="plate-val-sub">
+                          Tap plate or wedge to adjust portion
+                        </div>
+                        <div class="plate-tap-strip">
+                          <button
+                            class="plate-tap-btn"
+                            onclick="setDocPlateAmount(1)"
+                          >
+                            1
+                          </button>
+                          <button
+                            class="plate-tap-btn"
+                            onclick="setDocPlateAmount(2)"
+                          >
+                            2
+                          </button>
+                          <button
+                            class="plate-tap-btn"
+                            onclick="setDocPlateAmount(3)"
+                          >
+                            3
+                          </button>
+                          <button
+                            class="plate-tap-btn active"
+                            onclick="setDocPlateAmount(4)"
+                          >
+                            4
+                          </button>
+                          <button
+                            class="plate-tap-btn"
+                            onclick="setDocPlateAmount(5)"
+                          >
+                            5
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Macro-Grouped Food Boxes -->
+                    <div class="form-lbl">
+                      Categories <small>· macro compartments</small>
+                    </div>
+                    <div
+                      style="display: flex; flex-direction: column; gap: 6px"
+                    >
+                      <div class="macro-box">
+                        <div class="macro-header">
+                          <span>Produce</span
+                          ><span style="font-size: 9px">1 picked</span>
+                        </div>
+                        <div class="macro-row">
+                          <button
+                            class="macro-tag sel"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Fruit
+                          </button>
+                          <button
+                            class="macro-tag"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Vegetables
+                          </button>
+                        </div>
+                      </div>
+                      <div class="macro-box">
+                        <div class="macro-header">
+                          <span>Staples</span
+                          ><span style="font-size: 9px">2 picked</span>
+                        </div>
+                        <div class="macro-row">
+                          <button
+                            class="macro-tag sel"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Grains
+                          </button>
+                          <button
+                            class="macro-tag sel"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Dairy
+                          </button>
+                        </div>
+                      </div>
+                      <div class="macro-box">
+                        <div class="macro-header">
+                          <span>Proteins</span
+                          ><span style="font-size: 9px">0 picked</span>
+                        </div>
+                        <div class="macro-row">
+                          <button
+                            class="macro-tag"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Meat &amp; poultry
+                          </button>
+                          <button
+                            class="macro-tag"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Fish &amp; seafood
+                          </button>
+                          <button
+                            class="macro-tag"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Egg
+                          </button>
+                          <button
+                            class="macro-tag"
+                            onclick="this.classList.toggle('sel')"
+                          >
+                            Legumes
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Hazard Tag Tray -->
+                    <div class="form-lbl">
+                      Allergens <small>· dismissible hazard tray</small>
+                    </div>
+                    <div class="tag-tray-wrap">
+                      <div class="tag-tray-active" id="tray-active-doc">
+                        <span class="hazard-tag"
+                          >Milk
+                          <span class="rm" onclick="this.parentElement.remove()"
+                            >✕</span
+                          ></span
+                        >
+                        <span class="hazard-tag"
+                          >Wheat
+                          <span class="rm" onclick="this.parentElement.remove()"
+                            >✕</span
+                          ></span
+                        >
+                      </div>
+                      <div class="tag-quick-add">
+                        <select
+                          class="tag-quick-select"
+                          onchange="addDocTrayTag(this)"
+                        >
+                          <option value="">+ Add allergen flag...</option>
+                          <option value="Peanut">Peanut</option>
+                          <option value="Tree nut">Tree nut</option>
+                          <option value="Milk">Milk</option>
+                          <option value="Egg">Egg</option>
+                          <option value="Wheat">Wheat</option>
+                          <option value="Soy">Soy</option>
+                          <option value="Fish">Fish</option>
+                          <option value="Shellfish">Shellfish</option>
+                          <option value="Sesame">Sesame</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- 2-Column Split Matrix -->
+                    <div class="form-lbl">
+                      Texture &amp; feeding style
+                      <small>· 2-col split matrix</small>
+                    </div>
+                    <div class="split-matrix">
+                      <div class="split-col">
+                        <button
+                          class="split-pill"
+                          onclick="selectDocSplit(this, 'tex')"
+                        >
+                          Purée
+                        </button>
+                        <button
+                          class="split-pill sel"
+                          onclick="selectDocSplit(this, 'tex')"
+                        >
+                          Mashed
+                        </button>
+                        <button
+                          class="split-pill"
+                          onclick="selectDocSplit(this, 'tex')"
+                        >
+                          Soft finger
+                        </button>
+                        <button
+                          class="split-pill"
+                          onclick="selectDocSplit(this, 'tex')"
+                        >
+                          Whole
+                        </button>
+                      </div>
+                      <div class="split-col">
+                        <button
+                          class="split-pill sel"
+                          onclick="selectDocSplit(this, 'feed')"
+                        >
+                          Spoon-fed
+                        </button>
+                        <button
+                          class="split-pill"
+                          onclick="selectDocSplit(this, 'feed')"
+                        >
+                          Self-fed
+                        </button>
+                      </div>
+                    </div>
+
+                    <input
+                      class="d-note-input"
+                      placeholder="Note (optional)"
+                      value="finished entire bowl with enthusiasm"
+                    />
+
+                    <!-- Shared Timestamp Rule directly above Save -->
+                    <div class="d-ts">
+                      <span>When · This morning, 8:10 AM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save save-btn">Save meal</button>
+                  </div>
+
+                  <!-- ==========================================
+                       MEAL VIEW: VARIANT C (Minimalist Swiss Ledger)
+                       ========================================== -->
+                  <div id="meal-view-c" style="display: none">
+                    <div class="form-lbl">
+                      Dish name <small>· optional description</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      placeholder="e.g. Oatmeal with banana &amp; chia"
+                      value="Warm oat porridge with blueberries"
+                    />
+
+                    <!-- Micro-Bowl Stepper -->
+                    <div class="form-lbl">
+                      How much was eaten <small>· micro-bowl stepper</small>
+                    </div>
+                    <div class="bowl-stepper" id="bowl-stepper-doc">
+                      <button
+                        class="bowl-step-btn"
+                        onclick="setDocBowlAmount(1, this)"
+                      >
+                        <svg
+                          class="ic"
+                          style="
+                            width: 20px;
+                            height: 14px;
+                            stroke-width: 1.8;
+                            color: var(--keepsake-meta);
+                          "
+                        >
+                          <path
+                            d="M2 3 Q10 16 18 3 Z"
+                            fill="none"
+                            stroke="currentColor"
+                          />
+                          <path d="M8 8 Q10 11 12 8" stroke="currentColor" />
+                        </svg>
+                        <span class="bowl-lbl">Taste</span>
+                      </button>
+                      <button
+                        class="bowl-step-btn"
+                        onclick="setDocBowlAmount(2, this)"
+                      >
+                        <svg
+                          class="ic"
+                          style="
+                            width: 20px;
+                            height: 14px;
+                            stroke-width: 1.8;
+                            color: var(--keepsake-meta);
+                          "
+                        >
+                          <path
+                            d="M2 3 Q10 16 18 3 Z"
+                            fill="none"
+                            stroke="currentColor"
+                          />
+                          <path d="M6 7 Q10 13 14 7" stroke="currentColor" />
+                        </svg>
+                        <span class="bowl-lbl">¼ bowl</span>
+                      </button>
+                      <button
+                        class="bowl-step-btn"
+                        onclick="setDocBowlAmount(3, this)"
+                      >
+                        <svg
+                          class="ic"
+                          style="
+                            width: 20px;
+                            height: 14px;
+                            stroke-width: 1.8;
+                            color: var(--keepsake-meta);
+                          "
+                        >
+                          <path
+                            d="M2 3 Q10 16 18 3 Z"
+                            fill="none"
+                            stroke="currentColor"
+                          />
+                          <path d="M4 5 Q10 14 16 5" stroke="currentColor" />
+                        </svg>
+                        <span class="bowl-lbl">½ bowl</span>
+                      </button>
+                      <button
+                        class="bowl-step-btn active"
+                        onclick="setDocBowlAmount(4, this)"
+                      >
+                        <svg
+                          class="ic"
+                          style="
+                            width: 20px;
+                            height: 14px;
+                            stroke-width: 1.8;
+                            color: var(--keepsake-safe-chip-fg);
+                          "
+                        >
+                          <path
+                            d="M2 3 Q10 16 18 3 Z"
+                            fill="rgba(76,106,67,0.3)"
+                            stroke="currentColor"
+                          />
+                          <path d="M3 4 Q10 15 17 4" stroke="currentColor" />
+                        </svg>
+                        <span class="bowl-lbl">¾ bowl</span>
+                      </button>
+                      <button
+                        class="bowl-step-btn"
+                        onclick="setDocBowlAmount(5, this)"
+                      >
+                        <svg
+                          class="ic"
+                          style="
+                            width: 20px;
+                            height: 14px;
+                            stroke-width: 1.8;
+                            color: var(--keepsake-meta);
+                          "
+                        >
+                          <path
+                            d="M2 3 Q10 16 18 3 Z"
+                            fill="rgba(76,106,67,0.6)"
+                            stroke="currentColor"
+                          />
+                        </svg>
+                        <span class="bowl-lbl">Clean</span>
+                      </button>
+                    </div>
+
+                    <!-- Swiss Ledger Ruled Checklist Table -->
+                    <div class="form-lbl">
+                      Categories <small>· 2-col ruled ledger</small>
+                    </div>
+                    <div class="ledger-table">
+                      <div
+                        class="ledger-row sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Fruit</span>
+                      </div>
+                      <div
+                        class="ledger-row"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Vegetables</span>
+                      </div>
+                      <div
+                        class="ledger-row sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Grains</span>
+                      </div>
+                      <div
+                        class="ledger-row sel"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Dairy</span>
+                      </div>
+                      <div
+                        class="ledger-row"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Meat &amp; poultry</span>
+                      </div>
+                      <div
+                        class="ledger-row"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Fish &amp; seafood</span>
+                      </div>
+                      <div
+                        class="ledger-row"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Egg</span>
+                      </div>
+                      <div
+                        class="ledger-row"
+                        onclick="this.classList.toggle('sel')"
+                      >
+                        <div class="ledger-check">✓</div>
+                        <span>Legumes</span>
+                      </div>
+                    </div>
+
+                    <!-- Alert Card with Yes/No Binary Gate -->
+                    <div class="form-lbl">
+                      Safety alert <small>· dedicated binary gate</small>
+                    </div>
+                    <div class="alert-card">
+                      <div class="alert-card-head">
+                        <span style="font-size: 11.5px; font-weight: 600"
+                          >Any allergens present?</span
+                        >
+                        <div class="toggle-switch">
+                          <button
+                            class="toggle-opt"
+                            id="doc-tog-no"
+                            onclick="toggleDocAlertCard(false)"
+                          >
+                            No
+                          </button>
+                          <button
+                            class="toggle-opt sel"
+                            id="doc-tog-yes"
+                            onclick="toggleDocAlertCard(true)"
+                          >
+                            Yes
+                          </button>
+                        </div>
+                      </div>
+                      <div class="alert-grid" id="doc-alert-grid">
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Peanut
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Tree nut
+                        </button>
+                        <button
+                          class="safety-badge sel"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Milk
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Egg
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Wheat
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Soy
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Fish
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Shellfish
+                        </button>
+                        <button
+                          class="safety-badge"
+                          onclick="this.classList.toggle('sel')"
+                        >
+                          Sesame
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Hairline Slide Rails -->
+                    <div class="form-lbl">
+                      Texture <small>· slide rail</small>
+                    </div>
+                    <div class="rail-selector">
+                      <button class="rail-opt" onclick="selectDocRail(this)">
+                        Purée
+                      </button>
+                      <button
+                        class="rail-opt sel"
+                        onclick="selectDocRail(this)"
+                      >
+                        Mashed
+                      </button>
+                      <button class="rail-opt" onclick="selectDocRail(this)">
+                        Soft finger
+                      </button>
+                      <button class="rail-opt" onclick="selectDocRail(this)">
+                        Whole
+                      </button>
+                    </div>
+                    <div class="form-lbl" style="margin-top: 8px">
+                      Feeding style
+                    </div>
+                    <div class="rail-selector">
+                      <button
+                        class="rail-opt sel"
+                        onclick="selectDocRail(this)"
+                      >
+                        Spoon-fed
+                      </button>
+                      <button class="rail-opt" onclick="selectDocRail(this)">
+                        Self-fed
+                      </button>
+                    </div>
+
+                    <input
+                      class="d-note-input"
+                      placeholder="Note (optional)"
+                      value="finished entire bowl with enthusiasm"
+                    />
+
+                    <!-- Shared Timestamp Rule directly above Save -->
+                    <div class="d-ts">
+                      <span>When · This morning, 8:10 AM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save save-btn">Save meal</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2781,6 +4243,248 @@
       </section>
 
       <!-- ============================================================
+           SECTION 4.5: MEAL FORM DESIGN EXPLORATIONS & COMPARISON
+           ============================================================ -->
+      <section class="section-group" id="sec-meal-explorations">
+        <div class="spec-card">
+          <div class="section-kicker">
+            Design Exploration &amp; Architecture
+          </div>
+          <h2 class="section-title">
+            Meal Form Refinement: Resolving the 25-Lozenge Wall &amp; Amount
+            Scale Ergonomics
+          </h2>
+          <p class="section-desc">
+            A deep-dive comparative analysis of alternative interaction models
+            for the meal logging form (Form 04). Explores radical redesigns of
+            the 1–5 amount scale and replaces the visual clutter of 25+
+            unorganized pill lozenges with clear visual hierarchy, cognitive
+            grouping, and safety signal isolation.
+          </p>
+
+          <!-- Part 1: Amount Scale Comparison Table -->
+          <h3
+            style="
+              font-size: 15px;
+              margin: 24px 0 10px;
+              color: var(--keepsake-ink);
+              font-family: var(--keepsake-font-serif);
+            "
+          >
+            1. 1–5 Amount Eaten Scale: Design Alternatives
+          </h3>
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Design Pattern</th>
+                <th>Visual Metaphor</th>
+                <th>Caregiver Ergonomics</th>
+                <th>Tradeoffs &amp; Suitability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Baseline: 5 Check Discs</strong></td>
+                <td>Discrete checkmark circles (1..5)</td>
+                <td>
+                  Requires counting circles; feels like a multi-item checklist
+                  rather than volume.
+                </td>
+                <td>
+                  <span style="color: var(--keepsake-meta)">Low clarity:</span>
+                  doesn't communicate progressive volume; checkmarks
+                  semantically mean "done" not "volume eaten".
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>Variant A: Connected Stepped Fullness Bar</strong>
+                </td>
+                <td>
+                  Continuous horizontal tank with progressive fill segments
+                  (Taste, Little, Half, Most, All)
+                </td>
+                <td>
+                  One-tap direct selection; progressive highlight from left to
+                  right mirrors plate consumption.
+                </td>
+                <td>
+                  <span
+                    style="
+                      color: var(--keepsake-safe-chip-fg);
+                      font-weight: 600;
+                    "
+                    >Recommended for MVP:</span
+                  >
+                  Extremely compact (34px height), zero learning curve, clear
+                  fractions &amp; labels, seamless in React Native.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>Variant B: Interactive Toddler Plate Graphic</strong>
+                </td>
+                <td>
+                  Circular toddler plate with 5 portion wedges (conic fill
+                  10%–100%)
+                </td>
+                <td>
+                  Immediate visceral match with the physical plate sitting in
+                  front of the caregiver. Tap plate to cycle.
+                </td>
+                <td>
+                  <span style="color: var(--keepsake-accent); font-weight: 600"
+                    >Highest Delight:</span
+                  >
+                  Playful visual feedback; requires slightly more vertical space
+                  (68px diameter + label column).
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Variant C: Micro-Bowl Fill Stepper</strong></td>
+                <td>
+                  Iconographic bowl silhouettes at 5 fill heights with fraction
+                  badges
+                </td>
+                <td>
+                  Ideal for bowls, purees, soups, and spoon-fed meals; distinct
+                  icon for each step.
+                </td>
+                <td>
+                  <span style="color: var(--keepsake-ink); font-weight: 600"
+                    >High Precision:</span
+                  >
+                  Excellent for baby-led weaning and early solids, though
+                  slightly smaller tap targets on small phones.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Part 2: Lozenge Reduction Comparison Table -->
+          <h3
+            style="
+              font-size: 15px;
+              margin: 28px 0 10px;
+              color: var(--keepsake-ink);
+              font-family: var(--keepsake-font-serif);
+            "
+          >
+            2. Lozenge Reduction: Categories, Allergens &amp; Textures
+          </h3>
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Element Group</th>
+                <th>Baseline Problem (Pill Wall)</th>
+                <th>Refined Pattern</th>
+                <th>UX Impact &amp; Safety Benefit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Food Categories</strong> (8 items)</td>
+                <td>
+                  8 flat chips mixed together with allergens and textures,
+                  creating reading fatigue.
+                </td>
+                <td>
+                  <strong>4×2 Bento Grid (Variant A)</strong> with bespoke
+                  stroke icons<br />
+                  <em>or</em>
+                  <strong>Macro Compartments (Variant B)</strong> (Produce,
+                  Staples, Proteins)
+                </td>
+                <td>
+                  Replaces text parsing with instant icon recognition;
+                  structured 2-row layout preserves vertical rhythm and
+                  eliminates wrapping wrap artifacts.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Big-9 Allergens</strong> (9 items)</td>
+                <td>
+                  Allergens look identical to routine food categories.
+                  High-stakes safety warnings get lost in visual noise.
+                </td>
+                <td>
+                  <strong>Safety Shield Drawer (Variant A)</strong>: Collapsed
+                  when 0 flagged; expands to clay warning matrix.<br />
+                  <em>or</em> <strong>Tag Tray (Variant B)</strong> /
+                  <strong>Alert Card (Variant C)</strong>
+                </td>
+                <td>
+                  <strong style="color: var(--keepsake-danger)"
+                    >Critical Safety Win:</strong
+                  >
+                  Eliminates warning fatigue. 95% of routine meals have 0
+                  allergen alerts and show zero clutter. Flagged items stand out
+                  in Clay warning tint.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Texture &amp; Feeding Style</strong> (4 items)</td>
+                <td>
+                  Treated as generic multi-select chips, confusing mutually
+                  exclusive options with additive flags.
+                </td>
+                <td>
+                  <strong>Segmented Control Rails (Variant A)</strong><br />
+                  <em>or</em> <strong>2-Column Split Matrix (Variant B)</strong>
+                </td>
+                <td>
+                  Enforces clear single-select radio semantics for texture and
+                  feeding style; visually distinct from multi-select food tags.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Part 3: Architecture Recommendation -->
+          <div
+            style="
+              margin-top: 20px;
+              padding: 14px 16px;
+              background: var(--keepsake-paper);
+              border: 1px solid var(--keepsake-rule-thin);
+              border-radius: 8px;
+            "
+          >
+            <div
+              style="
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-weight: 700;
+                color: var(--keepsake-accent);
+              "
+            >
+              Synthesis &amp; Production Recommendation
+            </div>
+            <p
+              style="
+                font-size: 12.5px;
+                line-height: 1.5;
+                margin-top: 6px;
+                color: var(--keepsake-ink);
+              "
+            >
+              <strong
+                >Primary Recommendation: Variant A (Bento Grid &amp; Safety
+                Shield)</strong
+              >
+              combined with elements of Variant B. The Stepped Fullness Bar
+              gives immediate portion volume understanding in 34px of height.
+              The 4×2 Bento Grid leverages our 14-stroke Keepsake icon set for
+              rapid scanning. Most importantly, isolating Big-9 allergens into a
+              collapsible Safety Shield Drawer resolves the dangerous
+              warning-blindness created by the baseline form.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
            SECTION 5: SPECIFICATION & TOKEN MAPPING
            ============================================================ -->
       <section class="section-group" id="sec-specs">
@@ -3055,6 +4759,161 @@
           mealView.style.display = "none";
           introView.style.display = "block";
         }
+      }
+
+      // ============================================================
+      // MEAL FORM EXPLORATION INTERACTION HANDLERS
+      // ============================================================
+      function switchMealFormVariant(variant, btn) {
+        const tabs = document.querySelectorAll("#meal-vtabs .meal-vtab");
+        tabs.forEach((t) => t.classList.remove("sel"));
+        if (btn) btn.classList.add("sel");
+
+        document.getElementById("meal-view-baseline").style.display =
+          variant === "baseline" ? "block" : "none";
+        document.getElementById("meal-view-a").style.display =
+          variant === "a" ? "block" : "none";
+        document.getElementById("meal-view-b").style.display =
+          variant === "b" ? "block" : "none";
+        document.getElementById("meal-view-c").style.display =
+          variant === "c" ? "block" : "none";
+      }
+
+      function setDocSteppedAmount(idx, btn) {
+        const bar = document.getElementById("stepped-bar-a");
+        const segs = bar.querySelectorAll(".stepped-seg");
+        segs.forEach((s, i) => {
+          if (i < idx) {
+            s.classList.add("active");
+          } else {
+            s.classList.remove("active");
+          }
+        });
+        const labels = [
+          "1 of 5 · tasted (tiny nibble)",
+          "2 of 5 · ate little (< 25%)",
+          "3 of 5 · ate half (~50%)",
+          "4 of 5 · ate most (~75%)",
+          "5 of 5 · cleaned plate (100%)",
+        ];
+        const lbl = document.getElementById("stepped-bar-lbl-a");
+        if (lbl) lbl.textContent = labels[idx - 1];
+      }
+
+      function toggleDocSafetyDrawer(header) {
+        const content = document.getElementById("shield-content-doc");
+        if (content) {
+          content.style.display =
+            content.style.display === "none" ? "grid" : "none";
+        }
+      }
+
+      function toggleDocBadge(btn) {
+        btn.classList.toggle("sel");
+        const content = document.getElementById("shield-content-doc");
+        const selCount = content.querySelectorAll(".safety-badge.sel").length;
+        const countEl = document.getElementById("shield-count-doc");
+        if (countEl) {
+          countEl.textContent =
+            selCount === 0 ? "0 flagged (All safe)" : `${selCount} flagged`;
+        }
+      }
+
+      function toggleDocSeg(btn) {
+        const row = btn.parentElement;
+        row
+          .querySelectorAll(".seg-item")
+          .forEach((b) => b.classList.remove("sel"));
+        btn.classList.add("sel");
+      }
+
+      let currentDocPlateVal = 4;
+      const PLATE_PERCENTS = [10, 25, 50, 75, 100];
+      const PLATE_LABELS = [
+        "1 of 5 · Tasted (tiny nibble)",
+        "2 of 5 · Ate little (< 25%)",
+        "3 of 5 · Ate half (~50%)",
+        "4 of 5 · Ate most (~75%)",
+        "5 of 5 · Cleaned plate (100%)",
+      ];
+
+      function setDocPlateAmount(idx) {
+        currentDocPlateVal = idx;
+        const pct = PLATE_PERCENTS[idx - 1];
+        const pie = document.getElementById("plate-fill-doc");
+        if (pie) {
+          pie.style.background = `conic-gradient(var(--keepsake-safe-chip-fg) 0% ${pct}%, transparent ${pct}% 100%)`;
+        }
+        const title = document.getElementById("plate-title-doc");
+        if (title) title.textContent = PLATE_LABELS[idx - 1];
+
+        const strip = document.querySelector(".plate-tap-strip");
+        if (strip) {
+          strip.querySelectorAll(".plate-tap-btn").forEach((b, i) => {
+            b.classList.toggle("active", i === idx - 1);
+          });
+        }
+      }
+
+      function cycleDocPlate() {
+        const nextVal = (currentDocPlateVal % 5) + 1;
+        setDocPlateAmount(nextVal);
+      }
+
+      function addDocTrayTag(select) {
+        const val = select.value;
+        if (!val) return;
+        const tray = document.getElementById("tray-active-doc");
+        if (tray) {
+          const tag = document.createElement("span");
+          tag.className = "hazard-tag";
+          tag.innerHTML = `${val} <span class="rm" onclick="this.parentElement.remove()">✕</span>`;
+          tray.appendChild(tag);
+        }
+        select.value = "";
+      }
+
+      function selectDocSplit(btn, group) {
+        const col = btn.parentElement;
+        col
+          .querySelectorAll(".split-pill")
+          .forEach((b) => b.classList.remove("sel"));
+        btn.classList.add("sel");
+      }
+
+      function setDocBowlAmount(idx, btn) {
+        const stepper = document.getElementById("bowl-stepper-doc");
+        if (stepper) {
+          stepper.querySelectorAll(".bowl-step-btn").forEach((b, i) => {
+            b.classList.toggle("active", i === idx - 1);
+            const svg = b.querySelector("svg");
+            if (svg) {
+              svg.style.color =
+                i === idx - 1
+                  ? "var(--keepsake-safe-chip-fg)"
+                  : "var(--keepsake-meta)";
+            }
+          });
+        }
+      }
+
+      function toggleDocAlertCard(isYes) {
+        const togNo = document.getElementById("doc-tog-no");
+        const togYes = document.getElementById("doc-tog-yes");
+        const grid = document.getElementById("doc-alert-grid");
+        if (togNo && togYes && grid) {
+          togNo.classList.toggle("sel", !isYes);
+          togYes.classList.toggle("sel", isYes);
+          grid.style.display = isYes ? "grid" : "none";
+        }
+      }
+
+      function selectDocRail(btn) {
+        const rail = btn.parentElement;
+        rail
+          .querySelectorAll(".rail-opt")
+          .forEach((b) => b.classList.remove("sel"));
+        btn.classList.add("sel");
       }
     </script>
   </body>
