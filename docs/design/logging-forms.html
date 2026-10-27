@@ -1,0 +1,3061 @@
+<!doctype html>
+<!--
+  KEEPSAKE LOGGING FORMS · DESIGN MOCKUP SUITE
+  Direction D ("Keepsake": Ledger grid × Bloom palette)
+  Reference: docs/design/design-directions.html, packages/design-system, ADR-0002, ADR-0005, Issue #8
+
+  Complete design mockups for all eight Entry logging form types:
+  1. Feed (Nursing / Bottle: side toggle, duration, note, timestamp-above-save)
+  2. Diaper (Wet / Dirty / Both chips, note, timestamp-above-save)
+  3. Sleep Session (3-point quality pills, factor chips, start/end timestamps directly before Save)
+  4. Meal (5-point amount check-discs, food categories, big-9 allergen tags, texture, feeding style, note, timestamp)
+  5. Food Introduction (named food search & autocomplete, allergen heads-up banner, texture, "Also log a meal", timestamp)
+  6. Food Reaction (clay danger theme, suspected foods multi-select, 3-point severity, symptom checklist, warning note, timestamp)
+  7. Medical (4 distinct categories: Medication, Vaccine, Symptom, Temperature with unit toggle, note, timestamp)
+  8. Growth Measurement (Weight, Height, Head Circumference inputs, note, timestamp)
+
+  Plus:
+  - ADR-0002 tabbed food logging sheet (Meal ↔ Introduction tabs with draft persistence)
+  - Edit mode states ("Editing — the Entry keeps its identity. 'When' is when it happened, not when you save.")
+  - Night mode (the 3am surface: deep umber #24211C, warm charcoal sheet #2B2721, muted discs, no glare)
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Keepsake Logging Forms · Design Mockups</title>
+    <style>
+      /* ============================================================
+         KEEPSAKE DESIGN SYSTEM TOKENS (packages/design-system/tokens.ts)
+         ============================================================ */
+      :root {
+        --keepsake-paper: #fbf6ee;
+        --keepsake-sheet: #fffdf8;
+        --keepsake-ink: #33302a;
+        --keepsake-meta: #8b8375;
+        --keepsake-rule-strong: #33302a;
+        --keepsake-rule-thin: #e9dfcd;
+        --keepsake-chip-border: #e5d9c4;
+        --keepsake-accent: #c96f4a;
+        --keepsake-accent-ink: #8a5a3d;
+        --keepsake-accent-soft: #e8a582;
+        --keepsake-accent-wash: #fdf1e7;
+        --keepsake-accent-wash-ink: #a5775c;
+        --keepsake-danger: #b4552e;
+        --keepsake-danger-ink: #8a4526;
+        --keepsake-danger-soft: #e07b52;
+        --keepsake-danger-wash: #f3ddd4;
+        --keepsake-sleep-band: #eef2e8;
+        --keepsake-sleep-ink: #55694e;
+
+        --keepsake-accent-chip-bg: #f3e3d3;
+        --keepsake-accent-chip-border: #d8b794;
+        --keepsake-accent-chip-fg: #8a5a3d;
+
+        --keepsake-safe-chip-bg: #d9e4d0;
+        --keepsake-safe-chip-border: #a9c19d;
+        --keepsake-safe-chip-fg: #4c6a43;
+
+        --keepsake-tracker-feed-bg: #f6e3c2;
+        --keepsake-tracker-feed-fg: #a4741f;
+        --keepsake-tracker-diaper-bg: #dcebf2;
+        --keepsake-tracker-diaper-fg: #4a7b96;
+        --keepsake-tracker-sleep-bg: #dcebf2;
+        --keepsake-tracker-sleep-fg: #4a7b96;
+        --keepsake-tracker-meal-bg: #d9e4d0;
+        --keepsake-tracker-meal-fg: #55694e;
+        --keepsake-tracker-introduction-bg: #d9e4d0;
+        --keepsake-tracker-introduction-fg: #55694e;
+        --keepsake-tracker-medical-bg: #eedde8;
+        --keepsake-tracker-medical-fg: #9a5c80;
+        --keepsake-tracker-reaction-bg: #f3ddd4;
+        --keepsake-tracker-reaction-fg: #b4552e;
+        --keepsake-tracker-growth-bg: #dcebf2;
+        --keepsake-tracker-growth-fg: #4a7b96;
+
+        --keepsake-status-safe-bg: #e3eddc;
+        --keepsake-status-safe-border: #a9c19d;
+        --keepsake-status-safe-fg: #4c6a43;
+        --keepsake-status-trying-bg: #fdf1e7;
+        --keepsake-status-trying-border: #d8b794;
+        --keepsake-status-trying-fg: #c96f4a;
+        --keepsake-status-untried-bg: #efe9dc;
+        --keepsake-status-untried-border: #d8d0bd;
+        --keepsake-status-untried-fg: #6f675a;
+        --keepsake-status-avoid-bg: #f3ddd4;
+        --keepsake-status-avoid-border: #cf9b85;
+        --keepsake-status-avoid-fg: #b4552e;
+
+        --keepsake-font-serif:
+          "Iowan Old Style", Palatino, "Palatino Linotype", ui-serif, Georgia,
+          serif;
+        --keepsake-font-sans:
+          "Avenir Next", Avenir, "Segoe UI", Roboto, sans-serif;
+
+        /* Doc presentation chrome */
+        --doc-bg: #f5efe6;
+        --doc-card: #ffffff;
+        --doc-ink: #2a2620;
+        --doc-muted: #7a7264;
+        --doc-line: #e2d7c5;
+      }
+
+      [data-theme="night"],
+      .night-mode-scope {
+        --keepsake-paper: #24211c;
+        --keepsake-sheet: #2b2721;
+        --keepsake-ink: #f0e9da;
+        --keepsake-meta: #9a917e;
+        --keepsake-rule-strong: #f0e9da;
+        --keepsake-rule-thin: #3d382f;
+        --keepsake-chip-border: #4a4438;
+        --keepsake-accent: #e8a582;
+        --keepsake-accent-ink: #d9b598;
+        --keepsake-accent-soft: #e8a582;
+        --keepsake-accent-wash: #332418;
+        --keepsake-accent-wash-ink: #b08a6f;
+        --keepsake-danger: #e07b52;
+        --keepsake-danger-ink: #e07b52;
+        --keepsake-danger-soft: #e07b52;
+        --keepsake-danger-wash: #332418;
+        --keepsake-sleep-band: #2e2a22;
+        --keepsake-sleep-ink: #a9b39b;
+
+        --keepsake-accent-chip-bg: #453526;
+        --keepsake-accent-chip-border: #6b4a38;
+        --keepsake-accent-chip-fg: #d9b598;
+
+        --keepsake-safe-chip-bg: #3f4a37;
+        --keepsake-safe-chip-border: #6b7a58;
+        --keepsake-safe-chip-fg: #c8d4b8;
+
+        --keepsake-tracker-feed-bg: #3d3626;
+        --keepsake-tracker-feed-fg: #e0c98f;
+        --keepsake-tracker-diaper-bg: #2c3a40;
+        --keepsake-tracker-diaper-fg: #8fb8cc;
+        --keepsake-tracker-sleep-bg: #2c3a40;
+        --keepsake-tracker-sleep-fg: #8fb8cc;
+        --keepsake-tracker-meal-bg: #333a2c;
+        --keepsake-tracker-meal-fg: #a9b39b;
+        --keepsake-tracker-introduction-bg: #333a2c;
+        --keepsake-tracker-introduction-fg: #a9b39b;
+        --keepsake-tracker-medical-bg: #3d3238;
+        --keepsake-tracker-medical-fg: #c49ab4;
+        --keepsake-tracker-reaction-bg: #332418;
+        --keepsake-tracker-reaction-fg: #e07b52;
+        --keepsake-tracker-growth-bg: #2c3a40;
+        --keepsake-tracker-growth-fg: #8fb8cc;
+
+        --keepsake-status-safe-bg: #3f4a37;
+        --keepsake-status-safe-border: #6b7a58;
+        --keepsake-status-safe-fg: #c8d4b8;
+        --keepsake-status-trying-bg: #332418;
+        --keepsake-status-trying-border: #6b4a38;
+        --keepsake-status-trying-fg: #e8a582;
+        --keepsake-status-untried-bg: #2b2721;
+        --keepsake-status-untried-border: #4a4438;
+        --keepsake-status-untried-fg: #9a917e;
+        --keepsake-status-avoid-bg: #332418;
+        --keepsake-status-avoid-border: #6b4a38;
+        --keepsake-status-avoid-fg: #e07b52;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--keepsake-font-sans);
+        background: var(--doc-bg);
+        color: var(--doc-ink);
+        line-height: 1.5;
+        padding-bottom: 120px;
+      }
+
+      /* Document presentation wrapper */
+      .doc-wrap {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      .doc-header {
+        border-bottom: 1px solid var(--doc-line);
+        padding-bottom: 24px;
+        margin-bottom: 28px;
+      }
+      .doc-eyebrow {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--doc-muted);
+      }
+      .doc-title {
+        font-family: var(--keepsake-font-serif);
+        font-size: clamp(30px, 4vw, 44px);
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 8px 0 10px;
+      }
+      .doc-title em {
+        font-style: italic;
+        color: #c96f4a;
+      }
+      .doc-lede {
+        font-size: 16px;
+        color: var(--doc-muted);
+        max-width: 82ch;
+        line-height: 1.6;
+      }
+
+      /* Global controls & sticky nav bar */
+      .doc-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(245, 239, 230, 0.94);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--doc-line);
+        padding: 12px 24px;
+        margin: 0 -24px 36px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .doc-nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .doc-nav-btn {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--doc-line);
+        background: #fffdf8;
+        color: var(--doc-ink);
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .doc-nav-btn:hover,
+      .doc-nav-btn.active {
+        background: #33302a;
+        border-color: #33302a;
+        color: #fbf6ee;
+      }
+      .doc-toggles {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .toggle-pill {
+        display: inline-flex;
+        background: #eae1d2;
+        border-radius: 999px;
+        padding: 3px;
+        gap: 2px;
+      }
+      .toggle-opt {
+        font-size: 11.5px;
+        font-weight: 650;
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: none;
+        background: transparent;
+        color: #7a7264;
+        cursor: pointer;
+      }
+      .toggle-opt.sel {
+        background: #fffdf8;
+        color: #33302a;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Sections & Grid */
+      .section-group {
+        margin-bottom: 56px;
+      }
+      .section-head {
+        margin-bottom: 20px;
+      }
+      .section-kicker {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--doc-muted);
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-family: var(--keepsake-font-serif);
+        font-size: 26px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .section-desc {
+        font-size: 14px;
+        color: var(--doc-muted);
+        margin-top: 4px;
+        max-width: 74ch;
+      }
+
+      .mockup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 28px;
+        align-items: start;
+      }
+
+      /* Phone Frame */
+      .phone-card {
+        background: #fffdf8;
+        border-radius: 20px;
+        border: 1px solid var(--doc-line);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      }
+      .phone-card-meta {
+        margin-bottom: 14px;
+      }
+      .phone-card-tag {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8b8375;
+      }
+      .phone-card-title {
+        font-family: var(--keepsake-font-serif);
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .phone-card-note {
+        font-size: 12.5px;
+        color: #7a7264;
+        margin-top: 3px;
+        line-height: 1.4;
+      }
+
+      .phone {
+        width: 100%;
+        max-width: 375px;
+        min-height: 700px;
+        margin: 0 auto;
+        background: var(--keepsake-paper);
+        border-radius: 36px;
+        border: 10px solid #2a2822;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+        position: relative;
+        transition: background 0.2s ease;
+      }
+      .phone-notch {
+        width: 130px;
+        height: 18px;
+        background: #2a2822;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        margin: 0 auto;
+        flex: none;
+      }
+      .phone-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 18px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+      }
+      .phone-screen {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--keepsake-paper);
+        color: var(--keepsake-ink);
+        position: relative;
+        overflow-y: auto;
+      }
+
+      /* Direction D Keepsake Components */
+      .d-masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 18px 12px;
+      }
+      .d-h1 {
+        font-family: var(--keepsake-font-serif);
+        font-size: 24px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .d-h1 em {
+        font-style: italic;
+        color: var(--keepsake-accent);
+      }
+      .d-kicker {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--keepsake-meta);
+      }
+      .d-rule {
+        border-top: 1px solid var(--keepsake-rule-strong);
+      }
+      .d-rule-thin {
+        border-top: 1px solid var(--keepsake-rule-thin);
+      }
+
+      /* Home background stub context behind sheets */
+      .d-bg-context {
+        padding: 6px 0;
+        opacity: 0.38;
+      }
+      .d-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 18px;
+        border-top: 1px solid var(--keepsake-rule-thin);
+      }
+      .d-orb {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .d-orb svg {
+        width: 17px;
+        height: 17px;
+      }
+      .d-row .t {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .d-row .s {
+        font-size: 10.5px;
+        color: var(--keepsake-meta);
+      }
+      .d-row .time {
+        font-family: var(--keepsake-font-serif);
+        font-style: italic;
+        font-size: 11.5px;
+        color: var(--keepsake-meta);
+      }
+
+      /* Keepsake Sheet (Bottom Sheet Logging Form) */
+      .d-sheet {
+        position: relative;
+        background: var(--keepsake-sheet);
+        border-top: 2px solid var(--keepsake-rule-strong);
+        padding: 16px 18px 22px;
+        box-shadow: 0 -18px 44px rgba(51, 48, 42, 0.2);
+        z-index: 10;
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+      .d-sheet.danger-theme {
+        border-top-color: var(--keepsake-danger);
+      }
+      .d-sheet-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .d-sheet h4 {
+        font-family: var(--keepsake-font-serif);
+        font-size: 21px;
+        font-weight: 500;
+        line-height: 1.2;
+        margin-top: 2px;
+      }
+      .d-sheet h4 em {
+        font-style: italic;
+        color: var(--keepsake-accent);
+      }
+      .d-sheet.danger-theme h4 em {
+        color: var(--keepsake-danger);
+      }
+      .d-step-note {
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        line-height: 1.4;
+      }
+
+      /* Edit banner */
+      .d-edit-banner {
+        background: var(--keepsake-accent-wash);
+        border-left: 2px solid var(--keepsake-accent);
+        color: var(--keepsake-accent-ink);
+        padding: 8px 10px;
+        font-size: 10.5px;
+        line-height: 1.4;
+      }
+
+      /* Form controls & labels */
+      .form-lbl {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--keepsake-meta);
+        margin-bottom: -4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .form-lbl small {
+        font-size: 9.5px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: normal;
+        color: var(--keepsake-meta);
+      }
+
+      /* Pill chip rows */
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 7px 13px;
+        border-radius: 999px;
+        border: 1px solid var(--keepsake-chip-border);
+        color: var(--keepsake-meta);
+        background: var(--keepsake-sheet);
+        cursor: pointer;
+        transition: all 0.12s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        user-select: none;
+      }
+      .chip.sel {
+        background: var(--keepsake-accent-chip-bg);
+        border-color: var(--keepsake-accent-chip-border);
+        color: var(--keepsake-accent-chip-fg);
+      }
+      .chip.big {
+        flex: 1;
+        padding: 13px 10px;
+        font-size: 14px;
+      }
+      .chip.dashed {
+        border-style: dashed;
+      }
+
+      /* Quality 3-point row */
+      .d-qualrow {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+      .d-qualrow .qual-chip {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 650;
+        padding: 10px 0;
+        border-radius: 999px;
+        border: 1px solid var(--keepsake-chip-border);
+        color: var(--keepsake-meta);
+        background: var(--keepsake-sheet);
+        cursor: pointer;
+      }
+      .d-qualrow .qual-chip.sel {
+        background: var(--keepsake-safe-chip-bg);
+        border-color: var(--keepsake-safe-chip-border);
+        color: var(--keepsake-safe-chip-fg);
+      }
+      .d-qualrow .qual-chip.sev-sel {
+        background: var(--keepsake-danger-wash);
+        border-color: #cf9b85;
+        color: var(--keepsake-danger-ink);
+      }
+
+      /* Amount 5-point scale (Meal) */
+      .d-amount {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 4px 0 2px;
+      }
+      .d-amount-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1.5px solid var(--keepsake-chip-border);
+        display: grid;
+        place-items: center;
+        background: var(--keepsake-sheet);
+        cursor: pointer;
+      }
+      .d-amount-btn.on {
+        background: var(--keepsake-safe-chip-bg);
+        border-color: var(--keepsake-safe-chip-border);
+      }
+      .d-amount-btn.on svg {
+        color: var(--keepsake-safe-chip-fg);
+      }
+      .d-amount-btn.off svg {
+        color: #cfc3ad;
+      }
+      .d-amount-lbl {
+        text-align: center;
+        font-size: 11px;
+        color: var(--keepsake-meta);
+        font-weight: 600;
+      }
+
+      /* Inputs */
+      .d-input {
+        width: 100%;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--keepsake-ink);
+        font-family: inherit;
+        outline: none;
+      }
+      .d-input:focus {
+        border-color: var(--keepsake-accent);
+      }
+      .d-note-input {
+        width: 100%;
+        background: var(--keepsake-sheet);
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--keepsake-ink);
+        font-style: italic;
+        font-family: var(--keepsake-font-serif);
+        outline: none;
+      }
+      .d-note-input::placeholder {
+        color: var(--keepsake-meta);
+        font-style: italic;
+      }
+
+      /* Search & Autocomplete bar */
+      .d-search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        padding: 8px 2px;
+        font-size: 13px;
+      }
+      .d-search-box svg {
+        width: 15px;
+        height: 15px;
+        color: var(--keepsake-meta);
+        flex: none;
+      }
+      .d-search-box input {
+        border: none;
+        background: transparent;
+        color: var(--keepsake-ink);
+        font-size: 13px;
+        outline: none;
+        flex: 1;
+        font-family: inherit;
+      }
+      .d-search-box input::placeholder {
+        color: var(--keepsake-meta);
+      }
+      .d-ac-drop {
+        border: 1px solid var(--keepsake-rule-thin);
+        border-radius: 6px;
+        background: var(--keepsake-sheet);
+        overflow: hidden;
+        margin-top: -4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      }
+      .d-ac-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        font-size: 12px;
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        cursor: pointer;
+      }
+      .d-ac-row:last-child {
+        border-bottom: none;
+      }
+      .d-ac-row:hover {
+        background: var(--keepsake-accent-wash);
+      }
+      .d-ac-row .food-name {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .d-ac-row .tag-sub {
+        font-size: 10px;
+        color: var(--keepsake-meta);
+      }
+
+      /* Status Pill */
+      .d-pill {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 999px;
+        flex: none;
+      }
+
+      /* Heads-up banner */
+      .d-heads-up {
+        display: flex;
+        gap: 9px;
+        align-items: flex-start;
+        background: var(--keepsake-accent-wash);
+        border-left: 2px solid var(--keepsake-accent);
+        padding: 9px 11px;
+        font-size: 11px;
+        color: var(--keepsake-accent-ink);
+        line-height: 1.4;
+      }
+      .d-heads-up svg {
+        width: 15px;
+        height: 15px;
+        color: var(--keepsake-accent);
+        flex: none;
+        margin-top: 1px;
+      }
+
+      /* Timestamp section directly above Save */
+      .d-ts {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--keepsake-rule-thin);
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        padding: 10px 2px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+        margin-top: 4px;
+      }
+      .d-ts .e {
+        color: var(--keepsake-accent);
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      /* Sleep double timestamp */
+      .d-ttimes {
+        border-top: 1px solid var(--keepsake-rule-thin);
+        border-bottom: 1px solid var(--keepsake-rule-thin);
+        margin-top: 4px;
+      }
+      .d-ttimes .d-trow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 2px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--keepsake-meta);
+      }
+      .d-ttimes .d-trow + .d-trow {
+        border-top: 1px solid var(--keepsake-rule-thin);
+      }
+      .d-ttimes .e {
+        color: var(--keepsake-accent);
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      /* Big save button */
+      .d-save {
+        width: 100%;
+        background: var(--keepsake-rule-strong);
+        color: var(--keepsake-paper);
+        border: 0;
+        border-radius: 999px;
+        padding: 13px;
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: opacity 0.15s ease;
+      }
+      .d-save:hover {
+        opacity: 0.92;
+      }
+      .d-save.danger {
+        background: var(--keepsake-danger);
+        color: #fff6ef;
+      }
+      .d-save:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* ADR-0002 tabbed sheet switcher */
+      .d-tab-switch {
+        display: flex;
+        border: 1px solid var(--keepsake-chip-border);
+        border-radius: 999px;
+        padding: 3px;
+        background: var(--keepsake-paper);
+        gap: 3px;
+        margin-bottom: 2px;
+      }
+      .d-tab-switch-btn {
+        flex: 1;
+        font-size: 11.5px;
+        font-weight: 650;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: none;
+        background: transparent;
+        color: var(--keepsake-meta);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+      .d-tab-switch-btn.sel {
+        background: var(--keepsake-sheet);
+        color: var(--keepsake-ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Category pills for Medical */
+      .d-cat-pill-row {
+        display: flex;
+        gap: 5px;
+      }
+      .d-cat-pill {
+        flex: 1;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 7px 4px;
+        text-align: center;
+        border-radius: 999px;
+        border: 1px solid var(--keepsake-chip-border);
+        background: var(--keepsake-sheet);
+        color: var(--keepsake-meta);
+        cursor: pointer;
+      }
+      .d-cat-pill.sel {
+        background: #f3e3d3;
+        border-color: #d8b794;
+        color: #8a5a3d;
+      }
+
+      /* Growth 3-field layout */
+      .d-growth-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .d-field-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      /* Design Tokens Table Section */
+      .spec-card {
+        background: #fffdf8;
+        border-radius: 16px;
+        border: 1px solid var(--doc-line);
+        padding: 24px;
+        margin-top: 40px;
+      }
+      .spec-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 14px;
+      }
+      .spec-table th,
+      .spec-table td {
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--doc-line);
+      }
+      .spec-table th {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--doc-muted);
+        background: #faf7f2;
+      }
+      .swatch {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      /* SVG Icon utilities */
+      .ic {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Shared SVG stroke-icon sprite (14 stroke icons from packages/design-system/icons.ts) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-feed" viewBox="0 0 24 24">
+          <path
+            d="M12 3c-4 3.5-6 6.5-6 9.5a6 6 0 0 0 12 0C18 9.5 16 6.5 12 3z"
+          />
+          <path d="M9.5 13.5a2.5 2.5 0 0 0 2.5 2.5" />
+        </symbol>
+        <symbol id="i-diaper" viewBox="0 0 24 24">
+          <path d="M4 5h16v5a8 8 0 0 1-16 0V5z" />
+          <path d="M4 10h16" />
+          <path d="M9 14l1.5 2M15 14l-1.5 2" />
+        </symbol>
+        <symbol id="i-sleep" viewBox="0 0 24 24">
+          <path d="M19 13.5A7.5 7.5 0 1 1 10.5 5 6 6 0 0 0 19 13.5z" />
+        </symbol>
+        <symbol id="i-meal" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="i-introduction" viewBox="0 0 24 24">
+          <path d="M12 4v16M12 4l-4 4M12 4l4 4" />
+          <path d="M5 20h14" />
+        </symbol>
+        <symbol id="i-medical" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <path d="M12 8.5v7M8.5 12h7" />
+        </symbol>
+        <symbol id="i-reaction" viewBox="0 0 24 24">
+          <path d="M12 4L21 19H3L12 4z" />
+          <path d="M12 10v4M12 16.8v.2" />
+        </symbol>
+        <symbol id="i-growth" viewBox="0 0 24 24">
+          <path d="M4 20V8M4 20h16" />
+          <path d="M8 16v-4M12 16V7M16 16v-6M20 16V5" />
+        </symbol>
+        <symbol id="i-now" viewBox="0 0 24 24">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+        </symbol>
+        <symbol id="i-timeline" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 7.5V12l3 2" />
+        </symbol>
+        <symbol id="i-foods" viewBox="0 0 24 24">
+          <path
+            d="M12 20c-4.5 0-7-3-7-7 3.5 0 5 1 7 3 2-2 3.5-3 7-3 0 4-2.5 7-7 7z"
+          />
+          <path d="M12 16c0-5 1-9 6-12" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M17.7 6.3l-1.8 1.8M8.1 15.9l-1.8 1.8"
+          />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.8-3.8" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="doc-wrap">
+      <!-- Document Header -->
+      <header class="doc-header">
+        <div class="doc-eyebrow">
+          Design System Showcase · Direction D (Keepsake)
+        </div>
+        <h1 class="doc-title">All Logging Forms · <em>Design Mockups</em></h1>
+        <p class="doc-lede">
+          High-fidelity design mockups for all eight logging forms based on the
+          approved <strong>Keepsake design system</strong> (Ledger grid × Bloom
+          palette, serif voice, stroke icons, hairline rules, and zero emoji).
+          Every form enforces the core specification invariant:
+          <strong
+            >shared editable timestamp controls sit directly above Save</strong
+          >
+          (with Sleep displaying start and end times in that section).
+        </p>
+      </header>
+
+      <!-- Interactive Sticky Toolbar -->
+      <nav class="doc-toolbar" aria-label="Mockups Navigation">
+        <div class="doc-nav-links">
+          <a class="doc-nav-btn active" href="#sec-routine">Routine Forms</a>
+          <a class="doc-nav-btn" href="#sec-food">Food &amp; Allergies</a>
+          <a class="doc-nav-btn" href="#sec-medical-growth"
+            >Medical &amp; Growth</a
+          >
+          <a class="doc-nav-btn" href="#sec-tabbed-edit"
+            >Tabbed &amp; Edit States</a
+          >
+          <a class="doc-nav-btn" href="#sec-specs">Token Specs</a>
+        </div>
+        <div class="doc-toggles">
+          <!-- Theme toggle: Day vs Night -->
+          <div class="toggle-pill" role="group" aria-label="Theme Mode">
+            <button
+              id="btn-theme-day"
+              class="toggle-opt sel"
+              onclick="setGlobalTheme('day')"
+            >
+              Day (Paper)
+            </button>
+            <button
+              id="btn-theme-night"
+              class="toggle-opt"
+              onclick="setGlobalTheme('night')"
+            >
+              Night (3am Umber)
+            </button>
+          </div>
+          <!-- Mode toggle: Create vs Edit -->
+          <div class="toggle-pill" role="group" aria-label="Form State">
+            <button
+              id="btn-mode-create"
+              class="toggle-opt sel"
+              onclick="setGlobalMode('create')"
+            >
+              Create
+            </button>
+            <button
+              id="btn-mode-edit"
+              class="toggle-opt"
+              onclick="setGlobalMode('edit')"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ============================================================
+           SECTION 1: CORE ROUTINE FORMS (FEED, DIAPER, SLEEP)
+           ============================================================ -->
+      <section class="section-group" id="sec-routine">
+        <div class="section-head">
+          <div class="section-kicker">Part 1 · Routine Essentials</div>
+          <h2 class="section-title">Feed, Diaper &amp; Sleep Sessions</h2>
+          <p class="section-desc">
+            The high-frequency daily routines. Designed for tired, one-handed
+            operation with large tap targets, concise chip rows, and the
+            signature hairline timestamp rule directly before the save button.
+          </p>
+        </div>
+
+        <div class="mockup-grid">
+          <!-- 1. FEED LOGGING FORM -->
+          <article class="phone-card" id="mockup-feed">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 01 · Feed</span>
+              <h3 class="phone-card-title">Nursing / Bottle Feed</h3>
+              <p class="phone-card-note">
+                Optional side selection (Left / Right), duration in minutes with
+                quick increments, note, and pinned timestamp.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Today</span>
+                </div>
+                <div class="d-rule"></div>
+                <!-- Context row behind sheet -->
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-feed-bg);
+                        color: var(--keepsake-tracker-feed-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-feed" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Nursing · right</div>
+                      <div class="s">3h ago · 14 min</div>
+                    </span>
+                    <span class="time">6:20 am</span>
+                  </div>
+                </div>
+                <!-- Feed Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Counter + Side</div>
+                      <h4 class="form-title">Log <em>feed</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-feed-bg);
+                        color: var(--keepsake-tracker-feed-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-feed" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    Counter + optional nursing side and session duration.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when it
+                    happened, not when you save.
+                  </div>
+
+                  <div class="form-lbl">
+                    Side <small>· optional, pick one</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip big sel"
+                      onclick="toggleSingleChip(this)"
+                    >
+                      Left
+                    </button>
+                    <button class="chip big" onclick="toggleSingleChip(this)">
+                      Right
+                    </button>
+                  </div>
+
+                  <div class="form-lbl">
+                    Duration in minutes <small>· optional</small>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center">
+                    <input
+                      class="d-input"
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 15"
+                      value="15"
+                      style="width: 100px; flex: none"
+                    />
+                    <div class="chip-row" style="flex: 1">
+                      <button
+                        class="chip"
+                        onclick="
+                          this.closest('.phone').querySelector('input').value =
+                            '10'
+                        "
+                      >
+                        10m
+                      </button>
+                      <button
+                        class="chip sel"
+                        onclick="
+                          this.closest('.phone').querySelector('input').value =
+                            '15'
+                        "
+                      >
+                        15m
+                      </button>
+                      <button
+                        class="chip"
+                        onclick="
+                          this.closest('.phone').querySelector('input').value =
+                            '20'
+                        "
+                      >
+                        20m
+                      </button>
+                    </div>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional, e.g. took full bottle)"
+                    value="calm feed before morning nap"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · This morning, 9:41 AM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Save feed</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 2. DIAPER CHANGE FORM -->
+          <article class="phone-card" id="mockup-diaper">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 02 · Diaper</span>
+              <h3 class="phone-card-title">Diaper Change</h3>
+              <p class="phone-card-note">
+                Prominent 3-option type selector (Wet, Dirty, Both), optional
+                note for health observations, and pinned timestamp.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Today</span>
+                </div>
+                <div class="d-rule"></div>
+                <!-- Context row behind sheet -->
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-diaper-bg);
+                        color: var(--keepsake-tracker-diaper-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-diaper" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Diaper · wet</div>
+                      <div class="s">2h ago</div>
+                    </span>
+                    <span class="time">7:15 am</span>
+                  </div>
+                </div>
+                <!-- Diaper Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Quick Log</div>
+                      <h4 class="form-title">Log <em>diaper</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-diaper-bg);
+                        color: var(--keepsake-tracker-diaper-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-diaper" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    Pick the diaper type — one tap records the change.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when it
+                    happened, not when you save.
+                  </div>
+
+                  <div class="form-lbl">Type <small>· required</small></div>
+                  <div class="chip-row">
+                    <button class="chip big" onclick="toggleSingleChip(this)">
+                      Wet
+                    </button>
+                    <button
+                      class="chip big sel"
+                      onclick="toggleSingleChip(this)"
+                    >
+                      Dirty
+                    </button>
+                    <button class="chip big" onclick="toggleSingleChip(this)">
+                      Both
+                    </button>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional, e.g. mild rash)"
+                    value="mild redness on skin, barrier cream applied"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · This morning, 9:35 AM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Save diaper</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 3. SLEEP SESSION FORM -->
+          <article class="phone-card" id="mockup-sleep">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 03 · Sleep Session</span>
+              <h3 class="phone-card-title">End / Log Sleep</h3>
+              <p class="phone-card-note">
+                3-point quality pills, user-extensible factor chips, and dual
+                start/end timestamps directly above Save (spec exception row).
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>6:58</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>night</em></span>
+                  <span class="d-kicker">Sat 17 Oct</span>
+                </div>
+                <div class="d-rule"></div>
+                <!-- Context row behind sheet -->
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-sleep-bg);
+                        color: var(--keepsake-tracker-sleep-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-sleep" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Sleep · timer ran 10h 16m</div>
+                      <div class="s">fell asleep at 8:42 pm</div>
+                    </span>
+                    <span class="time">overnight</span>
+                  </div>
+                </div>
+                <!-- Sleep Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Sleep Session</div>
+                      <h4 class="form-title">End <em>sleep</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-sleep-bg);
+                        color: var(--keepsake-tracker-sleep-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-sleep" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    Timer ran 10h 16m — rate quality, choose factors, then save.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. Correcting times
+                    updates summaries.
+                  </div>
+
+                  <div class="form-lbl">Quality <small>· required</small></div>
+                  <div class="d-qualrow">
+                    <button class="qual-chip" onclick="toggleQuality(this)">
+                      Poor
+                    </button>
+                    <button class="qual-chip" onclick="toggleQuality(this)">
+                      Okay
+                    </button>
+                    <button class="qual-chip sel" onclick="toggleQuality(this)">
+                      Great
+                    </button>
+                  </div>
+
+                  <div class="form-lbl">
+                    Suspected factors <small>· optional, pick any</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip dashed sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Many wakeups
+                    </button>
+                    <button
+                      class="chip dashed"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Illness
+                    </button>
+                    <button
+                      class="chip dashed"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Fussiness / cries
+                    </button>
+                    <button
+                      class="chip dashed"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Teething
+                    </button>
+                    <button
+                      class="chip dashed"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Long awake time
+                    </button>
+                    <button
+                      class="chip dashed"
+                      style="
+                        color: var(--keepsake-accent);
+                        border-style: dotted;
+                      "
+                    >
+                      + Add factor
+                    </button>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="woke once at 3am for water, settled quickly"
+                  />
+
+                  <!-- Dual Timestamps for Sleep directly above Save -->
+                  <div class="d-ttimes">
+                    <div class="d-trow">
+                      <span>Fell asleep · 8:42 PM (yesterday)</span>
+                      <span class="e">Edit</span>
+                    </div>
+                    <div class="d-trow">
+                      <span>Woke up · 6:58 AM (today)</span>
+                      <span class="e">Edit</span>
+                    </div>
+                  </div>
+                  <button class="d-save save-btn">Save sleep</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SECTION 2: FOOD & ALLERGY FORMS (MEAL, INTRODUCTION, REACTION)
+           ============================================================ -->
+      <section class="section-group" id="sec-food">
+        <div class="section-head">
+          <div class="section-kicker">
+            Part 2 · Weaning &amp; Allergies (ADR-0002)
+          </div>
+          <h2 class="section-title">Meal, Introduction &amp; Reaction Forms</h2>
+          <p class="section-desc">
+            The core allergy safety pipeline: Meals record plate flags and eaten
+            amount without named foods; Introductions log one named food to
+            start a 3-day Watch Period; Reactions end watches with clay alert
+            styling.
+          </p>
+        </div>
+
+        <div class="mockup-grid">
+          <!-- 4. MEAL LOGGING FORM -->
+          <article class="phone-card" id="mockup-meal">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 04 · Meal</span>
+              <h3 class="phone-card-title">Meal (Plate Contents)</h3>
+              <p class="phone-card-note">
+                Optional dish name, 5-point check-disc amount, multi-select
+                category flags, big-9 allergen chips, texture, feeding style.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Today</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-meal-bg);
+                        color: var(--keepsake-tracker-meal-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-meal" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Breakfast</div>
+                      <div class="s">fruit, grains · ate all</div>
+                    </span>
+                    <span class="time">8:10 am</span>
+                  </div>
+                </div>
+                <!-- Meal Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Plate Contents</div>
+                      <h4 class="form-title">Log a <em>meal</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-meal-bg);
+                        color: var(--keepsake-tracker-meal-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-meal" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    What was on the plate — flags only, no named foods.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when it
+                    happened, not when you save.
+                  </div>
+
+                  <!-- ADR-0002 Optional Meal Dish Name -->
+                  <div class="form-lbl">
+                    Dish name <small>· optional description</small>
+                  </div>
+                  <input
+                    class="d-input"
+                    placeholder="e.g. Oatmeal with banana &amp; chia"
+                    value="Warm oat porridge with blueberries"
+                  />
+
+                  <!-- 5-Point Amount Selector -->
+                  <div class="form-lbl">
+                    How much was eaten <small>· 5-point scale</small>
+                  </div>
+                  <div class="d-amount">
+                    <div class="d-amount-btn on" onclick="setAmount(1, this)">
+                      <svg class="ic"><use href="#i-check" /></svg>
+                    </div>
+                    <div class="d-amount-btn on" onclick="setAmount(2, this)">
+                      <svg class="ic"><use href="#i-check" /></svg>
+                    </div>
+                    <div class="d-amount-btn on" onclick="setAmount(3, this)">
+                      <svg class="ic"><use href="#i-check" /></svg>
+                    </div>
+                    <div class="d-amount-btn on" onclick="setAmount(4, this)">
+                      <svg class="ic"><use href="#i-check" /></svg>
+                    </div>
+                    <div class="d-amount-btn off" onclick="setAmount(5, this)">
+                      <svg class="ic"><use href="#i-check" /></svg>
+                    </div>
+                  </div>
+                  <div class="d-amount-lbl">4 of 5 · ate most</div>
+
+                  <!-- Food Categories -->
+                  <div class="form-lbl">
+                    Food categories <small>· pick any</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Fruit
+                    </button>
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Grains
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Vegetables
+                    </button>
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Dairy
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Meat &amp; poultry
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Fish &amp; seafood
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Egg
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Legumes
+                    </button>
+                  </div>
+
+                  <!-- Allergen Tags (Big-9) -->
+                  <div class="form-lbl">
+                    Contains allergens <small>· Big-9 tags</small>
+                  </div>
+                  <div class="chip-row">
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Peanut
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Tree nut
+                    </button>
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Milk
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Egg
+                    </button>
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Wheat
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Soy
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Fish
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Sesame
+                    </button>
+                  </div>
+
+                  <!-- Texture & Feeding style -->
+                  <div class="form-lbl">
+                    Texture &amp; feeding style
+                    <small>· remembered from last meal</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Mashed
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Soft finger food
+                    </button>
+                    <button
+                      class="chip sel"
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Spoon-fed
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Self-fed
+                    </button>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="finished entire bowl with enthusiasm"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · This morning, 8:10 AM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Save meal</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 5. FOOD INTRODUCTION FORM -->
+          <article class="phone-card" id="mockup-introduction">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 05 · Introduction</span>
+              <h3 class="phone-card-title">Food Introduction</h3>
+              <p class="phone-card-note">
+                Single named food search with status dots, gentle allergen
+                heads-up banner, texture single-select, and "Also log a meal"
+                shortcut.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Oct 16</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-introduction-bg);
+                        color: var(--keepsake-tracker-introduction-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-introduction" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">First taste · Banana</div>
+                      <div class="s">safe food · 3 days watched</div>
+                    </span>
+                    <span class="time">Oct 10</span>
+                  </div>
+                </div>
+                <!-- Introduction Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">First Taste · Exposure</div>
+                      <h4 class="form-title">Log an <em>introduction</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-introduction-bg);
+                        color: var(--keepsake-tracker-introduction-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-introduction" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    One named food — the exposure record that starts a 3-day
+                    Watch Period.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when it
+                    happened, not when you save.
+                  </div>
+
+                  <!-- Food Search Autocomplete -->
+                  <div class="form-lbl">
+                    Which food? <small>· search catalogue</small>
+                  </div>
+                  <div class="d-search-box">
+                    <svg class="ic"><use href="#i-search" /></svg>
+                    <input
+                      type="text"
+                      value="Peanut butter"
+                      placeholder="Search food by name..."
+                    />
+                    <button
+                      class="chip"
+                      style="padding: 2px 8px; font-size: 10px; border: none"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <!-- Selected Food Badge -->
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      padding: 7px 10px;
+                      background: var(--keepsake-status-trying-bg);
+                      border: 1px solid var(--keepsake-status-trying-border);
+                      border-radius: 6px;
+                    "
+                  >
+                    <div style="display: flex; align-items: center; gap: 8px">
+                      <span
+                        class="swatch"
+                        style="background: var(--keepsake-accent)"
+                      ></span>
+                      <span
+                        style="
+                          font-weight: 650;
+                          font-size: 12.5px;
+                          color: var(--keepsake-accent-ink);
+                        "
+                        >Peanut butter</span
+                      >
+                      <span
+                        style="font-size: 10.5px; color: var(--keepsake-meta)"
+                        >nuts &amp; seeds · peanut</span
+                      >
+                    </div>
+                    <span
+                      class="d-pill"
+                      style="
+                        background: var(--keepsake-accent-chip-bg);
+                        color: var(--keepsake-accent-chip-fg);
+                      "
+                      >Allergen</span
+                    >
+                  </div>
+
+                  <!-- Gentle Allergen Heads-up banner (never blocking) -->
+                  <div class="d-heads-up">
+                    <svg class="ic"><use href="#i-reaction" /></svg>
+                    <span
+                      >Peanut butter carries a <b>peanut</b> tag. First tries of
+                      allergen foods are worth a calm morning — saving starts a
+                      3-day Watch Period.</span
+                    >
+                  </div>
+
+                  <!-- Texture Selection -->
+                  <div class="form-lbl">
+                    Texture <small>· optional, pick one</small>
+                  </div>
+                  <div class="chip-row">
+                    <button class="chip sel" onclick="toggleSingleChip(this)">
+                      Purée
+                    </button>
+                    <button class="chip" onclick="toggleSingleChip(this)">
+                      Mashed
+                    </button>
+                    <button class="chip" onclick="toggleSingleChip(this)">
+                      Soft finger food
+                    </button>
+                    <button class="chip" onclick="toggleSingleChip(this)">
+                      Firm finger food
+                    </button>
+                  </div>
+
+                  <!-- Also log a meal shortcut checkbox (ADR-0002) -->
+                  <div
+                    style="
+                      background: var(--keepsake-paper);
+                      border: 1px solid var(--keepsake-chip-border);
+                      border-radius: 8px;
+                      padding: 10px 12px;
+                      font-size: 11.5px;
+                    "
+                  >
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        checked
+                        style="accent-color: var(--keepsake-accent)"
+                      />
+                      <span>Also log a meal — part of a bigger meal?</span>
+                    </label>
+                    <div
+                      style="
+                        font-size: 10.5px;
+                        color: var(--keepsake-meta);
+                        margin-top: 4px;
+                        padding-left: 22px;
+                      "
+                    >
+                      Pre-fills a Meal with this Food's category &amp; allergen
+                      flags and “Purée” texture.
+                    </div>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="1/4 tsp mixed into warm oatmeal"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · This morning, 9:41 AM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Start watching</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 6. FOOD REACTION FORM (CLAY DANGER THEME) -->
+          <article class="phone-card" id="mockup-reaction">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag" style="color: var(--keepsake-danger)"
+                >Form 06 · Reaction</span
+              >
+              <h3 class="phone-card-title">Allergy Reaction</h3>
+              <p class="phone-card-note">
+                Clay theme, suspected foods multi-picker (trying-first sorting),
+                required 3-point severity, symptom checklist, warning note,
+                pinned timestamp.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>11:20</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Oct 16</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div
+                    class="d-row"
+                    style="
+                      background: var(--keepsake-accent-wash);
+                      border-color: var(--keepsake-accent);
+                    "
+                  >
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-reaction-bg);
+                        color: var(--keepsake-tracker-reaction-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-reaction" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Watching · day 2 of 3</div>
+                      <div class="s">Peanut butter · introduced Thursday</div>
+                    </span>
+                    <span
+                      class="d-pill"
+                      style="
+                        background: var(--keepsake-status-trying-bg);
+                        color: var(--keepsake-status-trying-fg);
+                      "
+                      >Active</span
+                    >
+                  </div>
+                </div>
+                <!-- Reaction Sheet (Danger Clay Theme) -->
+                <div class="d-sheet danger-theme">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div
+                        class="d-kicker"
+                        style="color: var(--keepsake-danger)"
+                      >
+                        Reaction Alert
+                      </div>
+                      <h4
+                        class="form-title"
+                        style="color: var(--keepsake-danger)"
+                      >
+                        What <em>happened?</em>
+                      </h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-reaction-bg);
+                        color: var(--keepsake-tracker-reaction-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-reaction" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    Ends the Watch Period — every flagged Food moves to avoid.
+                  </div>
+                  <div
+                    class="d-edit-banner edit-only"
+                    style="
+                      display: none;
+                      background: var(--keepsake-danger-wash);
+                      border-color: var(--keepsake-danger);
+                      color: var(--keepsake-danger-ink);
+                    "
+                  >
+                    ✏️ Editing — the Entry keeps its identity. “When” is when
+                    symptoms appeared.
+                  </div>
+
+                  <!-- Suspected Foods Picker -->
+                  <div class="form-lbl">
+                    Suspected foods <small>· at least one, trying first</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip sel"
+                      style="
+                        background: var(--keepsake-danger-wash);
+                        border-color: #cf9b85;
+                        color: var(--keepsake-danger-ink);
+                      "
+                    >
+                      Peanut butter ✕
+                    </button>
+                  </div>
+                  <div class="d-search-box">
+                    <svg class="ic"><use href="#i-search" /></svg>
+                    <input
+                      type="text"
+                      placeholder="Add another suspected food..."
+                    />
+                  </div>
+
+                  <!-- Severity (3-point pills, required) -->
+                  <div class="form-lbl">Severity <small>· required</small></div>
+                  <div class="d-qualrow">
+                    <button class="qual-chip" onclick="toggleQuality(this)">
+                      Mild
+                    </button>
+                    <button
+                      class="qual-chip sev-sel"
+                      onclick="toggleQuality(this)"
+                    >
+                      Moderate
+                    </button>
+                    <button class="qual-chip" onclick="toggleQuality(this)">
+                      Severe
+                    </button>
+                  </div>
+
+                  <!-- Symptoms Checklist -->
+                  <div class="form-lbl">
+                    Symptoms <small>· optional, pick any</small>
+                  </div>
+                  <div class="chip-row">
+                    <button
+                      class="chip sel"
+                      style="
+                        background: var(--keepsake-danger-wash);
+                        border-color: #cf9b85;
+                        color: var(--keepsake-danger-ink);
+                      "
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Rash / hives
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Vomiting
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Diarrhea
+                    </button>
+                    <button
+                      class="chip sel"
+                      style="
+                        background: var(--keepsake-danger-wash);
+                        border-color: #cf9b85;
+                        color: var(--keepsake-danger-ink);
+                      "
+                      onclick="this.classList.toggle('sel')"
+                    >
+                      Swelling around mouth
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Breathing issues
+                    </button>
+                    <button class="chip" onclick="this.classList.toggle('sel')">
+                      Fussiness / crying
+                    </button>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="red hives appeared around mouth ~20m after taste"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>Symptoms appeared · 11:20 AM</span>
+                    <span class="e">Edit</span>
+                  </div>
+                  <button class="d-save danger save-btn">Save reaction</button>
+                  <div
+                    style="
+                      font-size: 10px;
+                      color: var(--keepsake-meta);
+                      text-align: center;
+                      margin-top: -4px;
+                    "
+                  >
+                    Ends the Watch Period · Peanut butter moves to avoid
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SECTION 3: SPECIALIZED FORMS (MEDICAL & GROWTH)
+           ============================================================ -->
+      <section class="section-group" id="sec-medical-growth">
+        <div class="section-head">
+          <div class="section-kicker">Part 3 · Health &amp; Milestones</div>
+          <h2 class="section-title">Medical &amp; Growth Measurement Forms</h2>
+          <p class="section-desc">
+            Medical tracking supports four specialized categories (Medication,
+            Vaccine, Symptom, Temperature) with history autocomplete, while
+            Growth captures WHO standard measurements (Weight, Height, Head
+            circumference) with unit-safe entries.
+          </p>
+        </div>
+
+        <div class="mockup-grid">
+          <!-- 7. MEDICAL LOGGING FORM (INTERACTIVE CATEGORIES) -->
+          <article class="phone-card" id="mockup-medical">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 07 · Medical</span>
+              <h3 class="phone-card-title">Medical Entry (4 Categories)</h3>
+              <p class="phone-card-note">
+                One form adapting to 4 categories: Medication (dose), Vaccine,
+                Symptom (observation only), Temperature (°C/°F toggle).
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>2:15</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>Friday</em></span>
+                  <span class="d-kicker">Today</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-medical-bg);
+                        color: var(--keepsake-tracker-medical-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-medical" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Paracetamol · 5 ml</div>
+                      <div class="s">medication · 6h ago</div>
+                    </span>
+                    <span class="time">8:00 am</span>
+                  </div>
+                </div>
+                <!-- Medical Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Health &amp; Care</div>
+                      <h4 class="form-title">Log <em>medical</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-medical-bg);
+                        color: var(--keepsake-tracker-medical-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-medical" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    One of four categories — all carry optional notes and
+                    timestamps.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when
+                    administered / observed.
+                  </div>
+
+                  <!-- 4 Category Switcher Chips -->
+                  <div class="d-cat-pill-row">
+                    <button
+                      class="d-cat-pill sel"
+                      onclick="switchMedicalCat('medication', this)"
+                    >
+                      Medication
+                    </button>
+                    <button
+                      class="d-cat-pill"
+                      onclick="switchMedicalCat('vaccine', this)"
+                    >
+                      Vaccine
+                    </button>
+                    <button
+                      class="d-cat-pill"
+                      onclick="switchMedicalCat('symptom', this)"
+                    >
+                      Symptom
+                    </button>
+                    <button
+                      class="d-cat-pill"
+                      onclick="switchMedicalCat('temperature', this)"
+                    >
+                      Temperature
+                    </button>
+                  </div>
+
+                  <!-- Category Body A: Medication -->
+                  <div id="med-body-medication" class="med-body">
+                    <div class="form-lbl">
+                      Medication name <small>· history autocomplete</small>
+                    </div>
+                    <div class="d-search-box">
+                      <svg class="ic"><use href="#i-search" /></svg>
+                      <input
+                        type="text"
+                        value="Paracetamol"
+                        placeholder="e.g. Paracetamol, Ibuprofen"
+                      />
+                    </div>
+                    <div class="d-ac-drop" style="margin-top: 4px">
+                      <div class="d-ac-row">
+                        <span class="food-name">Paracetamol</span
+                        ><span class="tag-sub">history · last 5 ml</span>
+                      </div>
+                      <div class="d-ac-row">
+                        <span class="food-name">Ibuprofen</span
+                        ><span class="tag-sub">history · last 2.5 ml</span>
+                      </div>
+                    </div>
+                    <div class="form-lbl" style="margin-top: 8px">
+                      Dose <small>· optional, amount + unit</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      placeholder='e.g. "5 ml" or "120 mg"'
+                      value="5 ml"
+                    />
+                  </div>
+
+                  <!-- Category Body B: Vaccine -->
+                  <div
+                    id="med-body-vaccine"
+                    class="med-body"
+                    style="display: none"
+                  >
+                    <div class="form-lbl">
+                      Vaccine name <small>· history autocomplete</small>
+                    </div>
+                    <div class="d-search-box">
+                      <svg class="ic"><use href="#i-search" /></svg>
+                      <input
+                        type="text"
+                        placeholder="e.g. MMR, DTaP (2nd dose)"
+                        value="MMR (1st dose)"
+                      />
+                    </div>
+                    <div class="d-step-note" style="margin-top: 4px">
+                      Routine immunisation record for paediatric schedule.
+                    </div>
+                  </div>
+
+                  <!-- Category Body C: Symptom -->
+                  <div
+                    id="med-body-symptom"
+                    class="med-body"
+                    style="display: none"
+                  >
+                    <div class="form-lbl">
+                      Symptom <small>· required description</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      placeholder="e.g. runny nose, mild dry cough"
+                      value="runny nose and congestion"
+                    />
+                    <div class="d-step-note" style="margin-top: 4px">
+                      Illness and general observation only — food allergy
+                      reactions belong to a Reaction.
+                    </div>
+                  </div>
+
+                  <!-- Category Body D: Temperature -->
+                  <div
+                    id="med-body-temperature"
+                    class="med-body"
+                    style="display: none"
+                  >
+                    <div class="form-lbl">
+                      Temperature <small>· numeric value</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        class="d-input"
+                        type="number"
+                        step="0.1"
+                        placeholder="e.g. 37.6"
+                        value="38.2"
+                        style="flex: 1"
+                      />
+                      <div class="chip-row">
+                        <button
+                          class="chip sel"
+                          onclick="toggleSingleChip(this)"
+                        >
+                          °C
+                        </button>
+                        <button class="chip" onclick="toggleSingleChip(this)">
+                          °F
+                        </button>
+                      </div>
+                    </div>
+                    <div class="d-step-note" style="margin-top: 4px">
+                      Defaults from app setting (°C) — change default in
+                      Settings.
+                    </div>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="given with lunch for teething discomfort"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · Today, 2:15 PM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Save medical</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 8. GROWTH MEASUREMENT FORM -->
+          <article class="phone-card" id="mockup-growth">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Form 08 · Growth</span>
+              <h3 class="phone-card-title">Growth Measurements</h3>
+              <p class="phone-card-note">
+                Three independent optional measurements (Weight, Height, Head
+                Circumference), unit display, note, and pinned timestamp.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>10:30</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Growing <em>taller</em></span>
+                  <span class="d-kicker">Milo · 9 mo</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-growth-bg);
+                        color: var(--keepsake-tracker-growth-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-growth" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">9.1 kg · 73 cm</div>
+                      <div class="s">previous checkup · 45.8 cm head</div>
+                    </span>
+                    <span class="time">Sep 28</span>
+                  </div>
+                </div>
+                <!-- Growth Sheet -->
+                <div class="d-sheet">
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker">Paediatric Milestones</div>
+                      <h4 class="form-title">Log <em>growth</em></h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-growth-bg);
+                        color: var(--keepsake-tracker-growth-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-growth" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note">
+                    Any of the three measurements — enter at least one to save.
+                  </div>
+                  <div class="d-edit-banner edit-only" style="display: none">
+                    ✏️ Editing — the Entry keeps its identity. “When” is when
+                    measured.
+                  </div>
+
+                  <div class="d-growth-grid">
+                    <div class="d-field-cell">
+                      <div class="form-lbl">Weight <small>(kg)</small></div>
+                      <input
+                        class="d-input"
+                        type="number"
+                        step="0.01"
+                        placeholder="e.g. 9.4"
+                        value="9.42"
+                      />
+                    </div>
+                    <div class="d-field-cell">
+                      <div class="form-lbl">Height <small>(cm)</small></div>
+                      <input
+                        class="d-input"
+                        type="number"
+                        step="0.1"
+                        placeholder="e.g. 74"
+                        value="74.5"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="d-field-cell">
+                    <div class="form-lbl">
+                      Head circumference <small>(cm)</small>
+                    </div>
+                    <input
+                      class="d-input"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g. 46.5"
+                      value="46.2"
+                    />
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    placeholder="Note (optional)"
+                    value="9-month checkup with Dr. Patel · 50th percentile weight"
+                  />
+
+                  <!-- Shared Timestamp Rule directly above Save -->
+                  <div class="d-ts">
+                    <span>When · Oct 12, 10:30 AM</span>
+                    <span class="e">Change</span>
+                  </div>
+                  <button class="d-save save-btn">Save growth</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SECTION 4: TABBED FOOD LOGGING & EDIT STATES
+           ============================================================ -->
+      <section class="section-group" id="sec-tabbed-edit">
+        <div class="section-head">
+          <div class="section-kicker">
+            Part 4 · Architecture &amp; Environmental States
+          </div>
+          <h2 class="section-title">
+            ADR-0002 Tabbed Food Sheet &amp; Night Mode (3am Surface)
+          </h2>
+          <p class="section-desc">
+            Showing how the unified food entry sheet switches between Meal and
+            Introduction tabs with preserved unsaved drafts, and how the 3am
+            surface provides glare-free OLED logging during nocturnal wakeups.
+          </p>
+        </div>
+
+        <div class="mockup-grid">
+          <!-- 9. ADR-0002 TABBED FOOD SHEET -->
+          <article class="phone-card" id="mockup-tabbed">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">Architecture · ADR-0002</span>
+              <h3 class="phone-card-title">Tabbed Food Sheet (Meal ↔ Intro)</h3>
+              <p class="phone-card-note">
+                Starting from Home "Log Food" opens a tabbed sheet where Meal
+                and Introduction draft independently without overwriting each
+                other.
+              </p>
+            </div>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>12:30</span><span>●●●</span></div>
+              <div class="phone-screen">
+                <div class="d-masthead">
+                  <span class="d-h1">Milo's <em>lunch</em></span>
+                  <span class="d-kicker">Today</span>
+                </div>
+                <div class="d-rule"></div>
+                <div class="d-bg-context">
+                  <div class="d-row">
+                    <span
+                      class="d-orb"
+                      style="
+                        background: var(--keepsake-tracker-meal-bg);
+                        color: var(--keepsake-tracker-meal-fg);
+                      "
+                    >
+                      <svg class="ic"><use href="#i-meal" /></svg>
+                    </span>
+                    <span>
+                      <div class="t">Morning snack</div>
+                      <div class="s">fruit · ate all</div>
+                    </span>
+                    <span class="time">10:00 am</span>
+                  </div>
+                </div>
+                <!-- Tabbed Food Sheet -->
+                <div class="d-sheet">
+                  <!-- Mode Switcher Tabs -->
+                  <div class="d-tab-switch">
+                    <button
+                      id="tab-meal-btn"
+                      class="d-tab-switch-btn sel"
+                      onclick="switchFoodTab('meal')"
+                    >
+                      <svg class="ic" style="width: 14px; height: 14px">
+                        <use href="#i-meal" />
+                      </svg>
+                      Meal (Plate flags)
+                    </button>
+                    <button
+                      id="tab-intro-btn"
+                      class="d-tab-switch-btn"
+                      onclick="switchFoodTab('intro')"
+                    >
+                      <svg class="ic" style="width: 14px; height: 14px">
+                        <use href="#i-introduction" />
+                      </svg>
+                      Introduction (Named food)
+                    </button>
+                  </div>
+
+                  <!-- Meal Tab View -->
+                  <div id="tab-meal-view">
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        margin: 4px 0;
+                      "
+                    >
+                      <h4 style="font-size: 19px">Lunch <em>plate</em></h4>
+                      <span class="d-step-note">Unsaved draft preserved</span>
+                    </div>
+                    <div class="form-lbl">How much eaten</div>
+                    <div class="d-amount">
+                      <div class="d-amount-btn on">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn on">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                      <div class="d-amount-btn off">
+                        <svg class="ic"><use href="#i-check" /></svg>
+                      </div>
+                    </div>
+                    <div class="form-lbl">Food categories</div>
+                    <div class="chip-row">
+                      <button class="chip sel">Vegetables</button>
+                      <button class="chip sel">Meat &amp; poultry</button>
+                      <button class="chip">Grains</button>
+                    </div>
+                    <div class="d-ts">
+                      <span>When · Lunchtime, 12:30 PM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save" style="margin-top: 4px">
+                      Save meal
+                    </button>
+                  </div>
+
+                  <!-- Intro Tab View (Hidden by default) -->
+                  <div id="tab-intro-view" style="display: none">
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        margin: 4px 0;
+                      "
+                    >
+                      <h4 style="font-size: 19px">First <em>exposure</em></h4>
+                      <span class="d-step-note">Independent draft</span>
+                    </div>
+                    <div class="d-search-box">
+                      <svg class="ic"><use href="#i-search" /></svg>
+                      <input
+                        type="text"
+                        placeholder="Search food to introduce..."
+                        value="Steamed broccoli"
+                      />
+                    </div>
+                    <div class="form-lbl">Texture</div>
+                    <div class="chip-row">
+                      <button class="chip sel">Soft finger food</button>
+                      <button class="chip">Purée</button>
+                    </div>
+                    <div class="d-ts">
+                      <span>When · Lunchtime, 12:30 PM</span>
+                      <span class="e">Change</span>
+                    </div>
+                    <button class="d-save" style="margin-top: 4px">
+                      Start watching
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 10. NIGHT MODE (THE 3AM SURFACE) -->
+          <article class="phone-card" id="mockup-night-surface">
+            <div class="phone-card-meta">
+              <span class="phone-card-tag">3am Surface · Night Theme</span>
+              <h3 class="phone-card-title">
+                Night Surface (Diaper &amp; Feed)
+              </h3>
+              <p class="phone-card-note">
+                Deep umber (#24211C) paper canvas, warm charcoal (#2B2721)
+                sheet, softened terracotta (#E8A582), and muted disc tones for
+                midnight logging.
+              </p>
+            </div>
+            <div class="phone night-mode-scope">
+              <div class="phone-notch"></div>
+              <div class="phone-status"><span>3:14</span><span>●●●</span></div>
+              <div
+                class="phone-screen"
+                style="background: #24211c; color: #f0e9da"
+              >
+                <div class="d-masthead">
+                  <span class="d-h1" style="color: #f0e9da"
+                    >Milo's <em style="color: #e8a582">night</em></span
+                  >
+                  <span class="d-kicker" style="color: #9a917e">3:14 am</span>
+                </div>
+                <div class="d-rule" style="border-color: #f0e9da"></div>
+                <div class="d-bg-context">
+                  <div class="d-row" style="border-color: #3d382f">
+                    <span
+                      class="d-orb"
+                      style="background: #3d3626; color: #e0c98f"
+                    >
+                      <svg class="ic"><use href="#i-feed" /></svg>
+                    </span>
+                    <span>
+                      <div class="t" style="color: #f0e9da">
+                        Feed · right side
+                      </div>
+                      <div class="s" style="color: #9a917e">
+                        logged at 11:45 pm
+                      </div>
+                    </span>
+                    <span class="time" style="color: #9a917e">3h ago</span>
+                  </div>
+                </div>
+                <!-- Night Sheet -->
+                <div
+                  class="d-sheet"
+                  style="
+                    background: #2b2721;
+                    border-top-color: #f0e9da;
+                    color: #f0e9da;
+                  "
+                >
+                  <div class="d-sheet-head">
+                    <div>
+                      <div class="d-kicker" style="color: #9a917e">
+                        Quick Log · 3am
+                      </div>
+                      <h4 style="color: #f0e9da">
+                        Log <em style="color: #e8a582">diaper</em>
+                      </h4>
+                    </div>
+                    <span
+                      class="d-orb"
+                      style="background: #2c3a40; color: #8fb8cc"
+                    >
+                      <svg class="ic"><use href="#i-diaper" /></svg>
+                    </span>
+                  </div>
+                  <div class="d-step-note" style="color: #9a917e">
+                    Zero glare night surface — gentle on tired eyes.
+                  </div>
+
+                  <div class="form-lbl" style="color: #9a917e">Type</div>
+                  <div class="chip-row">
+                    <button
+                      class="chip big sel"
+                      style="
+                        background: #453526;
+                        border-color: #6b4a38;
+                        color: #d9b598;
+                      "
+                    >
+                      Wet
+                    </button>
+                    <button
+                      class="chip big"
+                      style="
+                        background: #2b2721;
+                        border-color: #4a4438;
+                        color: #9a917e;
+                      "
+                    >
+                      Dirty
+                    </button>
+                    <button
+                      class="chip big"
+                      style="
+                        background: #2b2721;
+                        border-color: #4a4438;
+                        color: #9a917e;
+                      "
+                    >
+                      Both
+                    </button>
+                  </div>
+
+                  <input
+                    class="d-note-input"
+                    style="
+                      background: #2b2721;
+                      border-color: #4a4438;
+                      color: #f0e9da;
+                    "
+                    placeholder="Note (optional)"
+                  />
+
+                  <div
+                    class="d-ts"
+                    style="border-color: #3d382f; color: #9a917e"
+                  >
+                    <span>When · Just now, 3:14 AM</span>
+                    <span class="e" style="color: #e8a582">Change</span>
+                  </div>
+                  <button
+                    class="d-save"
+                    style="background: #f0e9da; color: #24211c"
+                  >
+                    Save diaper
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SECTION 5: SPECIFICATION & TOKEN MAPPING
+           ============================================================ -->
+      <section class="section-group" id="sec-specs">
+        <div class="spec-card">
+          <div class="section-kicker">Architecture Handoff</div>
+          <h2 class="section-title">Keepsake Design System Token Mapping</h2>
+          <p class="section-desc">
+            Direct mapping of logging form UI elements to tokens in
+            <code>packages/design-system</code>, usable by both Web/CSS
+            prototypes (<code>buildKeepsakeCss</code>) and native screens via
+            the ADR-0005 adapter (<code>app/src/theme/tokens.ts</code>).
+          </p>
+
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Form Element</th>
+                <th>Day Token (Value)</th>
+                <th>Night Token (Value)</th>
+                <th>Design System Invariant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Background Paper</strong></td>
+                <td><code>--keepsake-paper</code> (#FBF6EE)</td>
+                <td><code>--keepsake-paper</code> (#24211C)</td>
+                <td>
+                  Main canvas; dims to deep warm umber at night with zero glare.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Sheet Container</strong></td>
+                <td><code>--keepsake-sheet</code> (#FFFDF8)</td>
+                <td><code>--keepsake-sheet</code> (#2B2721)</td>
+                <td>
+                  Top-ruled with <code>--keepsake-rule-strong</code>; shadows: 0
+                  -18px 44px.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Timestamp Controls</strong></td>
+                <td><code>--keepsake-rule-thin</code> (#E9DFCD)</td>
+                <td><code>--keepsake-rule-thin</code> (#3D382F)</td>
+                <td>
+                  <strong>Always directly above Save</strong>. Hairline borders
+                  with edit link.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Primary Action Button</strong></td>
+                <td><code>--keepsake-rule-strong</code> (#33302A)</td>
+                <td><code>--keepsake-rule-strong</code> (#F0E9DA)</td>
+                <td>
+                  Pill radius (999px), 13px bold, centered text. Danger forms
+                  use Clay (#B4552E).
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Selection Chips</strong></td>
+                <td><code>--keepsake-accent-chip</code> (#F3E3D3)</td>
+                <td><code>--keepsake-accent-chip</code> (#453526)</td>
+                <td>
+                  Radius 999px, 1px border; selected chips highlight without
+                  high contrast.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Feed Disc Tint</strong></td>
+                <td>
+                  <span class="swatch" style="background: #f6e3c2"></span
+                  >#F6E3C2 / #A4741F
+                </td>
+                <td>
+                  <span class="swatch" style="background: #3d3626"></span
+                  >#3D3626 / #E0C98F
+                </td>
+                <td>34px circular disc with stroke icon from shared sprite.</td>
+              </tr>
+              <tr>
+                <td><strong>Diaper / Sleep Disc</strong></td>
+                <td>
+                  <span class="swatch" style="background: #dcebf2"></span
+                  >#DCEBF2 / #4A7B96
+                </td>
+                <td>
+                  <span class="swatch" style="background: #2c3a40"></span
+                  >#2C3A40 / #8FB8CC
+                </td>
+                <td>
+                  Cool rain pastel discs for hydration, hygiene, and rest.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Meal / Intro Disc</strong></td>
+                <td>
+                  <span class="swatch" style="background: #d9e4d0"></span
+                  >#D9E4D0 / #55694E
+                </td>
+                <td>
+                  <span class="swatch" style="background: #333a2c"></span
+                  >#333A2C / #A9B39B
+                </td>
+                <td>
+                  Sage garden tint for food discovery, nutrition, and safe
+                  exposure.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Medical Disc Tint</strong></td>
+                <td>
+                  <span class="swatch" style="background: #eedde8"></span
+                  >#EEDDE8 / #9A5C80
+                </td>
+                <td>
+                  <span class="swatch" style="background: #3d3238"></span
+                  >#3D3238 / #C49AB4
+                </td>
+                <td>
+                  Warm mauve tint reserved for health, medicine, and clinical
+                  care.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Reaction Disc Tint</strong></td>
+                <td>
+                  <span class="swatch" style="background: #f3ddd4"></span
+                  >#F3DDD4 / #B4552E
+                </td>
+                <td>
+                  <span class="swatch" style="background: #332418"></span
+                  >#332418 / #E07B52
+                </td>
+                <td>
+                  Clay warning surface with red-brick accent for allergy events.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Typography Voice</strong></td>
+                <td>Iowan Old Style / Palatino serif</td>
+                <td>Avenir Next / Roboto sans</td>
+                <td>
+                  Serif display headings &amp; timestamps; clean sans-serif for
+                  interactive chips.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Interactive script for demo toggles -->
+    <script>
+      function setGlobalTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        document
+          .getElementById("btn-theme-day")
+          .classList.toggle("sel", theme === "day");
+        document
+          .getElementById("btn-theme-night")
+          .classList.toggle("sel", theme === "night");
+      }
+
+      function setGlobalMode(mode) {
+        document
+          .getElementById("btn-mode-create")
+          .classList.toggle("sel", mode === "create");
+        document
+          .getElementById("btn-mode-edit")
+          .classList.toggle("sel", mode === "edit");
+
+        const editBanners = document.querySelectorAll(".edit-only");
+        editBanners.forEach((el) => {
+          el.style.display = mode === "edit" ? "block" : "none";
+        });
+
+        const saveBtns = document.querySelectorAll(".save-btn");
+        saveBtns.forEach((btn) => {
+          if (mode === "edit") {
+            btn.textContent = "Save changes";
+          } else {
+            const card = btn.closest(".phone-card");
+            if (card.id === "mockup-feed") btn.textContent = "Save feed";
+            else if (card.id === "mockup-diaper")
+              btn.textContent = "Save diaper";
+            else if (card.id === "mockup-sleep") btn.textContent = "Save sleep";
+            else if (card.id === "mockup-meal") btn.textContent = "Save meal";
+            else if (card.id === "mockup-introduction")
+              btn.textContent = "Start watching";
+            else if (card.id === "mockup-reaction")
+              btn.textContent = "Save reaction";
+            else if (card.id === "mockup-medical")
+              btn.textContent = "Save medical";
+            else if (card.id === "mockup-growth")
+              btn.textContent = "Save growth";
+          }
+        });
+      }
+
+      function toggleSingleChip(btn) {
+        const row = btn.parentElement;
+        row.querySelectorAll(".chip").forEach((c) => c.classList.remove("sel"));
+        btn.classList.add("sel");
+      }
+
+      function toggleQuality(btn) {
+        const row = btn.parentElement;
+        const isSev =
+          btn.classList.contains("sev-sel") || row.querySelector(".sev-sel");
+        row.querySelectorAll(".qual-chip").forEach((c) => {
+          c.classList.remove("sel");
+          c.classList.remove("sev-sel");
+        });
+        if (isSev) {
+          btn.classList.add("sev-sel");
+        } else {
+          btn.classList.add("sel");
+        }
+      }
+
+      function setAmount(idx, btn) {
+        const container = btn.parentElement;
+        const buttons = container.querySelectorAll(".d-amount-btn");
+        buttons.forEach((b, i) => {
+          if (i < idx) {
+            b.classList.add("on");
+            b.classList.remove("off");
+          } else {
+            b.classList.add("off");
+            b.classList.remove("on");
+          }
+        });
+        const labels = [
+          "1 of 5 · tasted",
+          "2 of 5 · ate little",
+          "3 of 5 · ate half",
+          "4 of 5 · ate most",
+          "5 of 5 · ate all",
+        ];
+        const labelEl = container.nextElementSibling;
+        if (labelEl) labelEl.textContent = labels[idx - 1];
+      }
+
+      function switchMedicalCat(cat, btn) {
+        document
+          .querySelectorAll(".d-cat-pill")
+          .forEach((b) => b.classList.remove("sel"));
+        btn.classList.add("sel");
+
+        document
+          .querySelectorAll(".med-body")
+          .forEach((el) => (el.style.display = "none"));
+        const target = document.getElementById("med-body-" + cat);
+        if (target) target.style.display = "block";
+      }
+
+      function switchFoodTab(tab) {
+        const mealBtn = document.getElementById("tab-meal-btn");
+        const introBtn = document.getElementById("tab-intro-btn");
+        const mealView = document.getElementById("tab-meal-view");
+        const introView = document.getElementById("tab-intro-view");
+
+        if (tab === "meal") {
+          mealBtn.classList.add("sel");
+          introBtn.classList.remove("sel");
+          mealView.style.display = "block";
+          introView.style.display = "none";
+        } else {
+          mealBtn.classList.remove("sel");
+          introBtn.classList.add("sel");
+          mealView.style.display = "none";
+          introView.style.display = "block";
+        }
+      }
+    </script>
+  </body>
+</html>
