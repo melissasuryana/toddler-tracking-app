@@ -9,12 +9,13 @@ import {
   type ReactionSymptom,
 } from "@keepsake/food-tracking";
 import { useState } from "react";
-import { ScrollView, TextInput, View } from "react-native";
-import { Body, MetaLabel } from "./Screen";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Body } from "./Screen";
 import { PillChip } from "./PillChip";
 import { KeepsakeIcon } from "./KeepsakeIcon";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
+import { nativeFonts } from "~/theme/tokens";
 import { localDateTime, resolveEntryTimestamp } from "./entryTimestamp";
 import { EntryTimestampFields } from "./EntryTimestampFields";
 import { DeleteEntryConfirm } from "./DeleteEntryConfirm";
@@ -76,6 +77,7 @@ export function FoodEntryForm({
   const [dismissedHeadsUps, setDismissedHeadsUps] = useState<
     ReadonlySet<string>
   >(new Set());
+
   const foods =
     kind === "reaction" ? data.reactionFoods(childId) : data.foods();
   const resolved = resolveEntryTimestamp(
@@ -97,18 +99,9 @@ export function FoodEntryForm({
           excludeEntryId: entry?.id,
         })
       : [];
-  const inputStyle = {
-    color: theme.colors.ink,
-    borderBottomColor: theme.colors.ruleThin,
-    borderBottomWidth: theme.rule.hairline,
-    paddingVertical: theme.space.fieldGap,
-    fontSize: theme.typography.body.fontSize,
-  };
-  const choicesStyle = {
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: theme.space.fieldGap,
-  };
+
+  const isReaction = kind === "reaction";
+  const trackerColor = theme.colors.tracker[isReaction ? "reaction" : "introduction"];
 
   function save() {
     try {
@@ -156,208 +149,508 @@ export function FoodEntryForm({
     }
   }
 
+  const selectedFoodObjects = foodIds.map(
+    (id) => foods.find((f) => f.id === id) ?? { id, name: id }
+  );
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{
-        padding: theme.space.page,
-        gap: theme.space.fieldGap,
+        paddingHorizontal: theme.space.page,
+        paddingBottom: theme.space.sheetBlock * 2,
       }}
     >
-      <View style={choicesStyle}>
-        <KeepsakeIcon name={kind} color={theme.discTint(kind).foreground} />
-        <Body>
-          {entry ? "Edit" : "Log"}{" "}
-          {kind === "introduction" ? "Introduction" : "Reaction"}
-        </Body>
-      </View>
-      {kind === "reaction" ? (
-        <>
-          <MetaLabel>Severity · required</MetaLabel>
-          <View style={choicesStyle}>
-            {REACTION_SEVERITIES.map((value) => (
-              <PillChip
-                key={value}
-                label={value}
-                selected={severity === value}
-                onPress={() => setSeverity(value)}
-              />
-            ))}
+      <View
+        style={{
+          backgroundColor: isReaction ? theme.colors.dangerWash : theme.colors.sheet,
+          borderColor: isReaction ? theme.colors.dangerSoft : theme.colors.ruleThin,
+          borderWidth: 1,
+          borderRadius: 18,
+          padding: 16,
+          gap: 12,
+        }}
+      >
+        {/* Sheet Head */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                color: isReaction ? theme.colors.danger : theme.colors.meta,
+              }}
+            >
+              {isReaction ? "Allergic Observation" : "Food Introduction"}
+            </Text>
+            <Text
+              style={{
+                fontFamily: nativeFonts.serif,
+                fontSize: 20,
+                color: theme.colors.ink,
+              }}
+            >
+              {entry ? "Edit " : "Log "}
+              <Text
+                style={{
+                  color: isReaction ? theme.colors.danger : theme.colors.accent,
+                  fontStyle: "italic",
+                }}
+              >
+                {kind}
+              </Text>
+            </Text>
           </View>
-          <MetaLabel>Symptoms · optional</MetaLabel>
-          <View style={choicesStyle}>
-            {REACTION_SYMPTOMS.map((value) => (
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: trackerColor.background,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <KeepsakeIcon
+              name={kind}
+              size={18}
+              color={trackerColor.foreground}
+            />
+          </View>
+        </View>
+
+        <Text
+          style={{
+            fontFamily: nativeFonts.sans,
+            fontSize: 12,
+            color: isReaction ? theme.colors.dangerInk : theme.colors.meta,
+            marginTop: -6,
+          }}
+        >
+          {isReaction
+            ? "Ends the active watch period and marks food as 'avoid'."
+            : "First taste or continued exposure — starts a 3-day watch period."}
+        </Text>
+
+        {entry ? (
+          <View
+            style={{
+              backgroundColor: isReaction ? theme.colors.dangerSoft : theme.colors.accentWash,
+              borderColor: isReaction ? theme.colors.danger : theme.colors.accentSoft,
+              borderWidth: 1,
+              borderRadius: 8,
+              paddingVertical: 7,
+              paddingHorizontal: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 11.5,
+                color: isReaction ? theme.colors.dangerInk : theme.colors.accentInk,
+              }}
+            >
+              ✏️ Editing — the Entry keeps its identity.
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Reaction: Severity */}
+        {isReaction ? (
+          <View style={{ gap: 6 }}>
+            <FieldLabel label="Severity" hint="required" danger={isReaction} />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {REACTION_SEVERITIES.map((val) => {
+                const isSelected = severity === val;
+                return (
+                  <Pressable
+                    key={val}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Severity ${val}`}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => setSeverity(val)}
+                    style={({ pressed }) => ({
+                      flex: 1,
+                      paddingVertical: 10,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: isSelected
+                        ? theme.colors.danger
+                        : theme.colors.chipBorder,
+                      backgroundColor: isSelected
+                        ? theme.colors.dangerSoft
+                        : theme.colors.paper,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: pressed ? 0.8 : 1,
+                    })}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 13,
+                        fontWeight: isSelected ? "700" : "600",
+                        color: isSelected
+                          ? theme.colors.dangerInk
+                          : theme.colors.ink,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {val}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Reaction: Symptoms */}
+        {isReaction ? (
+          <View style={{ gap: 6 }}>
+            <FieldLabel label="Symptoms" hint="optional" danger={isReaction} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {REACTION_SYMPTOMS.map((val) => {
+                const isSelected = symptoms.includes(val);
+                const display = val.replaceAll("_", " ").replaceAll("-", " ");
+                return (
+                  <Pressable
+                    key={val}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Symptom ${display}`}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() =>
+                      setSymptoms(
+                        isSelected
+                          ? symptoms.filter((item) => item !== val)
+                          : [...symptoms, val]
+                      )
+                    }
+                    style={({ pressed }) => ({
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: theme.radius.pill,
+                      borderWidth: 1,
+                      borderColor: isSelected
+                        ? theme.colors.danger
+                        : theme.colors.chipBorder,
+                      backgroundColor: isSelected
+                        ? theme.colors.dangerSoft
+                        : theme.colors.paper,
+                      opacity: pressed ? 0.8 : 1,
+                    })}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 12,
+                        fontWeight: isSelected ? "700" : "500",
+                        color: isSelected
+                          ? theme.colors.dangerInk
+                          : theme.colors.ink,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {display}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Foods Selector */}
+        <View style={{ gap: 6 }}>
+          <FieldLabel
+            label={isReaction ? "Foods" : "One named Food"}
+            hint={isReaction ? "trying first" : "required"}
+            danger={isReaction}
+          />
+          {selectedFoodObjects.length > 0 ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {selectedFoodObjects.map((f) => (
+                <PillChip
+                  key={f.id}
+                  label={`${f.name} · ✕`}
+                  selected
+                  onPress={() =>
+                    setFoodIds(foodIds.filter((value) => value !== f.id))
+                  }
+                />
+              ))}
+            </View>
+          ) : null}
+
+          <TextInput
+            accessibilityLabel="Search Foods"
+            placeholder="Search Foods"
+            placeholderTextColor={theme.colors.meta}
+            value={query}
+            onChangeText={setQuery}
+            style={{
+              backgroundColor: theme.colors.paper,
+              borderColor: theme.colors.chipBorder,
+              borderWidth: 1,
+              borderRadius: 8,
+              color: theme.colors.ink,
+              fontFamily: nativeFonts.sans,
+              fontSize: 13,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+            }}
+          />
+
+          <ScrollView
+            nestedScrollEnabled
+            style={{ maxHeight: 160 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {foods
+                .filter((food) =>
+                  food.name
+                    .toLocaleLowerCase()
+                    .includes(query.trim().toLocaleLowerCase())
+                )
+                .slice(0, 20)
+                .map((food) => {
+                  const status = data.foodStatus(childId, food.id).status;
+                  const isSelected = foodIds.includes(food.id);
+                  return (
+                    <PillChip
+                      key={food.id}
+                      label={`${food.name} · ${status}`}
+                      selected={isSelected}
+                      tint={theme.statusPillTint(status)}
+                      onPress={() => {
+                        setFoodIds(
+                          kind === "introduction"
+                            ? [food.id]
+                            : foodIds.includes(food.id)
+                              ? foodIds.filter((id) => id !== food.id)
+                              : [...foodIds, food.id]
+                        );
+                      }}
+                    />
+                  );
+                })}
+            </View>
+          </ScrollView>
+          <Text
+            style={{
+              fontFamily: nativeFonts.sans,
+              fontSize: 11,
+              color: theme.colors.meta,
+            }}
+          >
+            Showing up to 20 matches. Search to find another Food; every status is available.
+          </Text>
+        </View>
+
+        {/* Heads-up Cards for Introduction */}
+        {headsUps.map((headsUp) => {
+          const key = `${foodIds[0]}:${headsUp.kind}:${headsUp.foodId}`;
+          return dismissedHeadsUps.has(key) ? null : (
+            <View
+              key={key}
+              style={{
+                backgroundColor: theme.colors.accentWash,
+                borderColor: theme.colors.accentSoft,
+                borderWidth: 1,
+                borderRadius: 8,
+                padding: 10,
+                gap: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: nativeFonts.sans,
+                  fontSize: 12,
+                  color: theme.colors.ink,
+                }}
+              >
+                {headsUp.kind === "first-allergen-food"
+                  ? "⚠️ A first introduction of an allergen Food. Take it at your own pace."
+                  : "⚠️ Another Food has an active watch. Overlapping introductions can make reactions harder to attribute."}
+              </Text>
               <PillChip
-                key={value}
-                label={value.replaceAll("_", " ").replaceAll("-", " ")}
-                selected={symptoms.includes(value)}
+                label="Dismiss heads-up"
+                selected={false}
                 onPress={() =>
-                  setSymptoms(
-                    symptoms.includes(value)
-                      ? symptoms.filter((item) => item !== value)
-                      : [...symptoms, value]
-                  )
+                  setDismissedHeadsUps(new Set(dismissedHeadsUps).add(key))
                 }
               />
-            ))}
-          </View>
-        </>
-      ) : null}
-      <MetaLabel>
-        {kind === "introduction"
-          ? "One named Food · required"
-          : "Foods · trying first"}
-      </MetaLabel>
-      <View style={choicesStyle}>
-        {foodIds.map((id) => (
-          <PillChip
-            key={id}
-            label={`${foods.find((food) => food.id === id)?.name ?? id} · remove`}
-            selected
-            onPress={() => setFoodIds(foodIds.filter((value) => value !== id))}
-          />
-        ))}
-      </View>
-      <TextInput
-        accessibilityLabel="Search Foods"
-        placeholder="Search Foods"
-        placeholderTextColor={theme.colors.meta}
-        style={inputStyle}
-        value={query}
-        onChangeText={setQuery}
-      />
-      <ScrollView
-        nestedScrollEnabled
-        style={{ maxHeight: theme.space.sheetBlock * 6 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={{ gap: theme.space.fieldGap }}>
-          {foods
-            .filter((food) =>
-              food.name
-                .toLocaleLowerCase()
-                .includes(query.trim().toLocaleLowerCase())
-            )
-            .slice(0, 20)
-            .map((food) => {
-              const status = data.foodStatus(childId, food.id).status;
-              return (
-                <PillChip
-                  key={food.id}
-                  label={`${food.name} · ${status}`}
-                  selected={foodIds.includes(food.id)}
-                  tint={theme.statusPillTint(status)}
-                  onPress={() => {
-                    setFoodIds(
-                      kind === "introduction"
-                        ? [food.id]
-                        : foodIds.includes(food.id)
-                          ? foodIds.filter((id) => id !== food.id)
-                          : [...foodIds, food.id]
-                    );
-                  }}
-                />
-              );
-            })}
-        </View>
-      </ScrollView>
-      <Body dim>
-        Showing up to 20 matches. Search to find another Food; every status is
-        available.
-      </Body>
-      {headsUps.map((headsUp) => {
-        const key = `${foodIds[0]}:${headsUp.kind}:${headsUp.foodId}`;
-        return dismissedHeadsUps.has(key) ? null : (
-          <View key={key} style={{ gap: theme.space.fieldGap }}>
-            <Body dim>
-              {headsUp.kind === "first-allergen-food"
-                ? "A first introduction of an allergen Food. Take it at your own pace."
-                : "Another Food has an active watch. Overlapping introductions can make reactions harder to attribute."}
-            </Body>
-            <PillChip
-              label="Dismiss heads-up"
-              selected={false}
-              onPress={() =>
-                setDismissedHeadsUps(new Set(dismissedHeadsUps).add(key))
-              }
-            />
-          </View>
-        );
-      })}
-      {kind === "introduction" ? (
-        <>
-          <MetaLabel>Texture · optional, choose one</MetaLabel>
-          <View style={choicesStyle}>
-            <PillChip
-              label="No texture"
-              selected={texture === null}
-              onPress={() => setTexture(null)}
-            />
-            {MEAL_TEXTURES.map((value) => (
+            </View>
+          );
+        })}
+
+        {/* Introduction: Texture */}
+        {kind === "introduction" ? (
+          <View style={{ gap: 6 }}>
+            <FieldLabel label="Texture" hint="optional, choose one" />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               <PillChip
-                key={value}
-                label={value}
-                selected={texture === value}
-                onPress={() => setTexture(value)}
+                label="No texture"
+                selected={texture === null}
+                onPress={() => setTexture(null)}
               />
-            ))}
+              {MEAL_TEXTURES.map((value) => (
+                <PillChip
+                  key={value}
+                  label={value}
+                  selected={texture === value}
+                  onPress={() => setTexture(value)}
+                />
+              ))}
+            </View>
           </View>
-        </>
-      ) : null}
-      <MetaLabel>Note · optional</MetaLabel>
-      <TextInput
-        accessibilityLabel={`${kind} note`}
-        multiline
-        style={inputStyle}
-        placeholder="Optional note"
-        placeholderTextColor={theme.colors.meta}
-        value={note}
-        onChangeText={setNote}
-      />
-      {kind === "introduction" ? (
-        <PillChip
-          label="Also log a meal"
-          selected={alsoMeal}
-          onPress={() => setAlsoMeal(!alsoMeal)}
-        />
-      ) : null}
-      {entry && !hideDelete ? (
-        <PillChip
-          label="Delete entry"
-          selected={false}
-          onPress={() => setConfirmDelete(true)}
-        />
-      ) : null}
-      {error ? <Body>{error}</Body> : null}
-      <EntryTimestampFields
-        label={kind}
-        original={original}
-        date={date}
-        time={time}
-        offset={offset}
-        setDate={(value) => {
-          setDate(value);
-          setTimestampEdited(true);
-          setOffset(undefined);
-        }}
-        setTime={(value) => {
-          setTime(value);
-          setTimestampEdited(true);
-          setOffset(undefined);
-        }}
-        setOffset={(value) => {
-          setTimestampEdited(true);
-          setOffset(value);
-        }}
-      />
-      <View style={choicesStyle}>
-        <PillChip label="Cancel" selected={false} onPress={onCancel} />
-        <PillChip
-          label={entry ? "Save changes" : `Save ${kind}`}
-          selected
-          onPress={save}
-        />
+        ) : null}
+
+        {/* Introduction: Also log a meal */}
+        {kind === "introduction" ? (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <PillChip
+              label={alsoMeal ? "✓ Also log a meal" : "+ Also log a meal"}
+              selected={alsoMeal}
+              onPress={() => setAlsoMeal(!alsoMeal)}
+            />
+          </View>
+        ) : null}
+
+        {/* Note */}
+        <View style={{ gap: 4 }}>
+          <FieldLabel label="Note" hint="optional" danger={isReaction} />
+          <TextInput
+            accessibilityLabel={`${kind} note`}
+            multiline
+            style={{
+              backgroundColor: theme.colors.paper,
+              borderColor: theme.colors.chipBorder,
+              borderWidth: 1,
+              borderRadius: 8,
+              color: theme.colors.ink,
+              fontFamily: nativeFonts.serif,
+              fontStyle: "italic",
+              fontSize: 12,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              minHeight: 40,
+            }}
+            placeholder="Note (optional)"
+            placeholderTextColor={theme.colors.meta}
+            value={note}
+            onChangeText={setNote}
+          />
+        </View>
+
+        {error ? <Body>{error}</Body> : null}
+
+        {/* Shared Timestamp Invariant directly preceding Save */}
+        <View
+          style={{
+            backgroundColor: theme.colors.paper,
+            borderColor: theme.colors.ruleThin,
+            borderWidth: 1,
+            borderRadius: 8,
+            padding: 10,
+            marginTop: 4,
+            gap: 8,
+          }}
+        >
+          <EntryTimestampFields
+            label={isReaction ? "Symptoms appeared" : "When"}
+            original={original}
+            date={date}
+            time={time}
+            offset={offset}
+            setDate={(value) => {
+              setDate(value);
+              setTimestampEdited(true);
+              setOffset(undefined);
+            }}
+            setTime={(value) => {
+              setTime(value);
+              setTimestampEdited(true);
+              setOffset(undefined);
+            }}
+            setOffset={(value) => {
+              setTimestampEdited(true);
+              setOffset(value);
+            }}
+          />
+        </View>
+
+        {/* Actions */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: theme.space.fieldGap,
+            paddingTop: 4,
+          }}
+        >
+          {entry && !hideDelete ? (
+            <PillChip
+              label="Delete entry"
+              selected={false}
+              onPress={() => setConfirmDelete(true)}
+            />
+          ) : null}
+          <PillChip label="Cancel" selected={false} onPress={onCancel} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={entry ? "Save changes" : `Save ${kind}`}
+            onPress={save}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              backgroundColor: isReaction
+                ? theme.colors.danger
+                : theme.colors.ruleStrong,
+              borderRadius: theme.radius.pill,
+              flex: 1,
+              paddingHorizontal: theme.space.buttonInset,
+              paddingVertical: 12,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text
+              style={{
+                color: theme.colors.paper,
+                fontFamily: nativeFonts.sans,
+                fontSize: 13.5,
+                fontWeight: "600",
+              }}
+            >
+              {entry ? "Save changes" : isReaction ? "Save reaction" : "Save introduction"}
+            </Text>
+          </Pressable>
+        </View>
+
+        {isReaction && selectedFoodObjects.length > 0 ? (
+          <Text
+            style={{
+              fontFamily: nativeFonts.sans,
+              fontSize: 11,
+              color: theme.colors.dangerInk,
+              textAlign: "center",
+            }}
+          >
+            Ends the Watch Period · {selectedFoodObjects.map((f) => f.name).join(", ")} moves to avoid
+          </Text>
+        ) : null}
       </View>
+
       <DeleteEntryConfirm
         visible={confirmDelete}
         onKeep={() => setConfirmDelete(false)}
@@ -378,5 +671,52 @@ export function FoodEntryForm({
         }}
       />
     </ScrollView>
+  );
+}
+
+function FieldLabel({
+  label,
+  hint,
+  danger,
+}: {
+  readonly label: string;
+  readonly hint?: string;
+  readonly danger?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingTop: 2,
+        paddingBottom: 2,
+      }}
+    >
+      <Text
+        style={{
+          color: danger ? theme.colors.danger : theme.colors.meta,
+          fontFamily: nativeFonts.sans,
+          fontSize: 11,
+          fontWeight: "700",
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Text>
+      {hint ? (
+        <Text
+          style={{
+            color: danger ? theme.colors.dangerInk : theme.colors.meta,
+            fontFamily: nativeFonts.sans,
+            fontSize: 10,
+          }}
+        >
+          {hint}
+        </Text>
+      ) : null}
+    </View>
   );
 }
