@@ -26,6 +26,8 @@ npm workspaces: `app/` is the Expo app (expo-router, Keepsake theme), and
   `packages` and `app/src`.
 - `npm start` — start the Expo dev server (iOS target; `npm run ios`,
   `npm run android`, `npm run web` inside `app/`).
+- In GitHub Codespaces, run `expo-web` to start the private browser preview on port
+  5000.
 
 ## Dependency health
 
