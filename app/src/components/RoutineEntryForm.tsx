@@ -14,6 +14,7 @@ import { KeepsakeIcon } from "./KeepsakeIcon";
 import { PillChip } from "./PillChip";
 import { nativeFonts } from "~/theme/tokens";
 import {
+  DualEntryTimestampFields,
   EntryTimestampFields,
   useEntryTimestamp,
 } from "./EntryTimestampFields";
@@ -36,7 +37,8 @@ const KIND_META: Record<
     icon: "feed",
     trackerKey: "feed",
     stepNote: "Breast or bottle nursing — side and duration in minutes.",
-    editNote: "✏️ Editing — the Entry keeps its identity. “When” is when feed started.",
+    editNote:
+      "✏️ Editing — the Entry keeps its identity. “When” is when feed started.",
   },
   diaper_change: {
     kicker: "Daily Routine",
@@ -44,7 +46,8 @@ const KIND_META: Record<
     icon: "diaper",
     trackerKey: "diaper",
     stepNote: "Observation and change — one tap saves wet, dirty, or both.",
-    editNote: "✏️ Editing — the Entry keeps its identity. “When” is when diaper was changed.",
+    editNote:
+      "✏️ Editing — the Entry keeps its identity. “When” is when diaper was changed.",
   },
   sleep_session: {
     kicker: "Sleep Tracker",
@@ -52,15 +55,18 @@ const KIND_META: Record<
     icon: "sleep",
     trackerKey: "sleep",
     stepNote: "Fell asleep to wake up — timer or retrospective logging.",
-    editNote: "✏️ Editing — the Entry keeps its identity. Quality and factors can be refined.",
+    editNote:
+      "✏️ Editing — the Entry keeps its identity. Quality and factors can be refined.",
   },
   medical: {
     kicker: "Health & Care",
     title: "medical",
     icon: "medical",
     trackerKey: "medical",
-    stepNote: "One of four categories — all carry optional notes and timestamps.",
-    editNote: "✏️ Editing — the Entry keeps its identity. “When” is when administered / observed.",
+    stepNote:
+      "One of four categories — all carry optional notes and timestamps.",
+    editNote:
+      "✏️ Editing — the Entry keeps its identity. “When” is when administered / observed.",
   },
   growth: {
     kicker: "Paediatric Milestones",
@@ -68,7 +74,8 @@ const KIND_META: Record<
     icon: "growth",
     trackerKey: "growth",
     stepNote: "Any of the three measurements — enter at least one to save.",
-    editNote: "✏️ Editing — the Entry keeps its identity. “When” is when measured.",
+    editNote:
+      "✏️ Editing — the Entry keeps its identity. “When” is when measured.",
   },
 };
 
@@ -315,9 +322,7 @@ export function RoutineEntryForm({
                       accessibilityRole="button"
                       accessibilityLabel={`Feed ${side} side`}
                       accessibilityState={{ selected: isSelected }}
-                      onPress={() =>
-                        change("side", isSelected ? "" : side)
-                      }
+                      onPress={() => change("side", isSelected ? "" : side)}
                       style={({ pressed }) => ({
                         flex: 1,
                         paddingVertical: 10,
@@ -582,12 +587,7 @@ export function RoutineEntryForm({
               <FieldLabel label="Category" hint="select one" />
               <View style={{ flexDirection: "row", gap: 6 }}>
                 {(
-                  [
-                    "medication",
-                    "vaccine",
-                    "symptom",
-                    "temperature",
-                  ] as const
+                  ["medication", "vaccine", "symptom", "temperature"] as const
                 ).map((cat) => {
                   const isSelected = draft.category === cat;
                   return (
@@ -683,10 +683,7 @@ export function RoutineEntryForm({
                   ) : null}
                 </View>
                 <View style={{ gap: 4 }}>
-                  <FieldLabel
-                    label="Dose"
-                    hint="optional, amount + unit"
-                  />
+                  <FieldLabel label="Dose" hint="optional, amount + unit" />
                   <TextInput
                     accessibilityLabel="Dose · amount and unit (optional)"
                     value={draft.dose}
@@ -764,10 +761,7 @@ export function RoutineEntryForm({
             {draft.category === "symptom" ? (
               <View style={{ gap: 8 }}>
                 <View style={{ gap: 4 }}>
-                  <FieldLabel
-                    label="Symptom"
-                    hint="required description"
-                  />
+                  <FieldLabel label="Symptom" hint="required description" />
                   <TextInput
                     accessibilityLabel="Symptom description · required"
                     value={draft.description}
@@ -885,25 +879,11 @@ export function RoutineEntryForm({
         {error ? <Body>{error}</Body> : null}
 
         {/* Shared Timestamp Invariant directly preceding Save */}
-        <View
-          style={{
-            backgroundColor: theme.colors.paper,
-            borderColor: theme.colors.ruleThin,
-            borderWidth: 1,
-            borderRadius: 8,
-            padding: 10,
-            marginTop: 4,
-            gap: 8,
-          }}
-        >
-          {kind === "sleep_session" ? (
-            <EntryTimestampFields label="Fell asleep" {...start} />
-          ) : null}
-          <EntryTimestampFields
-            label={kind === "sleep_session" ? "Woke up" : "Entry"}
-            {...timestamp}
-          />
-        </View>
+        {kind === "sleep_session" ? (
+          <DualEntryTimestampFields start={start} end={timestamp} />
+        ) : (
+          <EntryTimestampFields label="When" {...timestamp} />
+        )}
 
         {/* Actions: Cancel + Save */}
         <View

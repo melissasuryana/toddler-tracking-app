@@ -72,3 +72,86 @@ export function formatUtcOffset(offset: number) {
   const absolute = Math.abs(offset);
   return `UTC${offset < 0 ? "−" : "+"}${String(Math.floor(absolute / 60)).padStart(2, "0")}:${String(absolute % 60).padStart(2, "0")}`;
 }
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+export type KeepsakeTimestampStyle = "standard" | "sleep" | "reaction";
+
+export function formatKeepsakeTimestamp(
+  date: string,
+  time: string,
+  timezone: string,
+  style: KeepsakeTimestampStyle = "standard",
+  nowEpoch: number = Date.now()
+): string {
+  const [hStr = "0", mStr = "0"] = time.split(":");
+  const hour = parseInt(hStr, 10) || 0;
+  const minute = parseInt(mStr, 10) || 0;
+  const ampm = hour < 12 ? "AM" : "PM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  const minuteStr = String(minute).padStart(2, "0");
+  const formattedTime = `${hour12}:${minuteStr} ${ampm}`;
+
+  const nowLocal = localDateTime(nowEpoch, timezone);
+  const todayDate = nowLocal.date;
+
+  const [currYear, currMonth, currDay] = todayDate.split("-").map(Number);
+  const yesterdayUtc = new Date(Date.UTC(currYear, currMonth - 1, currDay - 1));
+  const yesterdayDate = yesterdayUtc.toISOString().slice(0, 10);
+
+  const [tYear, tMonth, tDay] = date.split("-").map(Number);
+  const monthName = MONTH_NAMES[(tMonth || 1) - 1] ?? "Jan";
+  const dayNum = tDay || 1;
+
+  if (style === "sleep") {
+    if (date === todayDate) {
+      return `${formattedTime} (today)`;
+    }
+    if (date === yesterdayDate) {
+      return `${formattedTime} (yesterday)`;
+    }
+    if (tYear === currYear) {
+      return `${formattedTime} (${monthName} ${dayNum})`;
+    }
+    return `${formattedTime} (${monthName} ${dayNum}, ${tYear})`;
+  }
+
+  if (style === "reaction") {
+    if (date === todayDate) {
+      return formattedTime;
+    }
+    if (date === yesterdayDate) {
+      return `Yesterday, ${formattedTime}`;
+    }
+    if (tYear === currYear) {
+      return `${monthName} ${dayNum}, ${formattedTime}`;
+    }
+    return `${monthName} ${dayNum}, ${tYear}, ${formattedTime}`;
+  }
+
+  // standard style
+  if (date === todayDate) {
+    const timeOfDay = hour < 12 ? "This morning" : "Today";
+    return `${timeOfDay}, ${formattedTime}`;
+  }
+  if (date === yesterdayDate) {
+    return `Yesterday, ${formattedTime}`;
+  }
+  if (tYear === currYear) {
+    return `${monthName} ${dayNum}, ${formattedTime}`;
+  }
+  return `${monthName} ${dayNum}, ${tYear}, ${formattedTime}`;
+}

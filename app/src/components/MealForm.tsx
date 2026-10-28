@@ -45,14 +45,22 @@ export type MealPrefill = Partial<MealSuggestionFields>;
 
 const CATEGORY_META: Record<
   FoodCategory,
-  { readonly label: string; readonly renderIcon: (color: string) => React.ReactNode }
+  {
+    readonly label: string;
+    readonly renderIcon: (color: string) => React.ReactNode;
+  }
 > = {
   fruit: {
     label: "Fruit",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
         <Circle cx={12} cy={14} r={7} stroke={color} strokeWidth={1.8} />
-        <Path d="M12 7V3M12 3c3 0 5 2 5 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        <Path
+          d="M12 7V3M12 3c3 0 5 2 5 4"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
       </Svg>
     ),
   },
@@ -60,8 +68,18 @@ const CATEGORY_META: Record<
     label: "Vegetables",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Path d="M7 21L17 11c2-2 1-6-2-6s-5 0-7 2L2 14c-1 3 2 6 5 7z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-        <Path d="M16 5l3-3M19 8l3-3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        <Path
+          d="M7 21L17 11c2-2 1-6-2-6s-5 0-7 2L2 14c-1 3 2 6 5 7z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M16 5l3-3M19 8l3-3"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
       </Svg>
     ),
   },
@@ -69,7 +87,13 @@ const CATEGORY_META: Record<
     label: "Grains",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Path d="M12 22V8M12 8c-3-2-3-5 0-6 3 1 3 4 0 6zM8 12c-2-2-2-4 0-5 2 1 2 3 0 5zM16 12c2-2 2-4 0-5-2 1-2 3 0 5z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M12 22V8M12 8c-3-2-3-5 0-6 3 1 3 4 0 6zM8 12c-2-2-2-4 0-5 2 1 2 3 0 5zM16 12c2-2 2-4 0-5-2 1-2 3 0 5z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </Svg>
     ),
   },
@@ -77,7 +101,13 @@ const CATEGORY_META: Record<
     label: "Dairy",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Path d="M8 3h8v3H8zM6 6h12v15H6zM10 11h4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M8 3h8v3H8zM6 6h12v15H6zM10 11h4"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </Svg>
     ),
   },
@@ -86,7 +116,12 @@ const CATEGORY_META: Record<
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
         <Circle cx={8} cy={16} r={3} stroke={color} strokeWidth={1.8} />
-        <Path d="M10.5 14.5L17 8c2.5-2.5 5 0 5 0s2.5 2.5 0 5L15.5 19.5" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+        <Path
+          d="M10.5 14.5L17 8c2.5-2.5 5 0 5 0s2.5 2.5 0 5L15.5 19.5"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+        />
       </Svg>
     ),
   },
@@ -94,8 +129,18 @@ const CATEGORY_META: Record<
     label: "Fish & seafood",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Path d="M3 12c5-7 15-4 18 0-3 4-13 7-18 0z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-        <Path d="M18 12l4-3v6l-4-3zM8 10v.01" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        <Path
+          d="M3 12c5-7 15-4 18 0-3 4-13 7-18 0z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M18 12l4-3v6l-4-3zM8 10v.01"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
       </Svg>
     ),
   },
@@ -103,8 +148,24 @@ const CATEGORY_META: Record<
     label: "Nuts & seeds",
     renderIcon: (color) => (
       <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-        <Ellipse cx={9} cy={14} rx={4} ry={6} stroke={color} strokeWidth={1.8} transform="rotate(-20 9 14)" />
-        <Ellipse cx={15} cy={10} rx={4} ry={6} stroke={color} strokeWidth={1.8} transform="rotate(-20 15 10)" />
+        <Ellipse
+          cx={9}
+          cy={14}
+          rx={4}
+          ry={6}
+          stroke={color}
+          strokeWidth={1.8}
+          transform="rotate(-20 9 14)"
+        />
+        <Ellipse
+          cx={15}
+          cy={10}
+          rx={4}
+          ry={6}
+          stroke={color}
+          strokeWidth={1.8}
+          transform="rotate(-20 15 10)"
+        />
       </Svg>
     ),
   },
@@ -404,10 +465,7 @@ export function MealForm({
 
         {/* Dish Name */}
         <View style={{ gap: 4 }}>
-          <FieldLabel
-            label="Dish name"
-            hint="optional description"
-          />
+          <FieldLabel label="Dish name" hint="optional description" />
           <TextInput
             accessibilityLabel="Meal name"
             maxLength={100}
@@ -525,10 +583,7 @@ export function MealForm({
 
         {/* Safety Shield Expandable Drawer for Allergens */}
         <View style={{ gap: 6 }}>
-          <FieldLabel
-            label="Allergy safety check"
-            hint="Big-9 flags"
-          />
+          <FieldLabel label="Allergy safety check" hint="Big-9 flags" />
           <View
             style={{
               borderRadius: 10,
@@ -635,7 +690,12 @@ export function MealForm({
                       accessibilityLabel={ALLERGEN_LABELS[tag]}
                       accessibilityState={{ selected: isFlagged }}
                       onPress={() =>
-                        toggle("allergenTags", tag, allergenTags, setAllergenTags)
+                        toggle(
+                          "allergenTags",
+                          tag,
+                          allergenTags,
+                          setAllergenTags
+                        )
                       }
                       style={({ pressed }) => ({
                         width: "31.5%",
@@ -678,10 +738,7 @@ export function MealForm({
 
         {/* Textures Segmented Control Rail */}
         <View style={{ gap: 6 }}>
-          <FieldLabel
-            label="Texture"
-            hint="segmented rail"
-          />
+          <FieldLabel label="Texture" hint="segmented rail" />
           <View
             style={{
               flexDirection: "row",
@@ -728,9 +785,7 @@ export function MealForm({
                       fontFamily: nativeFonts.sans,
                       fontSize: 10.5,
                       fontWeight: "600",
-                      color: isSelected
-                        ? theme.colors.ink
-                        : theme.colors.meta,
+                      color: isSelected ? theme.colors.ink : theme.colors.meta,
                     }}
                   >
                     {TEXTURE_LABELS[tex]}
@@ -743,10 +798,7 @@ export function MealForm({
 
         {/* Feeding Style Segmented Control Rail */}
         <View style={{ gap: 6 }}>
-          <FieldLabel
-            label="Feeding style"
-            hint="segmented rail"
-          />
+          <FieldLabel label="Feeding style" hint="segmented rail" />
           <View
             style={{
               flexDirection: "row",
@@ -798,9 +850,7 @@ export function MealForm({
                       fontFamily: nativeFonts.sans,
                       fontSize: 10.5,
                       fontWeight: "600",
-                      color: isSelected
-                        ? theme.colors.ink
-                        : theme.colors.meta,
+                      color: isSelected ? theme.colors.ink : theme.colors.meta,
                     }}
                   >
                     {FEEDING_STYLE_LABELS[style]}
@@ -828,38 +878,27 @@ export function MealForm({
         {error ? <Body>{error}</Body> : null}
 
         {/* Shared Timestamp Invariant directly preceding Save */}
-        <View
-          style={{
-            backgroundColor: theme.colors.paper,
-            borderColor: theme.colors.ruleThin,
-            borderWidth: 1,
-            borderRadius: 8,
-            padding: 10,
-            marginTop: 4,
+        <EntryTimestampFields
+          label="Meal"
+          original={originalTimestamp}
+          date={occurredOn}
+          time={occurredAt}
+          offset={utcOffsetMinutes}
+          setDate={(value) => {
+            setTimestampEdited(true);
+            setOccurredOn(value);
+            setUtcOffsetMinutes(undefined);
           }}
-        >
-          <EntryTimestampFields
-            label="Meal"
-            original={originalTimestamp}
-            date={occurredOn}
-            time={occurredAt}
-            offset={utcOffsetMinutes}
-            setDate={(value) => {
-              setTimestampEdited(true);
-              setOccurredOn(value);
-              setUtcOffsetMinutes(undefined);
-            }}
-            setTime={(value) => {
-              setTimestampEdited(true);
-              setOccurredAt(value);
-              setUtcOffsetMinutes(undefined);
-            }}
-            setOffset={(offset) => {
-              setTimestampEdited(true);
-              setUtcOffsetMinutes(offset);
-            }}
-          />
-        </View>
+          setTime={(value) => {
+            setTimestampEdited(true);
+            setOccurredAt(value);
+            setUtcOffsetMinutes(undefined);
+          }}
+          setOffset={(offset) => {
+            setTimestampEdited(true);
+            setUtcOffsetMinutes(offset);
+          }}
+        />
 
         {/* Action Buttons: Cancel + Save */}
         <View
@@ -982,4 +1021,3 @@ function noteInputStyle(theme: ReturnType<typeof useTheme>) {
 function currentTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
-
