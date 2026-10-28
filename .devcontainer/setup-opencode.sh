@@ -19,3 +19,10 @@ alias tmux-kill-all='tmux kill-server'
 # OpenCode devcontainer aliases
 EOF
 fi
+
+if ! grep -Fq "alias expo-web=" "$HOME/.bashrc"; then
+  cat >> "$HOME/.bashrc" <<'EOF'
+
+alias expo-web='npm run web --workspace app -- --port 5000 --host lan'
+EOF
+fi

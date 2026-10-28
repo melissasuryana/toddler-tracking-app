@@ -1,8 +1,12 @@
 {
   "postCreateCommand": "bash .devcontainer/setup-opencode.sh",
-  "forwardPorts": [4096],
+  "forwardPorts": [4096, 5000],
   "portsAttributes": {
     "4096": {
+      "onAutoForward": "notify",
+      "visibility": "private"
+    },
+    "5000": {
       "onAutoForward": "notify",
       "visibility": "private"
     }
