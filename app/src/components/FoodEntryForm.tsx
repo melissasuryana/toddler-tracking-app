@@ -101,7 +101,8 @@ export function FoodEntryForm({
       : [];
 
   const isReaction = kind === "reaction";
-  const trackerColor = theme.colors.tracker[isReaction ? "reaction" : "introduction"];
+  const trackerColor =
+    theme.colors.tracker[isReaction ? "reaction" : "introduction"];
 
   function save() {
     try {
@@ -163,8 +164,12 @@ export function FoodEntryForm({
     >
       <View
         style={{
-          backgroundColor: isReaction ? theme.colors.dangerWash : theme.colors.sheet,
-          borderColor: isReaction ? theme.colors.dangerSoft : theme.colors.ruleThin,
+          backgroundColor: isReaction
+            ? theme.colors.dangerWash
+            : theme.colors.sheet,
+          borderColor: isReaction
+            ? theme.colors.dangerSoft
+            : theme.colors.ruleThin,
           borderWidth: 1,
           borderRadius: 18,
           padding: 16,
@@ -244,8 +249,12 @@ export function FoodEntryForm({
         {entry ? (
           <View
             style={{
-              backgroundColor: isReaction ? theme.colors.dangerSoft : theme.colors.accentWash,
-              borderColor: isReaction ? theme.colors.danger : theme.colors.accentSoft,
+              backgroundColor: isReaction
+                ? theme.colors.dangerSoft
+                : theme.colors.accentWash,
+              borderColor: isReaction
+                ? theme.colors.danger
+                : theme.colors.accentSoft,
               borderWidth: 1,
               borderRadius: 8,
               paddingVertical: 7,
@@ -256,7 +265,9 @@ export function FoodEntryForm({
               style={{
                 fontFamily: nativeFonts.sans,
                 fontSize: 11.5,
-                color: isReaction ? theme.colors.dangerInk : theme.colors.accentInk,
+                color: isReaction
+                  ? theme.colors.dangerInk
+                  : theme.colors.accentInk,
               }}
             >
               ✏️ Editing — the Entry keeps its identity.
@@ -453,7 +464,8 @@ export function FoodEntryForm({
               color: theme.colors.meta,
             }}
           >
-            Showing up to 20 matches. Search to find another Food; every status is available.
+            Showing up to 20 matches. Search to find another Food; every status
+            is available.
           </Text>
         </View>
 
@@ -556,39 +568,27 @@ export function FoodEntryForm({
         {error ? <Body>{error}</Body> : null}
 
         {/* Shared Timestamp Invariant directly preceding Save */}
-        <View
-          style={{
-            backgroundColor: theme.colors.paper,
-            borderColor: theme.colors.ruleThin,
-            borderWidth: 1,
-            borderRadius: 8,
-            padding: 10,
-            marginTop: 4,
-            gap: 8,
+        <EntryTimestampFields
+          label={isReaction ? "Symptoms appeared" : "When"}
+          original={original}
+          date={date}
+          time={time}
+          offset={offset}
+          setDate={(value) => {
+            setDate(value);
+            setTimestampEdited(true);
+            setOffset(undefined);
           }}
-        >
-          <EntryTimestampFields
-            label={isReaction ? "Symptoms appeared" : "When"}
-            original={original}
-            date={date}
-            time={time}
-            offset={offset}
-            setDate={(value) => {
-              setDate(value);
-              setTimestampEdited(true);
-              setOffset(undefined);
-            }}
-            setTime={(value) => {
-              setTime(value);
-              setTimestampEdited(true);
-              setOffset(undefined);
-            }}
-            setOffset={(value) => {
-              setTimestampEdited(true);
-              setOffset(value);
-            }}
-          />
-        </View>
+          setTime={(value) => {
+            setTime(value);
+            setTimestampEdited(true);
+            setOffset(undefined);
+          }}
+          setOffset={(value) => {
+            setTimestampEdited(true);
+            setOffset(value);
+          }}
+        />
 
         {/* Actions */}
         <View
@@ -632,7 +632,11 @@ export function FoodEntryForm({
                 fontWeight: "600",
               }}
             >
-              {entry ? "Save changes" : isReaction ? "Save reaction" : "Save introduction"}
+              {entry
+                ? "Save changes"
+                : isReaction
+                  ? "Save reaction"
+                  : "Save introduction"}
             </Text>
           </Pressable>
         </View>
@@ -646,7 +650,8 @@ export function FoodEntryForm({
               textAlign: "center",
             }}
           >
-            Ends the Watch Period · {selectedFoodObjects.map((f) => f.name).join(", ")} moves to avoid
+            Ends the Watch Period ·{" "}
+            {selectedFoodObjects.map((f) => f.name).join(", ")} moves to avoid
           </Text>
         ) : null}
       </View>
