@@ -10,6 +10,7 @@ import type {
   ChildInput,
   LocalDatabase,
   TemperatureUnit,
+  ThemePreference,
 } from "@keepsake/local-data";
 import {
   MealEntries,
@@ -34,6 +35,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [db] = useState<LocalDatabase>(() => openAppDatabase());
   const [child, setChild] = useState<Child | null>(() => db.children.first());
   const [unitVersion, setUnitVersion] = useState(0);
+  const [themeVersion, setThemeVersion] = useState(0);
+  const [demoVersion, setDemoVersion] = useState(0);
   const [sleepTimerVersion, setSleepTimerVersion] = useState(0);
   const [routineEntries] = useState(() => new RoutineEntries(db));
   const [mealEntries] = useState(() => new MealEntries(db));
@@ -143,6 +146,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         db.preferences.set("temperatureUnit", unit);
         setUnitVersion((version) => version + 1);
       },
+      themePreference: () => {
+        void themeVersion;
+        return db.preferences.get("themePreference");
+      },
+      setThemePreference: (preference: ThemePreference) => {
+        db.preferences.set("themePreference", preference);
+        setThemeVersion((version) => version + 1);
+      },
+      demoDataLoaded: () => {
+        void demoVersion;
+        return db.preferences.get("demoDataLoaded") ?? false;
+      },
+      setDemoDataLoaded: (loaded: boolean) => {
+        db.preferences.set("demoDataLoaded", loaded);
+        setDemoVersion((version) => version + 1);
+      },
       runningSleepTimer: () => {
         void sleepTimerVersion;
         return child ? routineEntries.getSleepTimer(child.id) : null;
@@ -231,6 +250,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       routineEntries,
       sleepTimerVersion,
       unitVersion,
+      themeVersion,
+      demoVersion,
     ]
   );
 

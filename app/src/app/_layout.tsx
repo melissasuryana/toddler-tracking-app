@@ -1,6 +1,6 @@
 /**
  * Root layout: opens the local database, installs the Keepsake theme
- * (day/night follows the system appearance live), and gates the whole app on
+ * (day/night follows the saved preference or system appearance), and gates the whole app on
  * a Child existing — before that, onboarding is the only reachable UI
  * (issue #43; no logging surface mounts until the gate opens).
  */
@@ -35,11 +35,11 @@ function Gate() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <SessionProvider>
+      <SessionProvider>
+        <ThemeProvider>
           <Gate />
-        </SessionProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </SessionProvider>
     </SafeAreaProvider>
   );
 }

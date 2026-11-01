@@ -674,13 +674,13 @@ export default function HomeScreen() {
               onSave={(input) => {
                 if (input.kind !== "sleep_session")
                   throw new Error("Choose a Sleep Session.");
-                const saved = data.stopSleepTimer(input.quality, {
+                data.stopSleepTimer(input.quality, {
                   startAt: input.startAt,
                   endedAt: input.occurredAt,
                   factors: input.factors,
                 });
                 setWakeVisible(false);
-                setSelectedId(saved.id);
+                setSelectedId(null);
                 setMessage("Sleep Session saved.");
               }}
             />
@@ -691,9 +691,9 @@ export default function HomeScreen() {
               kind={routineKind}
               onCancel={() => setRoutineKind(null)}
               onSave={(input) => {
-                const saved = data.createRoutineEntry(input);
+                data.createRoutineEntry(input);
                 setRoutineKind(null);
-                setSelectedId(saved.id);
+                setSelectedId(null);
                 setMessage("Entry saved.");
               }}
             />

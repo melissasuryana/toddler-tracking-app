@@ -36,3 +36,12 @@ test("parsePreference reads the temperature-unit key", () => {
   assert.equal(parsePreference("temperatureUnit", null), null);
   assert.equal(parsePreference("temperatureUnit", "nonsense"), null);
 });
+
+test("parsePreference reads theme and demo-data settings", () => {
+  assert.equal(parsePreference("themePreference", "system"), "system");
+  assert.equal(parsePreference("themePreference", "dark"), "dark");
+  assert.equal(parsePreference("themePreference", "nonsense"), null);
+  assert.equal(parsePreference("demoDataLoaded", "true"), true);
+  assert.equal(parsePreference("demoDataLoaded", "false"), false);
+  assert.equal(parsePreference("demoDataLoaded", "yes"), null);
+});

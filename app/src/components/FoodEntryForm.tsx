@@ -71,6 +71,7 @@ export function FoodEntryForm({
     entry?.kind === "reaction" ? (entry.content.symptoms ?? []) : []
   );
   const [query, setQuery] = useState("");
+  const [foodInputFocused, setFoodInputFocused] = useState(false);
   const [alsoMeal, setAlsoMeal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -153,6 +154,13 @@ export function FoodEntryForm({
   const selectedFoodObjects = foodIds.map(
     (id) => foods.find((f) => f.id === id) ?? { id, name: id }
   );
+  const matchingFoods = foods
+    .filter((food) =>
+      food.name
+        .toLocaleLowerCase()
+        .includes(query.trim().toLocaleLowerCase())
+    )
+    .slice(0, 10);
 
   return (
     <ScrollView
@@ -387,27 +395,16 @@ export function FoodEntryForm({
             hint={isReaction ? "trying first" : "required"}
             danger={isReaction}
           />
-          {selectedFoodObjects.length > 0 ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {selectedFoodObjects.map((f) => (
-                <PillChip
-                  key={f.id}
-                  label={`${f.name} · ✕`}
-                  selected
-                  onPress={() =>
-                    setFoodIds(foodIds.filter((value) => value !== f.id))
-                  }
-                />
-              ))}
-            </View>
-          ) : null}
-
           <TextInput
             accessibilityLabel="Search Foods"
-            placeholder="Search Foods"
+            placeholder="Start typing a Food name"
             placeholderTextColor={theme.colors.meta}
             value={query}
-            onChangeText={setQuery}
+            onFocus={() => setFoodInputFocused(true)}
+            onChangeText={(value) => {
+              setQuery(value);
+              setFoodInputFocused(true);
+            }}
             style={{
               backgroundColor: theme.colors.paper,
               borderColor: theme.colors.chipBorder,
@@ -421,42 +418,126 @@ export function FoodEntryForm({
             }}
           />
 
-          <ScrollView
-            nestedScrollEnabled
-            style={{ maxHeight: 160 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {foods
-                .filter((food) =>
-                  food.name
-                    .toLocaleLowerCase()
-                    .includes(query.trim().toLocaleLowerCase())
-                )
-                .slice(0, 20)
-                .map((food) => {
-                  const status = data.foodStatus(childId, food.id).status;
-                  const isSelected = foodIds.includes(food.id);
-                  return (
-                    <PillChip
-                      key={food.id}
-                      label={`${food.name} · ${status}`}
-                      selected={isSelected}
-                      tint={theme.statusPillTint(status)}
-                      onPress={() => {
-                        setFoodIds(
-                          kind === "introduction"
-                            ? [food.id]
-                            : foodIds.includes(food.id)
-                              ? foodIds.filter((id) => id !== food.id)
-                              : [...foodIds, food.id]
-                        );
+          {foodInputFocused ? (
+            <ScrollView
+              nestedScrollEnabled
+              style={{
+                maxHeight: 200,
+                borderWidth: 1,
+                borderColor: theme.colors.ruleThin,
+                borderRadius: 8,
+                backgroundColor: theme.colors.paper,
+              }}
+              keyboardShouldPersistTaps="always"
+            >
+              {matchingFoods.map((food) => {
+                const status = data.foodStatus(childId, food.id).status;
+                const isSelected = foodIds.includes(food.id);
+                return (
+                  <Pressable
+                    key={food.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => {
+                      setFoodIds(
+                        kind === "introduction"
+                          ? [food.id]
+                          : isSelected
+                            ? foodIds.filter((id) => id !== food.id)
+                            : [...foodIds, food.id]
+                      );
+                      setQuery(kind === "introduction" ? food.name : "");
+                      setFoodInputFocused(kind === "reaction");
+                    }}
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      paddingHorizontal: 10,
+                      paddingVertical: 9,
+                      borderBottomWidth: theme.rule.hairline,
+                      borderBottomColor: theme.colors.ruleThin,
+                      backgroundColor: pressed
+                        ? theme.colors.accentWash
+                        : theme.colors.paper,
+                    })}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 13,
+                        color: theme.colors.ink,
                       }}
-                    />
-                  );
-                })}
+                    >
+                      {food.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 11,
+                        color: theme.statusPillTint(status).foreground,
+                      }}
+                    >
+                      {isSelected ? "Selected" : status}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              {matchingFoods.length === 0 ? (
+                <Text
+                  style={{
+                    padding: 10,
+                    fontFamily: nativeFonts.sans,
+                    fontSize: 12,
+                    color: theme.colors.meta,
+                  }}
+                >
+                  No matching Foods
+                </Text>
+              ) : null}
+            </ScrollView>
+          ) : null}
+          {selectedFoodObjects.length > 0 ? (
+            <View style={{ gap: 4 }}>
+              {selectedFoodObjects.map((food) => (
+                <View
+                  key={food.id}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 12,
+                      color: theme.colors.ink,
+                    }}
+                  >
+                    Selected: {food.name}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${food.name}`}
+                    onPress={() =>
+                      setFoodIds(foodIds.filter((value) => value !== food.id))
+                    }
+                  >
+                    <Text
+                      style={{
+                        fontFamily: nativeFonts.sans,
+                        fontSize: 11,
+                        color: theme.colors.accent,
+                      }}
+                    >
+                      Remove
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
-          </ScrollView>
+          ) : null}
           <Text
             style={{
               fontFamily: nativeFonts.sans,
@@ -464,8 +545,9 @@ export function FoodEntryForm({
               color: theme.colors.meta,
             }}
           >
-            Showing up to 20 matches. Search to find another Food; every status
-            is available.
+            {kind === "reaction"
+              ? "Search and select one or more Foods."
+              : "Search and select one Food."}
           </Text>
         </View>
 

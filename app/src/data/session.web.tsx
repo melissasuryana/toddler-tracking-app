@@ -36,6 +36,7 @@ import type {
   ChildInput,
   RunningSleepTimer,
   TemperatureUnit,
+  ThemePreference,
   ManualSafeMarker,
 } from "@keepsake/local-data";
 import {
@@ -59,6 +60,8 @@ const DataContext = createContext<DataSession | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [child, setChild] = useState<Child | null>(null);
   const [unit, setUnit] = useState<TemperatureUnit | null>(null);
+  const [theme, setTheme] = useState<ThemePreference | null>(null);
+  const [demoLoaded, setDemoLoaded] = useState(false);
   const [sleepTimer, setSleepTimer] = useState<RunningSleepTimer | null>(null);
   const [sleepSessions, setSleepSessions] = useState<
     Extract<RoutineEntry, { kind: "sleep_session" }>[]
@@ -519,6 +522,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       temperatureUnit: () => unit,
       setTemperatureUnit: (next: TemperatureUnit) => setUnit(next),
+      themePreference: () => theme,
+      setThemePreference: (next: ThemePreference) => setTheme(next),
+      demoDataLoaded: () => demoLoaded,
+      setDemoDataLoaded: setDemoLoaded,
       runningSleepTimer: () => sleepTimer,
       startSleepTimer: () => {
         if (!child) throw new Error("A Child is required to start Sleep.");
@@ -638,6 +645,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     sleepSessions,
     sleepTimer,
     unit,
+    theme,
+    demoLoaded,
     routineEntries,
     safeMarkers,
   ]);

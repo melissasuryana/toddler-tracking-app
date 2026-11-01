@@ -5,6 +5,7 @@ import {
   useReducer,
   useState,
 } from "react";
+import { useRouter } from "expo-router";
 import { BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { FoodEntry, MealEntry } from "@keepsake/food-tracking";
@@ -29,6 +30,7 @@ export const FoodLogging = forwardRef<
   }
 >(function FoodLogging({ childId, hideDefaultContent = false }, ref) {
   const data = useData();
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
@@ -89,16 +91,19 @@ export const FoodLogging = forwardRef<
     setVisible(true);
   }
 
-  function selectTab(kind: typeof tab) {
-    setTab(kind);
-    dispatchDraft({ type: "open", kind });
-  }
-
   function saved(kind: typeof tab) {
     setVisible(false);
     setEditing(null);
     dispatchDraft({ type: "saved", kind });
     setMessage("Entry saved.");
+    router.navigate("/");
+  }
+
+  function updated(message: string) {
+    setEditing(null);
+    setVisible(false);
+    setMessage(message);
+    router.navigate("/");
   }
 
   function alsoMeal(
@@ -241,23 +246,6 @@ export const FoodLogging = forwardRef<
             backgroundColor: theme.colors.paper,
           }}
         >
-          {!editing ? (
-            <View style={[rowStyle, { paddingHorizontal: theme.space.page }]}>
-              <PillChip
-                label="Meal"
-                selected={tab === "meal"}
-                onPress={() => selectTab("meal")}
-              />
-              <PillChip
-                label="Introduction"
-                selected={tab === "introduction"}
-                onPress={() => selectTab("introduction")}
-              />
-              {tab === "reaction" ? (
-                <PillChip label="Reaction" selected />
-              ) : null}
-            </View>
-          ) : null}
           {visible && message?.startsWith("Introduction saved") ? (
             <Body>{message}</Body>
           ) : null}
@@ -334,8 +322,7 @@ export const FoodLogging = forwardRef<
               onSave={(input) => {
                 if (!data.updateMeal(editing.id, input))
                   throw new Error("This Meal is no longer available.");
-                setEditing(null);
-                setVisible(false);
+                updated("Entry updated.");
               }}
             />
           ) : editing ? (
@@ -345,9 +332,7 @@ export const FoodLogging = forwardRef<
               entry={editing}
               kind={editing.kind}
               onSaved={() => {
-                setEditing(null);
-                setVisible(false);
-                setMessage("Entry updated.");
+                updated("Entry updated.");
               }}
               onAlsoMeal={alsoMeal}
               onCancel={() => setVisible(false)}

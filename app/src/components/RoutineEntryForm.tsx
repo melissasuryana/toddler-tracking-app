@@ -360,32 +360,35 @@ export function RoutineEntryForm({
 
             <View style={{ gap: 6 }}>
               <FieldLabel
-                label="Duration (seconds)"
+                label="Duration (minutes)"
                 hint="optional · quick chips available"
               />
               <TextInput
-                accessibilityLabel="Duration · seconds (optional)"
+                accessibilityLabel="Duration · minutes (optional)"
                 keyboardType="decimal-pad"
-                value={String(draft.durationSeconds)}
-                onChangeText={(value) => change("durationSeconds", value)}
-                placeholder="e.g. 600 (10 min) or 900 (15 min)"
+                value={String(draft.durationMinutes)}
+                onChangeText={(value) => change("durationMinutes", value)}
+                placeholder="e.g. 10 or 15"
                 placeholderTextColor={theme.colors.meta}
                 style={inputStyle(theme)}
               />
               <View style={{ flexDirection: "row", gap: 6 }}>
                 {[
-                  { label: "10m", sec: "600" },
-                  { label: "15m", sec: "900" },
-                  { label: "20m", sec: "1200" },
+                  { label: "10m", minutes: "10" },
+                  { label: "15m", minutes: "15" },
+                  { label: "20m", minutes: "20" },
                 ].map((chip) => {
-                  const isSel = draft.durationSeconds === chip.sec;
+                  const isSel = draft.durationMinutes === chip.minutes;
                   return (
                     <PillChip
                       key={chip.label}
                       label={`+${chip.label}`}
                       selected={isSel}
                       onPress={() =>
-                        change("durationSeconds", isSel ? "" : chip.sec)
+                        change(
+                          "durationMinutes",
+                          isSel ? "" : chip.minutes
+                        )
                       }
                     />
                   );

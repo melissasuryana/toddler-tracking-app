@@ -151,7 +151,7 @@ export function entrySummary(
         entry.content.side,
         entry.content.durationSeconds === undefined
           ? ""
-          : `${entry.content.durationSeconds}s`,
+          : `${entry.content.durationSeconds / 60}m`,
       ]
         .filter(Boolean)
         .join(" · ");

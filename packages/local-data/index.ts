@@ -83,6 +83,7 @@ export {
   parseTemperatureUnit,
   type PreferenceKey,
   type PreferenceTypes,
+  type ThemePreference,
   type TemperatureUnit,
 } from "./lib/preferences.ts";
 export {
