@@ -14,7 +14,10 @@ import {
   space,
   typography,
 } from "@keepsake/design-system";
-import { resolveTheme } from "../app/src/theme/tokens.ts";
+import {
+  resolveTheme,
+  resolveThemePreference,
+} from "../app/src/theme/tokens.ts";
 
 test("light or unknown system appearance resolves to day", () => {
   assert.equal(resolveTheme("light").name, "day");
@@ -24,6 +27,13 @@ test("light or unknown system appearance resolves to day", () => {
 
 test("dark system appearance resolves to night", () => {
   assert.equal(resolveTheme("dark").name, "night");
+});
+
+test("theme preferences override or follow the system appearance", () => {
+  assert.equal(resolveThemePreference("system", "dark").name, "night");
+  assert.equal(resolveThemePreference("light", "dark").name, "day");
+  assert.equal(resolveThemePreference("dark", "light").name, "night");
+  assert.equal(resolveThemePreference(null, "light").name, "day");
 });
 
 test("the adapter exposes the design-system token objects unchanged", () => {

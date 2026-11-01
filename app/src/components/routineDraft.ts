@@ -8,7 +8,7 @@ import type { EntryTimestamp } from "./entryTimestamp.ts";
 
 export interface RoutineDraft {
   side: "" | "left" | "right";
-  durationSeconds: string;
+  durationMinutes: string;
   change: "wet" | "dirty" | "both";
   note: string;
   category: "medication" | "vaccine" | "symptom" | "temperature";
@@ -30,7 +30,7 @@ export function routineDraft(
 ): RoutineDraft {
   const draft: RoutineDraft = {
     side: "",
-    durationSeconds: "",
+    durationMinutes: "",
     change: "wet",
     note: "",
     category: "medication",
@@ -48,7 +48,6 @@ export function routineDraft(
   if (!entry) return draft;
   const content = entry.content;
   for (const key of [
-    "durationSeconds",
     "value",
     "weightKg",
     "heightCm",
@@ -61,6 +60,10 @@ export function routineDraft(
   switch (entry.kind) {
     case "feed":
       draft.side = entry.content.side ?? "";
+      draft.durationMinutes =
+        entry.content.durationSeconds === undefined
+          ? ""
+          : String(entry.content.durationSeconds / 60);
       break;
     case "diaper_change":
       draft.change = entry.content.change;
@@ -102,13 +105,16 @@ export function routineInput(
     occurredTz: timestamp.occurredTz,
   };
   switch (kind) {
-    case "feed":
+    case "feed": {
+      const durationMinutes = numeric(draft.durationMinutes);
       return {
         ...common,
         kind,
         side: draft.side || undefined,
-        durationSeconds: numeric(draft.durationSeconds),
+        durationSeconds:
+          durationMinutes === undefined ? undefined : durationMinutes * 60,
       };
+    }
     case "diaper_change":
       return { ...common, kind, change: draft.change, note: draft.note };
     case "growth":

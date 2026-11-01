@@ -8,6 +8,7 @@ import type {
   ChildInput,
   RunningSleepTimer,
   TemperatureUnit,
+  ThemePreference,
 } from "@keepsake/local-data";
 import type {
   MealDefaults,
@@ -97,6 +98,10 @@ export interface DataSession {
   readonly createChild: (input: ChildInput) => void;
   readonly temperatureUnit: () => TemperatureUnit | null;
   readonly setTemperatureUnit: (unit: TemperatureUnit) => void;
+  readonly themePreference: () => ThemePreference | null;
+  readonly setThemePreference: (preference: ThemePreference) => void;
+  readonly demoDataLoaded: () => boolean;
+  readonly setDemoDataLoaded: (loaded: boolean) => void;
   readonly runningSleepTimer: () => RunningSleepTimer | null;
   readonly startSleepTimer: () => void;
   readonly cancelWake: () => void;

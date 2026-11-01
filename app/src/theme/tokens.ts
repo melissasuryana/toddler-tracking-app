@@ -19,6 +19,7 @@ import {
   type TrackerKey,
   type TypographyTokens,
 } from "@keepsake/design-system";
+import type { ThemePreference } from "@keepsake/local-data";
 
 export type { ThemeName } from "@keepsake/design-system";
 
@@ -69,4 +70,13 @@ export function resolveTheme(
     discTint: (tracker) => colors.tracker[tracker],
     statusPillTint: (status) => colors.status[status],
   };
+}
+
+export function resolveThemePreference(
+  preference: ThemePreference | null | undefined,
+  systemScheme: "light" | "dark" | null | undefined
+): Theme {
+  return resolveTheme(
+    preference === "system" || preference == null ? systemScheme : preference
+  );
 }

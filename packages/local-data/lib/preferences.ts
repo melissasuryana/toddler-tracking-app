@@ -5,6 +5,7 @@
 
 /** Temperature units a Medical Entry can be recorded in. */
 export type TemperatureUnit = "C" | "F";
+export type ThemePreference = "system" | "light" | "dark";
 
 export const TEMPERATURE_UNITS: readonly TemperatureUnit[] = ["C", "F"];
 
@@ -21,6 +22,8 @@ export function parseTemperatureUnit(value: string): TemperatureUnit | null {
 export interface PreferenceTypes {
   /** Temperature-unit default for new Entries (CONTEXT.md temperature rule). */
   temperatureUnit: TemperatureUnit;
+  themePreference: ThemePreference;
+  demoDataLoaded: boolean;
 }
 
 export type PreferenceKey = keyof PreferenceTypes;
@@ -37,6 +40,16 @@ export function parsePreference<K extends PreferenceKey>(
   switch (key) {
     case "temperatureUnit":
       return parseTemperatureUnit(raw) as PreferenceTypes[K] | null;
+    case "themePreference":
+      return raw === "system" || raw === "light" || raw === "dark"
+        ? (raw as PreferenceTypes[K])
+        : null;
+    case "demoDataLoaded":
+      return raw === "true"
+        ? (true as PreferenceTypes[K])
+        : raw === "false"
+          ? (false as PreferenceTypes[K])
+          : null;
     default:
       return null;
   }

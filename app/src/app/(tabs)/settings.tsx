@@ -19,6 +19,76 @@ export default function SettingsScreen() {
   const unit = data.temperatureUnit() ?? DEFAULT_TEMPERATURE_UNIT;
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportReport | null>(null);
+  const [demoMessage, setDemoMessage] = useState<string | null>(null);
+  const themePreference = data.themePreference() ?? "system";
+  const demoDataLoaded = data.demoDataLoaded();
+
+  function loadDemoData() {
+    try {
+      if (!child) throw new Error("Create a Child profile first.");
+      const foods = data.foods();
+      const firstFood =
+        foods.find((food) => food.name.toLowerCase() === "banana") ?? foods[0];
+      const secondFood = foods.find((food) => food.id !== firstFood?.id);
+      if (!firstFood || !secondFood)
+        throw new Error("Demo Foods are unavailable.");
+
+      const now = Date.now();
+      const occurredTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const at = (daysAgo: number) => now - daysAgo * 86_400_000;
+      data.createIntroduction({
+        childId: child.id,
+        occurredAt: at(5),
+        occurredTz,
+        foodId: firstFood.id,
+        note: "Demo entry",
+      });
+      data.createReaction({
+        childId: child.id,
+        occurredAt: at(4),
+        occurredTz,
+        foodIds: [firstFood.id],
+        severity: "mild",
+        symptoms: ["rash/hives"],
+        note: "Demo entry",
+      });
+      data.createIntroduction({
+        childId: child.id,
+        occurredAt: at(1),
+        occurredTz,
+        foodId: secondFood.id,
+        note: "Demo entry",
+      });
+      data.createMeal({
+        childId: child.id,
+        occurredAt: now - 90 * 60_000,
+        occurredTz,
+        amount: 4,
+        name: "Demo breakfast",
+        note: "Demo entry",
+        categories: firstFood.category ? [firstFood.category] : [],
+        allergenTags: firstFood.allergenTags,
+        textures: ["mashed"],
+        feedingStyles: ["spoon-fed"],
+      });
+      data.createRoutineEntry({
+        childId: child.id,
+        occurredAt: now - 30 * 60_000,
+        occurredTz,
+        kind: "feed",
+        side: "left",
+        durationSeconds: 900,
+      });
+      data.setDemoDataLoaded(true);
+      setDemoMessage("Demo entries added to the timeline.");
+    } catch (error) {
+      setDemoMessage(
+        error instanceof Error
+          ? error.message
+          : "Demo data could not be loaded."
+      );
+    }
+  }
 
   return (
     <Screen>
@@ -110,9 +180,140 @@ export default function SettingsScreen() {
             })}
           </View>
         </View>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: theme.space.page,
+            paddingVertical: 13,
+            borderTopWidth: theme.rule.hairline,
+            borderTopColor: theme.colors.ruleThin,
+            backgroundColor: theme.colors.paper,
+          }}
+        >
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 13,
+                fontWeight: "600",
+                color: theme.colors.ink,
+              }}
+            >
+              Appearance
+            </Text>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 10.5,
+                color: theme.colors.meta,
+                marginTop: 2,
+              }}
+            >
+              choose how Keepsake looks
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              borderWidth: 1,
+              borderColor: theme.colors.chipBorder,
+              borderRadius: theme.radius.pill,
+              overflow: "hidden",
+            }}
+          >
+            {(["system", "light", "dark"] as const).map((option) => {
+              const selected = themePreference === option;
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set appearance to ${option}`}
+                  accessibilityState={{ selected }}
+                  onPress={() => data.setThemePreference(option)}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 7,
+                    backgroundColor: selected
+                      ? theme.colors.ruleStrong
+                      : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: nativeFonts.sans,
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: selected ? theme.colors.paper : theme.colors.meta,
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {option}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Data Section */}
         <SectionHeader title="Data" />
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: theme.space.page,
+            paddingVertical: 13,
+            borderTopWidth: theme.rule.hairline,
+            borderTopColor: theme.colors.ruleThin,
+            backgroundColor: theme.colors.paper,
+          }}
+        >
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 13,
+                fontWeight: "600",
+                color: theme.colors.ink,
+              }}
+            >
+              Load demo data
+            </Text>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 10.5,
+                color: theme.colors.meta,
+                marginTop: 2,
+              }}
+            >
+              sample entries for this Child
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              demoDataLoaded ? "Demo data already loaded" : "Load demo data"
+            }
+            disabled={demoDataLoaded}
+            onPress={loadDemoData}
+          >
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 12,
+                fontWeight: "600",
+                color: demoDataLoaded ? theme.colors.meta : theme.colors.accent,
+              }}
+            >
+              {demoDataLoaded ? "Loaded" : "Load"}
+            </Text>
+          </Pressable>
+        </View>
+        {demoMessage ? <Body dim={!demoDataLoaded}>{demoMessage}</Body> : null}
         <View
           style={{
             flexDirection: "row",
