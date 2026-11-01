@@ -4,16 +4,16 @@ import {
   auditArgs,
   auditDependencies,
   evaluateAudit,
-  exception,
+  exceptions,
 } from "../scripts/audit-dependencies.mjs";
 
-const now = new Date("2026-10-24T00:00:00Z");
-const forgePath = "node_modules/node-forge";
+const exception = exceptions.find((item) => item.package === "deepmerge");
+const now = new Date("2026-11-01T00:00:00Z");
+const forgePath = "node_modules/deepmerge";
 const lockfile = {
   packages: {
     [forgePath]: {
-      version: exception.version,
-      integrity: exception.integrity,
+      version: exception.versions[0],
     },
     "node_modules/expo": { version: "54.0.16" },
     "node_modules/@expo/cli": { version: "54.0.13" },
@@ -22,8 +22,8 @@ const lockfile = {
 };
 const advisory = {
   source: 1240912,
-  name: "node-forge",
-  dependency: "node-forge",
+  name: "deepmerge",
+  dependency: "deepmerge",
   title: "RSA signature verification",
   url: exception.url,
   range: exception.range,
@@ -64,9 +64,9 @@ function report(vulnerabilities = {}) {
 }
 function forgeReport() {
   return report({
-    "node-forge": vulnerability("node-forge", [{ ...advisory }]),
-    "@expo/cli": vulnerability("@expo/cli", ["node-forge"]),
-    expo: vulnerability("expo", ["@expo/cli", "node-forge"]),
+    deepmerge: vulnerability("deepmerge", [{ ...advisory }]),
+    "@expo/cli": vulnerability("@expo/cli", ["deepmerge"]),
+    expo: vulnerability("expo", ["@expo/cli", "deepmerge"]),
   });
 }
 function evaluate(value = forgeReport(), options = {}) {
@@ -81,20 +81,19 @@ function evaluate(value = forgeReport(), options = {}) {
 test("only the exact advisory and its exempt-only ancestors pass", () => {
   const result = evaluate();
   assert.deepEqual(result.blocked, []);
-  assert.match(result.warning, /WARNING.*GHSA-86w9-cpqp-85rv.*2026-11-23/);
+  assert.match(
+    result.warnings.join("\n"),
+    /WARNING.*GHSA-gcqx-w48m-w2h4.*2026-12-01/
+  );
 });
 
 test("mixed advisories block both the leaf and every ancestor", () => {
   const value = forgeReport();
-  value.vulnerabilities["node-forge"].via.push({
+  value.vulnerabilities["deepmerge"].via.push({
     ...advisory,
     url: "https://github.com/advisories/GHSA-new1-new2-new3",
   });
-  assert.deepEqual(evaluate(value).blocked, [
-    "@expo/cli",
-    "expo",
-    "node-forge",
-  ]);
+  assert.deepEqual(evaluate(value).blocked, ["@expo/cli", "deepmerge", "expo"]);
 });
 
 test("an unrelated branch blocks its ancestors without blocking exempt-only ancestors", () => {
@@ -121,38 +120,35 @@ test("matching advisory URL attached to a different package never passes", () =>
   );
 });
 
-test("package identity, exact affected range, version, and artifact digest are pinned", () => {
+test("package identity, exact affected range, and locked version are pinned", () => {
   for (const edit of [
     (value, lock) => {
-      lock.packages[forgePath].version = "1.4.1";
+      lock.packages[forgePath].version = "4.3.0";
     },
     (value, lock) => {
-      lock.packages[forgePath].version = "1.3.0";
+      lock.packages[forgePath].version = "4.2.0";
     },
     (value, lock) => {
       lock.packages[forgePath].name = "fake-forge";
     },
     (value, lock) => {
-      lock.packages[forgePath].integrity = "sha512-wrong";
-    },
-    (value, lock) => {
       lock.packages[forgePath].link = true;
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via[0].range = "*";
+      value.vulnerabilities["deepmerge"].via[0].range = "*";
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via[0].dependency = "other";
+      value.vulnerabilities["deepmerge"].via[0].dependency = "other";
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via[0].name = "other";
+      value.vulnerabilities["deepmerge"].via[0].name = "other";
     },
   ]) {
     const value = forgeReport();
     const lock = structuredClone(lockfile);
     edit(value, lock);
     assert.ok(
-      evaluate(value, { lockfile: lock }).blocked.includes("node-forge")
+      evaluate(value, { lockfile: lock }).blocked.includes("deepmerge")
     );
   }
 });
@@ -164,7 +160,7 @@ test("expiration is exclusive, enforced at the exact UTC boundary", () => {
     }).blocked,
     []
   );
-  for (const date of [exception.expires, "2026-11-24T00:00:00Z"]) {
+  for (const date of [exception.expires, "2026-12-02T00:00:00Z"]) {
     assert.throws(
       () => evaluate(undefined, { now: new Date(date) }),
       /expired/
@@ -175,7 +171,7 @@ test("expiration is exclusive, enforced at the exact UTC boundary", () => {
 test("a clean audit passes and warns to remove the stale exception even after expiry", () => {
   const result = evaluate(report(), { now: new Date("2027-01-01") });
   assert.deepEqual(result.blocked, []);
-  assert.match(result.warning, /unused; remove/);
+  assert.match(result.warnings.join("\n"), /unused; remove/);
 });
 
 test("npm nonzero errors, success with vulnerabilities, and failure without vulnerabilities fail closed", () => {
@@ -212,28 +208,28 @@ test("empty, malformed, error, and inconsistent reports fail closed", () => {
       value.metadata.vulnerabilities.total = 0;
     },
     (value) => {
-      value.vulnerabilities["node-forge"].nodes = [];
+      value.vulnerabilities["deepmerge"].nodes = [];
     },
     (value) => {
-      value.vulnerabilities["node-forge"].nodes = ["missing"];
+      value.vulnerabilities["deepmerge"].nodes = ["missing"];
     },
     (value) => {
-      value.vulnerabilities["node-forge"].name = "other";
+      value.vulnerabilities["deepmerge"].name = "other";
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via = [];
+      value.vulnerabilities["deepmerge"].via = [];
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via = [null];
+      value.vulnerabilities["deepmerge"].via = [null];
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via[0].source = null;
+      value.vulnerabilities["deepmerge"].via[0].source = null;
     },
     (value) => {
-      value.vulnerabilities["node-forge"].via[0].severity = "unknown";
+      value.vulnerabilities["deepmerge"].via[0].severity = "unknown";
     },
     (value) => {
-      value.vulnerabilities["node-forge"].effects = ["missing"];
+      value.vulnerabilities["deepmerge"].effects = ["missing"];
     },
   ]) {
     const value = forgeReport();
@@ -246,7 +242,7 @@ test("empty, malformed, error, and inconsistent reports fail closed", () => {
 test("unknown edges and cycles fail even alongside a blocking advisory", () => {
   for (const edge of ["unknown", "expo"]) {
     const value = forgeReport();
-    value.vulnerabilities["node-forge"].via.push(
+    value.vulnerabilities["deepmerge"].via.push(
       {
         ...advisory,
         url: "https://github.com/advisories/GHSA-new1-new2-new3",

@@ -12,15 +12,31 @@ export const auditArgs = [
   "--include=peer",
 ];
 
-export const exception = Object.freeze({
-  package: "node-forge",
-  url: "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
-  range: "<=1.4.0",
-  version: "1.4.0",
-  integrity:
-    "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
-  expires: "2026-11-23T00:00:00.000Z",
-});
+const expires = "2026-12-01T00:00:00.000Z";
+// Pinned to the exact locked versions; npm lock entries for these packages
+// carry no integrity, so version and identity are the pin.
+export const exceptions = Object.freeze(
+  [
+    {
+      package: "glob",
+      url: "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+      range: ">=9.0.0 <=14.0.1",
+      versions: ["7.2.3", "13.0.6"],
+    },
+    {
+      package: "minimatch",
+      url: "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+      range: "<11.0.1",
+      versions: ["3.1.5", "9.0.9", "10.2.6"],
+    },
+    {
+      package: "deepmerge",
+      url: "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+      range: ">=4.2.0 <=4.3.1",
+      versions: ["4.3.1"],
+    },
+  ].map((entry) => Object.freeze({ ...entry, expires }))
+);
 
 const severities = ["info", "low", "moderate", "high", "critical"];
 const object = (value) =>
@@ -103,7 +119,7 @@ export function evaluateAudit(report, { status, lockfile, now = new Date() }) {
     }
   }
 
-  let accepted = false;
+  const accepted = new Set();
   const visiting = new Set();
   const blocked = new Map();
   function visit(name) {
@@ -114,28 +130,29 @@ export function evaluateAudit(report, { status, lockfile, now = new Date() }) {
     // Traverse every edge, even when a different advisory already blocks.
     const reasons = entry.via.map((via) => {
       if (typeof via === "string") return visit(via);
-      const exempt =
-        name === exception.package &&
-        via.name === exception.package &&
-        via.dependency === exception.package &&
-        via.url === exception.url &&
-        via.range === exception.range &&
-        entry.nodes.every((node) => {
-          const pkg = lockfile.packages[node];
-          return (
-            (node.endsWith("/node_modules/node-forge") ||
-              node === "node_modules/node-forge") &&
-            pkg.version === exception.version &&
-            (!pkg.name || pkg.name === exception.package) &&
-            pkg.integrity === exception.integrity &&
-            !pkg.link
-          );
-        });
-      if (exempt && now.getTime() >= Date.parse(exception.expires)) {
-        throw new Error(`node-forge exception expired ${exception.expires}`);
+      const match = exceptions.find(
+        (item) =>
+          name === item.package &&
+          via.name === item.package &&
+          via.dependency === item.package &&
+          via.url === item.url &&
+          via.range === item.range &&
+          entry.nodes.every((node) => {
+            const pkg = lockfile.packages[node];
+            return (
+              (node.endsWith(`/node_modules/${item.package}`) ||
+                node === `node_modules/${item.package}`) &&
+              item.versions.includes(pkg.version) &&
+              (!pkg.name || pkg.name === item.package) &&
+              !pkg.link
+            );
+          })
+      );
+      if (match && now.getTime() >= Date.parse(match.expires)) {
+        throw new Error(`${match.package} exception expired ${match.expires}`);
       }
-      if (exempt) accepted = true;
-      return !exempt;
+      if (match) accepted.add(match);
+      return !match;
     });
     visiting.delete(name);
     const result = reasons.some(Boolean);
@@ -148,9 +165,14 @@ export function evaluateAudit(report, { status, lockfile, now = new Date() }) {
       .filter(([, value]) => value)
       .map(([name]) => name)
       .sort(),
-    warning: accepted
-      ? `WARNING: temporarily accepting ONLY ${exception.url} in node-forge@${exception.version}; expires ${exception.expires}. RSA signature verification remains vulnerable.`
-      : "WARNING: node-forge exception is unused; remove it and its README policy.",
+    warnings: accepted.size
+      ? [...accepted].map(
+          (item) =>
+            `WARNING: temporarily accepting ONLY ${item.url} in ${item.package}@${item.versions.join(", ")}; expires ${item.expires}.`
+        )
+      : [
+          "WARNING: audit exceptions are unused; remove them and their README policy.",
+        ],
   };
 }
 
@@ -178,7 +200,7 @@ if (
 ) {
   try {
     const result = auditDependencies();
-    console.warn(result.warning);
+    for (const warning of result.warnings) console.warn(warning);
     if (result.blocked.length) {
       console.error(`Dependency audit blocked: ${result.blocked.join(", ")}`);
       process.exitCode = 1;
