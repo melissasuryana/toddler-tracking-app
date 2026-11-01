@@ -34,6 +34,7 @@
       "decode-uri-component": "file:../../packages/query-decoder-compat"
     },
     "postcss": "8.5.31",
+    "node-forge": "1.4.2",
     "metro": {
       "image-size": "file:../../packages/metro-image-size-compat"
     }

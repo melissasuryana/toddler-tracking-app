@@ -100,32 +100,31 @@ Dependabot checks npm and GitHub Actions updates weekly. Existing vulnerabilitie
 or historical secrets can make the initial checks fail; remediate them rather
 than lowering the threshold. Rotate exposed credentials before removing them.
 
-### Temporary node-forge advisory exception
+### Temporary glob, minimatch, and deepmerge advisory exceptions
 
-**Owner:** repository maintainers. **Approved scope:** the maintainer-approved
-temporary exclusion of
-[GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
-only, expiring **2026-11-23 at 00:00 UTC**. As checked on 2026-10-24, upstream
-has not published a patched release; Expo SDK 54's CLI and code-signing
-certificates still require node-forge. Upgrading Expo does not eliminate it.
-RSA PKCS#1 v1.5 signature verification remains vulnerable; this is risk
-acceptance, not remediation. Do not rely on this version to verify untrusted
-signatures or certificate material.
+**Owner:** repository maintainers. **Approved scope:** temporary exclusion of
+[GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) (glob),
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)
+(minimatch), and
+[GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4)
+(deepmerge), expiring **2026-12-01 at 00:00 UTC**. As checked on 2026-11-01,
+glob and minimatch are fixed only in majors (glob 14.0.2, minimatch 11.0.1)
+incompatible with the glob 7 / minimatch 3 consumers in Expo and React Native
+tooling, and deepmerge has no patched release. These are build-time tooling
+dependencies; this is risk acceptance, not remediation. node-forge is
+remediated by the `overrides` pin to 1.4.2.
 
-`scripts/audit-dependencies.mjs` matches the exact advisory URL, package and
-dependency identity, advisory affected range `<=1.4.0`, and only the currently
-locked **node-forge 1.4.0** npm artifact (including its SHA-512 integrity).
-Older versions, aliases to other artifacts, new node-forge advisories, and
-advisories in any other package still block. An Expo ancestor is accepted only
-when every advisory reachable through its `via` graph is this exact exception;
-there is no package-wide or Expo-wide suppression. Every accepted run prints a
-warning with the advisory, remaining risk, and expiration date. The exception
-blocks at expiration while the advisory is present.
+`scripts/audit-dependencies.mjs` matches each exact advisory URL, package and
+dependency identity, affected range, and only the currently locked versions
+(glob 7.2.3/13.0.6, minimatch 3.1.5/9.0.9/10.2.6, deepmerge 4.3.1). Other
+versions, aliases, new advisories, and other packages still block. An ancestor
+is accepted only when every advisory reachable through its `via` graph is one of
+these exceptions. Every accepted run warns with the advisory and expiration
+date, and the exception blocks at expiration while the advisory is present.
 
-Maintainers must monitor the linked advisory and upstream releases, install a
-patched version as soon as available, and remove the exception and this policy
-in the same change. An unused exception warns that it must be removed; extending
-its expiry or changing its scope requires a fresh maintainer review and approval.
+Maintainers must monitor upstream releases, upgrade as soon as compatible
+versions exist, and remove each exception and this policy in the same change.
+Extending an expiry or changing scope requires fresh maintainer approval.
 
 Other advisories are remediated with pinned upstream **PostCSS 8.5.31** and
 **uuid 11.1.1** (the last CommonJS major, scoped to xcode). Two narrow workspace
