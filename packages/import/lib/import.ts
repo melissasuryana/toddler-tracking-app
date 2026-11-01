@@ -87,6 +87,13 @@ const normalize = (value: string) =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
 const displayName = (value: string) => value.trim().replace(/\s+/g, " ");
 const HEADERS = ["name", "date", "category", "allergens"] as const;
+const HEADER_ALIASES: Readonly<Record<string, string>> = {
+  "food name": "name",
+  "food category": "category",
+  allergen: "allergens",
+  "allergen tag": "allergens",
+  "allergen tags": "allergens",
+};
 
 export class TriedFoodImport {
   private readonly store: ImportStore;
@@ -182,7 +189,7 @@ export class TriedFoodImport {
       const firstHeaders =
         first?.cells.map((cell) => {
           const header = normalize(cell);
-          return header === "food category" ? "category" : header;
+          return HEADER_ALIASES[header] ?? header;
         }) ?? [];
       const hasHeader =
         firstHeaders.includes("name") &&

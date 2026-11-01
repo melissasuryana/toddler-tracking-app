@@ -116,7 +116,7 @@ test("case/whitespace headers, reordered columns, CRLF, BOM, quoted commas, esca
   const { database, importer, options } = fixture();
   try {
     const report = importer.preview(
-      '\uFEFF ALLERGENS , Date , NAME , Food  Category \r\nMilk; EGG,2020-02-29,"  My, ""soup""  ", Compound\r\n,, "A\nB",\r\n\r\n',
+      '\uFEFF Allergen Tags , Date , Food Name , Food  Category \r\nMilk; EGG,2020-02-29,"  My, ""soup""  ", Compound\r\n,, "A\nB",\r\n\r\n',
       options
     );
     assert.equal(report.abortReason, null);
@@ -127,6 +127,11 @@ test("case/whitespace headers, reordered columns, CRLF, BOM, quoted commas, esca
     assert.equal(report.rows[0]!.category, "compound");
     assert.equal(report.rows[1]!.name, "A B");
     assert.equal(report.rows[1]!.line, 3);
+    const duplicateAlias = importer.preview(
+      "Name,Food Name\nSoup,Another Soup",
+      options
+    );
+    assert.match(duplicateAlias.abortReason ?? "", /unique/);
   } finally {
     database.close();
   }
