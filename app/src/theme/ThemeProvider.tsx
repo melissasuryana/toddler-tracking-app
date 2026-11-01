@@ -7,22 +7,15 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useColorScheme } from "react-native";
 import { useData } from "~/data/DataProvider";
-import { resolveTheme, type Theme } from "./tokens";
+import { resolveThemePreference, type Theme } from "./tokens";
 
 const ThemeContext = createContext<Theme | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const scheme = useColorScheme();
-  const preference = useData().themePreference() ?? "system";
+  const preference = useData().themePreference();
   const theme = useMemo(
-    () =>
-      resolveTheme(
-        preference === "system"
-          ? scheme
-          : preference === "dark"
-            ? "dark"
-            : "light"
-      ),
+    () => resolveThemePreference(preference, scheme),
     [preference, scheme]
   );
   return (

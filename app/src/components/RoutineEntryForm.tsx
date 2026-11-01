@@ -385,10 +385,7 @@ export function RoutineEntryForm({
                       label={`+${chip.label}`}
                       selected={isSel}
                       onPress={() =>
-                        change(
-                          "durationMinutes",
-                          isSel ? "" : chip.minutes
-                        )
+                        change("durationMinutes", isSel ? "" : chip.minutes)
                       }
                     />
                   );

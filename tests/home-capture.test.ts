@@ -147,6 +147,17 @@ test("routine drafts require explicit Sleep quality and valid numbers while pres
   );
 });
 
+test("Feed drafts accept minutes and persist duration in seconds", () => {
+  const draft = { ...routineDraft(), durationMinutes: "15" };
+  assert.deepEqual(routineInput("child", "feed", WHEN, draft), {
+    childId: "child",
+    kind: "feed",
+    ...WHEN,
+    side: undefined,
+    durationSeconds: 900,
+  });
+});
+
 test("all eight Home Entry kinds persist offline, edit with stable identity, and scrub through public boundaries", () => {
   const path = `.home-capture-${randomUUID()}.sqlite`;
   let database = openDatabase(openTestDriver(path));

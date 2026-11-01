@@ -1,6 +1,6 @@
 # Hybrid meal and food introduction flow
 
-Use a hybrid of variants B and C: Home and Foods launch Meal, Introduction, and Reaction forms as separate flows, with no top-level form tabs. Food selection in Introduction and Reaction uses autocomplete. The Home screen's active Watch Card offers contextual quick actions for an ongoing food introduction.
+Use a hybrid of variants B and C: Home, Timeline, and Foods launch Meal, Introduction, and Reaction forms as separate flows, with no top-level form tabs. Food selection in Introduction and Reaction uses autocomplete. The Home screen's active Watch Card offers contextual quick actions for an ongoing food introduction.
 
 ## Meal name requirements
 

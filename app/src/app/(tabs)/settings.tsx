@@ -83,7 +83,9 @@ export default function SettingsScreen() {
       setDemoMessage("Demo entries added to the timeline.");
     } catch (error) {
       setDemoMessage(
-        error instanceof Error ? error.message : "Demo data could not be loaded."
+        error instanceof Error
+          ? error.message
+          : "Demo data could not be loaded."
       );
     }
   }
@@ -311,9 +313,7 @@ export default function SettingsScreen() {
             </Text>
           </Pressable>
         </View>
-        {demoMessage ? (
-          <Body dim={!demoDataLoaded}>{demoMessage}</Body>
-        ) : null}
+        {demoMessage ? <Body dim={!demoDataLoaded}>{demoMessage}</Body> : null}
         <View
           style={{
             flexDirection: "row",

@@ -156,9 +156,7 @@ export function FoodEntryForm({
   );
   const matchingFoods = foods
     .filter((food) =>
-      food.name
-        .toLocaleLowerCase()
-        .includes(query.trim().toLocaleLowerCase())
+      food.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
     )
     .slice(0, 10);
 
