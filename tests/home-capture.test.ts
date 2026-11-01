@@ -15,9 +15,15 @@ import {
   routineInput,
 } from "../app/src/components/routineDraft.ts";
 import {
+  entriesForLocalDate,
   entrySummary,
   latestEntries,
+  localDateKey,
+  shiftCalendarDate,
+  timelineEntryPresentation,
+  timelineEntrySummary,
   type LoggedEntry,
+  weekDates,
 } from "../app/src/components/entryPresentation.ts";
 import {
   localDateTime,
@@ -377,6 +383,131 @@ test("Latest uses occurrence order, isolates Child, excludes Deleted content, an
       name: "",
     })!;
     assert.equal(entrySummary(unnamed), "Meal · 4/5");
+
+    const foodEntries = new FoodEntries(database);
+    const introduction = foodEntries.createIntroduction({
+      childId: first.id,
+      ...WHEN,
+      foodId: "apple",
+    });
+    const reaction = foodEntries.createReaction({
+      childId: first.id,
+      ...WHEN,
+      foodIds: ["egg"],
+      severity: "mild",
+    });
+    const foods = new FoodTracking(database).listFoods();
+    assert.equal(
+      timelineEntrySummary(introduction, foods, () => "trying"),
+      "Apple · Trying"
+    );
+    assert.equal(
+      timelineEntrySummary(reaction, foods, () => "avoid"),
+      "Egg · Avoid"
+    );
+    assert.equal(
+      timelineEntrySummary(meal, foods, () => "untried"),
+      "4/5"
+    );
+  } finally {
+    database.close();
+  }
+});
+
+test("Timeline week dates and day rows follow each Entry's recorded timezone and corrected occurrence", () => {
+  const kinds = [
+    "feed",
+    "diaper_change",
+    "sleep_session",
+    "medical",
+    "growth",
+    "meal",
+    "introduction",
+    "reaction",
+  ] as const;
+  assert.deepEqual(
+    kinds.map(timelineEntryPresentation),
+    kinds.map((kind) => ({
+      icon:
+        kind === "diaper_change"
+          ? "diaper"
+          : kind === "sleep_session"
+            ? "sleep"
+            : kind,
+      tracker:
+        kind === "diaper_change"
+          ? "diaper"
+          : kind === "sleep_session"
+            ? "sleep"
+            : kind,
+    }))
+  );
+  assert.deepEqual(weekDates("2024-11-03"), [
+    "2024-10-28",
+    "2024-10-29",
+    "2024-10-30",
+    "2024-10-31",
+    "2024-11-01",
+    "2024-11-02",
+    "2024-11-03",
+  ]);
+  assert.equal(shiftCalendarDate("2024-11-03", 7), "2024-11-10");
+
+  const beforeMidnightInNewYork = Date.parse("2024-11-03T02:30:00Z");
+  assert.equal(
+    localDateKey(beforeMidnightInNewYork, "America/New_York"),
+    "2024-11-02"
+  );
+  assert.equal(localDateKey(beforeMidnightInNewYork, "UTC"), "2024-11-03");
+
+  const database = openDatabase(openTestDriver());
+  try {
+    const child = database.children.create({
+      name: "Ada",
+      birthdate: "2023-01-01",
+      sex: "female",
+    });
+    const routine = new RoutineEntries(database);
+    const entry = routine.create({
+      childId: child.id,
+      occurredAt: AT,
+      occurredTz: "America/New_York",
+      kind: "feed",
+    });
+    const otherDay = routine.create({
+      childId: child.id,
+      occurredAt: beforeMidnightInNewYork + 60_000,
+      occurredTz: "America/New_York",
+      kind: "diaper_change",
+      change: "wet",
+    });
+    assert.deepEqual(
+      entriesForLocalDate([entry, otherDay], "2024-11-03").map(
+        (item) => item.id
+      ),
+      [entry.id]
+    );
+    assert.deepEqual(
+      entriesForLocalDate([entry, otherDay], "2024-11-02").map(
+        (item) => item.id
+      ),
+      [otherDay.id]
+    );
+
+    const corrected = routine.update(entry.id, {
+      childId: entry.childId,
+      occurredAt: beforeMidnightInNewYork,
+      occurredTz: entry.occurredTz,
+      kind: "feed",
+      ...entry.content,
+    });
+    assert.ok(corrected);
+    assert.deepEqual(
+      entriesForLocalDate([corrected, otherDay], "2024-11-02").map(
+        (item) => item.id
+      ),
+      [otherDay.id, corrected.id]
+    );
   } finally {
     database.close();
   }

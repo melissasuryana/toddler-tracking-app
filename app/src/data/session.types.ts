@@ -14,6 +14,7 @@ import type {
   MealEntry,
   MealEntryInput,
   MealNameSuggestion,
+  CustomFoodInput,
   Food,
   FoodStatus,
   FoodEntry,
@@ -58,6 +59,12 @@ export interface DataSession {
   readonly deleteMeal: (id: string) => boolean;
   readonly markFoodSafe: (childId: string, foodId: string) => FoodStatus | null;
   readonly foods: () => readonly Food[];
+  readonly createCustomFood: (input: CustomFoodInput) => Food;
+  readonly updateCustomFood: (
+    foodId: string,
+    input: CustomFoodInput
+  ) => Food | null;
+  readonly deleteCustomFood: (foodId: string) => boolean;
   readonly foodStatus: (
     childId: string,
     foodId: string,

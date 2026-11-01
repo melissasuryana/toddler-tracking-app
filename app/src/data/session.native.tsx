@@ -80,6 +80,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return status;
       },
       foods: () => foodTracking.listFoods(),
+      createCustomFood: (input) => {
+        const food = foodTracking.createCustomFood(input);
+        setFoodVersion((version) => version + 1);
+        return food;
+      },
+      updateCustomFood: (foodId, input) => {
+        const food = foodTracking.updateCustomFood(foodId, input);
+        setFoodVersion((version) => version + 1);
+        return food;
+      },
+      deleteCustomFood: (foodId) => {
+        const deleted = foodTracking.deleteCustomFood(foodId);
+        if (deleted) setFoodVersion((version) => version + 1);
+        return deleted;
+      },
       foodStatus: (childId, foodId, now) =>
         foodTracking.statusFor(childId, foodId, now),
       introductionHeadsUps: (childId, foodId, occurredAt, options) =>

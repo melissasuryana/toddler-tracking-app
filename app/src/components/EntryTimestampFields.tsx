@@ -70,7 +70,9 @@ export function EntryTimestampFields({
     ? "Symptoms appeared"
     : isSleep
       ? label
-      : "When";
+      : label === "First tried"
+        ? label
+        : "When";
   const style = isReaction ? "reaction" : isSleep ? "sleep" : "standard";
   const actionText = expanded
     ? "Done"

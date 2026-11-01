@@ -79,6 +79,7 @@ test("custom Foods persist, accept missing imported categories, and delete only 
   assert.equal(custom.source, "custom");
   assert.deepEqual(foods.getFood(custom.id)?.allergenTags, ["milk"]);
   assert.equal(foods.deleteCustomFood(custom.id), true);
+  const editable = foods.createCustomFood({ name: "Editable puree" });
 
   const introduced = foods.createCustomFood({
     name: "Trial Food",
@@ -86,12 +87,23 @@ test("custom Foods persist, accept missing imported categories, and delete only 
   });
   addFoodEntry(database, child.id, "introduction", [introduced.id], T0);
   assert.equal(foods.deleteCustomFood(introduced.id), false);
-  const edited = foods.updateCustomFood(introduced.id, {
-    name: "Updated Trial Food",
+  assert.throws(
+    () =>
+      foods.updateCustomFood(introduced.id, {
+        name: "Updated Trial Food",
+        category: "compound",
+        allergenTags: ["sesame"],
+      }),
+    /untried custom Food/
+  );
+  assert.equal(foods.getFood(introduced.id)?.name, "Trial Food");
+
+  const edited = foods.updateCustomFood(editable.id, {
+    name: "Edited Ada puree",
     category: "compound",
     allergenTags: ["sesame"],
   });
-  assert.equal(edited.name, "Updated Trial Food");
+  assert.equal(edited.name, "Edited Ada puree");
   assert.deepEqual(edited.allergenTags, ["sesame"]);
   assert.throws(
     () =>
@@ -180,7 +192,7 @@ test("same-kind introductions use created time and ID as stable tie-breakers", (
   database.close();
 });
 
-test("manual-safe is cycle-bound, survives clock passage and irrelevant edits, and cannot resurrect", () => {
+test("manual-safe is cycle-bound and cannot resurrect after its Introduction changes", () => {
   const { database, child, foods } = setup();
   const custom = foods.createCustomFood({ name: "Watch item" });
   const opening = addFoodEntry(
@@ -203,12 +215,6 @@ test("manual-safe is cycle-bound, survives clock passage and irrelevant edits, a
     foods.statusFor(child.id, custom.id, T0 + 2 * DAY).safeReason,
     "manual"
   );
-  foods.updateCustomFood(custom.id, { name: "Renamed", allergenTags: ["egg"] });
-  assert.equal(
-    foods.statusFor(child.id, custom.id, T0 + 2 * DAY).safeReason,
-    "manual"
-  );
-
   const backdated = addFoodEntry(
     database,
     child.id,

@@ -11,6 +11,8 @@ import {
   normalizeMealContent,
   sortMealsByRecency,
   SEEDED_FOODS,
+  FOOD_CATEGORIES,
+  ALLERGEN_TAGS,
   deriveFoodStatus,
   introductionHeadsUpsFrom,
   mealDraftFromIntroduction,
@@ -18,6 +20,9 @@ import {
   normalizeReactionContent,
   type FoodEntry,
   type Food,
+  type CustomFoodInput,
+  type FoodCategory,
+  type AllergenTag,
   type FoodStatus,
   type IntroductionEntry,
   type IntroductionEntryInput,
@@ -330,6 +335,54 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         };
       },
       foods: () => foods,
+      createCustomFood: (input: CustomFoodInput) => {
+        const food = normalizeWebCustomFood(input);
+        const created: Food = {
+          ...food,
+          id: uuidv7(),
+          source: "custom",
+        };
+        latestCustomFoods.current = [...latestCustomFoods.current, created];
+        setCustomFoods(latestCustomFoods.current);
+        return created;
+      },
+      updateCustomFood: (foodId: string, input: CustomFoodInput) => {
+        const existing = latestCustomFoods.current.find(
+          (food) => food.id === foodId
+        );
+        if (!existing)
+          throw new Error("Only an existing custom Food can be edited.");
+        if (
+          latestChild.current &&
+          statusFor(latestChild.current.id, foodId).status !== "untried"
+        ) {
+          throw new Error("Only an untried custom Food can be edited.");
+        }
+        const normalized = normalizeWebCustomFood(input);
+        const updated: Food = { ...existing, ...normalized };
+        latestCustomFoods.current = latestCustomFoods.current.map((food) =>
+          food.id === foodId ? updated : food
+        );
+        setCustomFoods(latestCustomFoods.current);
+        return updated;
+      },
+      deleteCustomFood: (foodId: string) => {
+        const exists = latestCustomFoods.current.some(
+          (food) => food.id === foodId
+        );
+        if (!exists) return false;
+        if (
+          latestChild.current &&
+          statusFor(latestChild.current.id, foodId).status !== "untried"
+        ) {
+          return false;
+        }
+        latestCustomFoods.current = latestCustomFoods.current.filter(
+          (food) => food.id !== foodId
+        );
+        setCustomFoods(latestCustomFoods.current);
+        return true;
+      },
       foodStatus: statusFor,
       introductionHeadsUps: (childId, foodId, occurredAt, options = {}) => {
         const food = foods.find((item) => item.id === foodId);
@@ -615,6 +668,26 @@ function toWebMeal(input: MealEntryInput, existing?: MealEntry): MealEntry {
     deletedAt: null,
     isSeed: false,
     content: normalizeMealContent(input),
+  };
+}
+
+function normalizeWebCustomFood(
+  input: CustomFoodInput
+): Pick<Food, "name" | "category" | "allergenTags"> {
+  const name = input.name.trim();
+  if (!name) throw new TypeError("Food name is required.");
+  const category = input.category ?? null;
+  if (category !== null && !FOOD_CATEGORIES.includes(category)) {
+    throw new TypeError("Food Category is not supported.");
+  }
+  const allergenTags = [...new Set(input.allergenTags ?? [])];
+  if (allergenTags.some((tag) => !ALLERGEN_TAGS.includes(tag as AllergenTag))) {
+    throw new TypeError("Allergen Tag is not supported.");
+  }
+  return {
+    name,
+    category: category as FoodCategory | null,
+    allergenTags: allergenTags as AllergenTag[],
   };
 }
 

@@ -243,7 +243,7 @@ export function FoodEntryForm({
         >
           {isReaction
             ? "Ends the active watch period and marks food as 'avoid'."
-            : "First taste or continued exposure — starts a 3-day watch period."}
+            : "First taste or repeat exposure starts a 3-day watch. Change First tried to backfill an earlier date."}
         </Text>
 
         {entry ? (
@@ -569,7 +569,7 @@ export function FoodEntryForm({
 
         {/* Shared Timestamp Invariant directly preceding Save */}
         <EntryTimestampFields
-          label={isReaction ? "Symptoms appeared" : "When"}
+          label={isReaction ? "Symptoms appeared" : "First tried"}
           original={original}
           date={date}
           time={time}

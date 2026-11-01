@@ -75,9 +75,22 @@ export class FoodTracking {
       throw new Error("Only an existing custom Food can be edited.");
     }
     const normalized = normalizeCustomFood(input);
-    return toCustomFood(
-      this.database.foods.updateCustomFood(foodId, normalized)
-    );
+    return this.database.transaction((transaction) => {
+      if (
+        transaction.children
+          .list()
+          .some(
+            (child) =>
+              statusFor(transaction, child.id, foodId, Date.now()).status !==
+              "untried"
+          )
+      ) {
+        throw new Error("Only an untried custom Food can be edited.");
+      }
+      return toCustomFood(
+        transaction.foods.updateCustomFood(foodId, normalized)
+      );
+    });
   }
 
   deleteCustomFood(foodId: string): boolean {
