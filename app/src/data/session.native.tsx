@@ -82,6 +82,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (status) setFoodVersion((version) => version + 1);
         return status;
       },
+      resetStatusCounts: (childId, foodId) => {
+        void foodVersion;
+        return foodTracking.resetStatusCounts(childId, foodId);
+      },
+      resetFoodStatus: (childId, foodId) => {
+        const status = foodTracking.resetStatus(childId, foodId);
+        setFoodVersion((version) => version + 1);
+        return status;
+      },
       foods: () => foodTracking.listFoods(),
       createCustomFood: (input) => {
         const food = foodTracking.createCustomFood(input);

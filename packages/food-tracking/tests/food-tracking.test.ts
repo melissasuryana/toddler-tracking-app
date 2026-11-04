@@ -314,6 +314,29 @@ test("changing an Introduction's Food invalidates old and new Food markers", () 
   database.close();
 });
 
+test("cycle-bound manual-safe retains manual safeReason even after watchPeriod endsAt", () => {
+  const { database, child, foods } = setup();
+  const custom = foods.createCustomFood({ name: "Manual safe item" });
+  addFoodEntry(database, child.id, "introduction", [custom.id], T0);
+
+  const manuallySafe = foods.markSafe(child.id, custom.id, T0 + 1);
+  assert.equal(manuallySafe?.status, "safe");
+  assert.equal(manuallySafe?.safeReason, "manual");
+
+  // Before 3 days
+  assert.equal(
+    foods.statusFor(child.id, custom.id, T0 + 2 * DAY).safeReason,
+    "manual"
+  );
+
+  // After 3 days (watch period expired)
+  const afterExpiration = foods.statusFor(child.id, custom.id, T0 + 5 * DAY);
+  assert.equal(afterExpiration.status, "safe");
+  assert.equal(afterExpiration.safeReason, "manual");
+
+  database.close();
+});
+
 test("deleting the only Introduction returns to untried, but a Reaction remains avoid", () => {
   const { database, child, foods } = setup();
   const custom = foods.createCustomFood({ name: "Delete evidence" });
@@ -355,3 +378,202 @@ test("Meals do not count as exposure; heads-ups are queryable and suppressible",
   );
   database.close();
 });
+
+test("manual-safe supports untried foods and establishes safe status without introduction", () => {
+  const { database, child, foods } = setup();
+
+  // Untried food can be marked safe directly
+  assert.equal(foods.statusFor(child.id, "apple", T0).status, "untried");
+  const marked = foods.markSafe(child.id, "apple", T0);
+  assert.ok(marked);
+  assert.equal(marked.status, "safe");
+  assert.equal(marked.safeReason, "manual");
+  assert.equal(marked.exposureCount, 0);
+  assert.equal(marked.watchPeriod, null);
+
+  const marker = database.foods.manualSafeMarker(child.id, "apple");
+  assert.ok(marker);
+  assert.equal(marker.cycleEntryId, null);
+
+  // Status derives as safe with manual reason
+  const derived = foods.statusFor(child.id, "apple", T0 + 100);
+  assert.equal(derived.status, "safe");
+  assert.equal(derived.safeReason, "manual");
+  assert.equal(derived.exposureCount, 0);
+
+  // Cannot mark safe when already safe
+  assert.equal(foods.markSafe(child.id, "apple", T0 + 200), null);
+
+  // Logging an introduction invalidates untried manual safe and starts trying
+  const introId = addFoodEntry(database, child.id, "introduction", ["apple"], T0 + 300);
+  assert.equal(database.foods.manualSafeMarker(child.id, "apple"), null);
+  assert.equal(foods.statusFor(child.id, "apple", T0 + 300).status, "trying");
+
+  // While trying, marking safe is cycle-bound to that introduction
+  const markedCycle = foods.markSafe(child.id, "apple", T0 + 400);
+  assert.ok(markedCycle);
+  assert.equal(database.foods.manualSafeMarker(child.id, "apple")?.cycleEntryId, introId);
+
+  // Logging reaction invalidates and sets avoid
+  addFoodEntry(database, child.id, "reaction", ["apple"], T0 + 500);
+  assert.equal(database.foods.manualSafeMarker(child.id, "apple"), null);
+  assert.equal(foods.statusFor(child.id, "apple", T0 + 500).status, "avoid");
+
+  // Cannot mark safe when avoid
+  assert.equal(foods.markSafe(child.id, "apple", T0 + 600), null);
+
+  database.close();
+});
+
+test("resetStatusCounts accurately reports counts and canReset eligibility", () => {
+  const { database, child, foods } = setup();
+
+  // Untried food with no entries or markers cannot be reset
+  assert.deepEqual(foods.resetStatusCounts(child.id, "banana"), {
+    canReset: false,
+    introductionCount: 0,
+    singleReactionCount: 0,
+    sharedReactionCount: 0,
+    hasManualSafeDecision: false,
+  });
+
+  // Untried food with manual safe marker CAN be reset
+  foods.markSafe(child.id, "banana", T0);
+  assert.deepEqual(foods.resetStatusCounts(child.id, "banana"), {
+    canReset: true,
+    introductionCount: 0,
+    singleReactionCount: 0,
+    sharedReactionCount: 0,
+    hasManualSafeDecision: true,
+  });
+
+  // Add 2 introductions
+  addFoodEntry(database, child.id, "introduction", ["banana"], T0 + 100);
+  addFoodEntry(database, child.id, "introduction", ["banana"], T0 + 200);
+
+  // Add 1 single-food reaction
+  const singleReaction = database.entries.create({
+    childId: child.id,
+    kind: "reaction",
+    occurredAt: T0 + 300,
+    occurredTz: "UTC",
+  });
+  database.entries.setContent(singleReaction.id, {
+    foodIds: ["banana"],
+    symptoms: [{ name: "hives", severity: "mild" }],
+  });
+  database.entries.addAssociation(singleReaction.id, "food", "banana");
+
+  // Add 1 shared reaction with pear
+  const sharedReaction = database.entries.create({
+    childId: child.id,
+    kind: "reaction",
+    occurredAt: T0 + 400,
+    occurredTz: "UTC",
+  });
+  database.entries.setContent(sharedReaction.id, {
+    foodIds: ["banana", "pear"],
+    symptoms: [{ name: "rash", severity: "mild" }],
+  });
+  database.entries.addAssociation(sharedReaction.id, "food", "banana");
+  database.entries.addAssociation(sharedReaction.id, "food", "pear");
+
+  assert.deepEqual(foods.resetStatusCounts(child.id, "banana"), {
+    canReset: true,
+    introductionCount: 2,
+    singleReactionCount: 1,
+    sharedReactionCount: 1,
+    hasManualSafeDecision: false,
+  });
+
+  database.close();
+});
+
+test("resetStatus atomically scrubs introductions, single-food reactions, prunes shared reactions, and clears markers", () => {
+  const { database, child, foods } = setup();
+
+  // Banana: 2 introductions, 1 single-food reaction, 1 shared reaction with pear
+  const intro1 = addFoodEntry(database, child.id, "introduction", ["banana"], T0 + 100);
+  const intro2 = addFoodEntry(database, child.id, "introduction", ["banana"], T0 + 200);
+
+  const singleReaction = database.entries.create({
+    childId: child.id,
+    kind: "reaction",
+    occurredAt: T0 + 300,
+    occurredTz: "UTC",
+  });
+  database.entries.setContent(singleReaction.id, {
+    foodIds: ["banana"],
+    symptoms: [{ name: "hives", severity: "mild" }],
+  });
+  database.entries.addAssociation(singleReaction.id, "food", "banana");
+
+  // Pear: 1 introduction
+  const pearIntro = addFoodEntry(database, child.id, "introduction", ["pear"], T0 + 50);
+
+  const sharedReaction = database.entries.create({
+    childId: child.id,
+    kind: "reaction",
+    occurredAt: T0 + 400,
+    occurredTz: "UTC",
+  });
+  database.entries.setContent(sharedReaction.id, {
+    foodIds: ["banana", "pear"],
+    symptoms: [{ name: "rash", severity: "mild" }],
+  });
+  database.entries.addAssociation(sharedReaction.id, "food", "banana");
+  database.entries.addAssociation(sharedReaction.id, "food", "pear");
+
+  // Rechallenge banana and mark safe
+  addFoodEntry(database, child.id, "introduction", ["banana"], T0 + 500);
+  foods.markSafe(child.id, "banana", T0 + 501);
+
+  // Verify initial status
+  assert.equal(foods.statusFor(child.id, "banana", T0 + 501).status, "safe");
+  assert.equal(foods.statusFor(child.id, "pear", T0 + 501).status, "avoid");
+
+  // Reset banana status
+  const resetResult = foods.resetStatus(child.id, "banana");
+  assert.equal(resetResult.status, "untried");
+  assert.equal(resetResult.safeReason, null);
+  assert.equal(resetResult.watchPeriod, null);
+  assert.equal(resetResult.exposureCount, 0);
+
+  // Banana is now untried
+  const statusAfter = foods.statusFor(child.id, "banana", T0 + 600);
+  assert.equal(statusAfter.status, "untried");
+  assert.equal(statusAfter.exposureCount, 0);
+  assert.equal(database.foods.manualSafeMarker(child.id, "banana"), null);
+
+  // Introductions for banana are scrubbed
+  assert.equal(database.entries.get(intro1), null);
+  assert.equal(database.entries.get(intro2), null);
+
+  // Single food reaction is scrubbed
+  assert.equal(database.entries.get(singleReaction.id), null);
+
+  // Shared reaction is NOT scrubbed, but banana is removed from it
+  const preservedReaction = database.entries.get(sharedReaction.id);
+  assert.ok(preservedReaction);
+  const sharedContent = database.entries.contentFor(sharedReaction.id) as {
+    foodIds: string[];
+  };
+  assert.deepEqual(sharedContent.foodIds, ["pear"]);
+  const sharedAssocs = database.entries.associationsFor(sharedReaction.id);
+  assert.deepEqual(sharedAssocs, [
+    { associationType: "food", associatedId: "pear" },
+  ]);
+
+  // Pear remains avoid with its introduction intact
+  assert.ok(database.entries.get(pearIntro));
+  assert.equal(foods.statusFor(child.id, "pear", T0 + 600).status, "avoid");
+
+  // Resetting an already untried food with no history throws
+  assert.throws(
+    () => foods.resetStatus(child.id, "banana"),
+    /Food is already untried/
+  );
+
+  database.close();
+});
+

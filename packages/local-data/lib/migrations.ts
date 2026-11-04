@@ -314,6 +314,97 @@ CREATE TABLE IF NOT EXISTS running_sleep_timers (
 );
 `,
   },
+  {
+    index: 7,
+    name: "0007_manual_safe_markers_nullable_cycle",
+    sql: `
+DROP TRIGGER IF EXISTS manual_safe_entries_update;
+DROP TRIGGER IF EXISTS manual_safe_entries_delete;
+DROP TRIGGER IF EXISTS manual_safe_association_insert;
+DROP TRIGGER IF EXISTS manual_safe_association_delete;
+DROP TRIGGER IF EXISTS manual_safe_association_update;
+
+CREATE TABLE IF NOT EXISTS manual_safe_markers_new (
+  child_id TEXT NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+  food_id TEXT NOT NULL,
+  cycle_entry_id TEXT REFERENCES entries(id) ON DELETE CASCADE,
+  PRIMARY KEY (child_id, food_id)
+);
+INSERT INTO manual_safe_markers_new (child_id, food_id, cycle_entry_id)
+  SELECT child_id, food_id, cycle_entry_id FROM manual_safe_markers;
+DROP TABLE manual_safe_markers;
+ALTER TABLE manual_safe_markers_new RENAME TO manual_safe_markers;
+CREATE INDEX IF NOT EXISTS manual_safe_markers_cycle_idx
+  ON manual_safe_markers(cycle_entry_id);
+
+CREATE TRIGGER IF NOT EXISTS manual_safe_entries_update
+BEFORE UPDATE OF occurred_at, child_id, kind, deleted_at ON entries
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL
+  AND (OLD.kind IN ('introduction', 'reaction')
+    OR NEW.kind IN ('introduction', 'reaction'))
+BEGIN
+  DELETE FROM manual_safe_markers
+  WHERE child_id IN (OLD.child_id, NEW.child_id)
+    AND food_id IN (
+      SELECT associated_id FROM entry_associations
+      WHERE entry_id = OLD.id AND association_type = 'food'
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS manual_safe_entries_delete
+BEFORE DELETE ON entries
+WHEN OLD.deleted_at IS NULL AND OLD.kind IN ('introduction', 'reaction')
+BEGIN
+  DELETE FROM manual_safe_markers
+  WHERE child_id = OLD.child_id
+    AND food_id IN (
+      SELECT associated_id FROM entry_associations
+      WHERE entry_id = OLD.id AND association_type = 'food'
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS manual_safe_association_insert
+AFTER INSERT ON entry_associations
+WHEN NEW.association_type = 'food'
+BEGIN
+  DELETE FROM manual_safe_markers
+  WHERE food_id = NEW.associated_id
+    AND child_id = (
+      SELECT child_id FROM entries
+      WHERE id = NEW.entry_id
+        AND deleted_at IS NULL
+        AND kind IN ('introduction', 'reaction')
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS manual_safe_association_delete
+AFTER DELETE ON entry_associations
+WHEN OLD.association_type = 'food'
+BEGIN
+  DELETE FROM manual_safe_markers
+  WHERE food_id = OLD.associated_id
+    AND child_id = (
+      SELECT child_id FROM entries
+      WHERE id = OLD.entry_id
+        AND deleted_at IS NULL
+        AND kind IN ('introduction', 'reaction')
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS manual_safe_association_update
+AFTER UPDATE OF association_type, associated_id, entry_id ON entry_associations
+BEGIN
+  DELETE FROM manual_safe_markers
+  WHERE (food_id = OLD.associated_id OR food_id = NEW.associated_id)
+    AND child_id IN (
+      SELECT child_id FROM entries
+      WHERE id IN (OLD.entry_id, NEW.entry_id)
+        AND deleted_at IS NULL
+        AND kind IN ('introduction', 'reaction')
+    );
+END;
+`,
+  },
 ];
 
 /** Reads the applied-migration cursor (`PRAGMA user_version`). */

@@ -430,3 +430,52 @@ test("migration refuses to register invalid legacy Entry timezones", () => {
   );
   driver.closeSync();
 });
+
+test("removeAssociation removes target association while preserving entry and other associations", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  const child = db.children.create(childInput());
+  const entry = db.entries.create(entryInput(child.id));
+  db.entries.addAssociation(entry.id, "food", "apple");
+  db.entries.addAssociation(entry.id, "food", "banana");
+  assert.equal(db.entries.associationsFor(entry.id).length, 2);
+
+  db.entries.removeAssociation(entry.id, "food", "apple");
+  assert.deepEqual(db.entries.associationsFor(entry.id), [
+    { associationType: "food", associatedId: "banana" },
+  ]);
+  assert.ok(db.entries.get(entry.id));
+  driver.closeSync();
+});
+
+test("manualSafeMarkers supports null cycleEntryId and obeys lifecycle triggers", () => {
+  const driver = openTestDriver();
+  const db = openDatabase(driver);
+  const child = db.children.create(childInput());
+  const entry = db.entries.create(entryInput(child.id));
+
+  // Null cycleEntryId for untried food
+  db.foods.setManualSafeMarker(child.id, "apple", null);
+  const marker = db.foods.manualSafeMarker(child.id, "apple");
+  assert.ok(marker);
+  assert.equal(marker.childId, child.id);
+  assert.equal(marker.foodId, "apple");
+  assert.equal(marker.cycleEntryId, null);
+
+  // Deleting an unrelated entry does not delete the null-cycle marker
+  db.entries.scrub(entry.id);
+  assert.ok(db.foods.manualSafeMarker(child.id, "apple"));
+
+  // Marker with cycleEntryId is deleted when cycle entry is scrubbed
+  const cycleEntry = db.entries.create(entryInput(child.id));
+  db.foods.setManualSafeMarker(child.id, "banana", cycleEntry.id);
+  assert.equal(db.foods.manualSafeMarker(child.id, "banana")?.cycleEntryId, cycleEntry.id);
+  db.entries.scrub(cycleEntry.id);
+  assert.equal(db.foods.manualSafeMarker(child.id, "banana"), null);
+
+  // Deleting child cascades and deletes markers
+  driver.prepareSync("DELETE FROM children WHERE id = ?").run(child.id);
+  assert.equal(db.foods.manualSafeMarker(child.id, "apple"), null);
+  driver.closeSync();
+});
+

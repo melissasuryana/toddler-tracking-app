@@ -117,7 +117,6 @@ export const manualSafeMarkers = sqliteTable(
       .references(() => children.id, { onDelete: "cascade" }),
     foodId: text("food_id").notNull(),
     cycleEntryId: text("cycle_entry_id")
-      .notNull()
       .references(() => entries.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.childId, table.foodId] })]

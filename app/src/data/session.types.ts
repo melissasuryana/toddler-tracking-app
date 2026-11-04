@@ -25,6 +25,7 @@ import type {
   ReactionEntryInput,
   IntroductionHeadsUp,
   IntroductionHeadsUpOptions,
+  ResetStatusCounts,
 } from "@keepsake/food-tracking";
 import type {
   RoutineEntry,
@@ -59,6 +60,8 @@ export interface DataSession {
   readonly deleteRoutineEntry: (id: string) => boolean;
   readonly deleteMeal: (id: string) => boolean;
   readonly markFoodSafe: (childId: string, foodId: string) => FoodStatus | null;
+  readonly resetStatusCounts: (childId: string, foodId: string) => ResetStatusCounts;
+  readonly resetFoodStatus: (childId: string, foodId: string) => FoodStatus;
   readonly foods: () => readonly Food[];
   readonly createCustomFood: (input: CustomFoodInput) => Food;
   readonly updateCustomFood: (

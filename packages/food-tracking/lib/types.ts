@@ -13,3 +13,12 @@ export interface IntroductionHeadsUp {
   readonly kind: IntroductionHeadsUpKind;
   readonly foodId: string;
 }
+
+export interface ResetStatusCounts {
+  readonly introductionCount: number;
+  readonly singleReactionCount: number;
+  readonly sharedReactionCount: number;
+  readonly hasManualSafeDecision: boolean;
+  readonly canReset: boolean;
+}
+
