@@ -1,0 +1,789 @@
+<!doctype html>
+<!--
+  PROTOTYPE (throwaway) — read-only detail views for all eight Entry kinds.
+  Question: how should recorded fields, missing optional values, timestamps,
+  and available actions read in an Entry detail? Three layouts are compared;
+  this explores the issue #89 question and is not a final design.
+  Prior context: prototypes/mvp-end-to-end.html (issue #34); its editing flow
+  is context only, not the answer to this read-only view question.
+  Open directly in a browser. Use the Entry menu and ?variant=A/B/C switcher.
+  All demo values are local to this file; no persistence or real actions.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prototype: Entry view modes</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #fbf6ee;
+        --sheet: #fffdf8;
+        --ink: #33302a;
+        --meta: #8b8375;
+        --rule: #e9dfcd;
+        --strong: #33302a;
+        --accent: #c96f4a;
+        --wash: #fdf1e7;
+        --danger: #b4552e;
+        --sleep: #eef2e8;
+        --shadow: 0 20px 55px #33271d26;
+        --serif: "Iowan Old Style", Palatino, Georgia, serif;
+        --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      }
+      [data-theme="night"] {
+        color-scheme: dark;
+        --paper: #24211c;
+        --sheet: #2b2721;
+        --ink: #f0e9da;
+        --meta: #9a917e;
+        --rule: #3d382f;
+        --strong: #f0e9da;
+        --accent: #e8a582;
+        --wash: #332418;
+        --danger: #e07b52;
+        --sleep: #2e2a22;
+        --shadow: 0 20px 55px #00000066;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 38px 20px 110px;
+        background: #e9e3d8;
+        color: var(--ink);
+        font: 14px/1.45 var(--sans);
+      }
+      body[data-theme="night"] {
+        background: #171512;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      .stage {
+        width: min(100%, 980px);
+        margin: 0 auto;
+      }
+      .intro {
+        margin: 0 0 18px;
+      }
+      .eyebrow,
+      .label {
+        color: var(--meta);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .intro h1 {
+        margin: 4px 0 5px;
+        font: 500 28px/1.15 var(--serif);
+      }
+      .intro p {
+        max-width: 660px;
+        margin: 0;
+        color: var(--meta);
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .control {
+        display: grid;
+        gap: 5px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      select,
+      .theme-toggle {
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid #cfc5b5;
+        border-radius: 10px;
+        background: var(--sheet);
+        color: var(--ink);
+      }
+      .theme-toggle {
+        cursor: pointer;
+      }
+      .prototype-note {
+        margin-left: auto;
+        color: var(--meta);
+        font-size: 12px;
+      }
+      .phone {
+        position: relative;
+        width: min(100%, 430px);
+        min-height: 690px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 9px solid #25231f;
+        border-radius: 34px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+      .screen {
+        min-height: 672px;
+        padding-bottom: 20px;
+        background: var(--paper);
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 17px 18px 12px;
+      }
+      .nav button,
+      .action-link {
+        border: 0;
+        background: transparent;
+        color: var(--meta);
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav .delete-link {
+        color: var(--danger);
+      }
+      .hero {
+        padding: 18px 20px 20px;
+        border-bottom: 1px solid var(--strong);
+        background: var(--sleep);
+      }
+      .hero-meta {
+        margin-bottom: 7px;
+        color: var(--meta);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .hero h2 {
+        margin: 0;
+        font: 500 25px/1.17 var(--serif);
+      }
+      .hero .stamp {
+        margin-top: 9px;
+        color: var(--meta);
+        font-size: 12px;
+      }
+      .hero .stamp strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .body-content {
+        padding: 4px 20px 0;
+      }
+      .section-title {
+        margin: 18px 0 4px;
+        color: var(--meta);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .field {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 43px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .field-name {
+        flex: 0 0 38%;
+        color: var(--meta);
+        font-size: 12px;
+      }
+      .field-value {
+        text-align: right;
+        font-size: 13px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+      }
+      .field-value.missing {
+        color: var(--meta);
+        font-style: italic;
+        font-weight: 400;
+      }
+      .pill-list {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .pill {
+        padding: 4px 9px;
+        border: 1px solid var(--rule);
+        border-radius: 99px;
+        background: var(--sheet);
+        font-size: 11px;
+      }
+      .context-note {
+        margin: 16px 0 0;
+        padding: 11px 12px;
+        border-left: 2px solid var(--accent);
+        background: var(--wash);
+        color: var(--meta);
+        font-size: 11px;
+      }
+      .actions {
+        display: grid;
+        gap: 9px;
+        padding: 20px;
+      }
+      .primary-action {
+        min-height: 42px;
+        border: 0;
+        border-radius: 99px;
+        background: var(--strong);
+        color: var(--paper);
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .secondary-action {
+        min-height: 40px;
+        border: 1px solid var(--rule);
+        border-radius: 99px;
+        background: var(--sheet);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .danger-action {
+        color: var(--danger);
+      }
+      .message {
+        display: none;
+        margin: 0 20px 16px;
+        padding: 11px 12px;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        background: var(--sheet);
+        font-size: 12px;
+      }
+      .message.visible {
+        display: block;
+      }
+      .message button {
+        margin: 8px 8px 0 0;
+        padding: 6px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 99px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .message .confirm {
+        color: var(--danger);
+      }
+      .variant-story .hero {
+        padding-top: 24px;
+        padding-bottom: 26px;
+      }
+      .variant-story .hero h2 {
+        max-width: 330px;
+        font-size: 29px;
+      }
+      .variant-story .hero .stamp {
+        margin-top: 13px;
+      }
+      .variant-story .body-content {
+        padding-top: 3px;
+      }
+      .variant-story .section-title {
+        margin-top: 22px;
+      }
+      .variant-story .field-grid {
+        margin: 11px 0 0 5px;
+        padding-left: 16px;
+        border-left: 1px solid var(--rule);
+      }
+      .variant-story .field {
+        position: relative;
+        display: block;
+        min-height: 0;
+        padding: 8px 0 13px;
+        border: 0;
+      }
+      .variant-story .field::before {
+        position: absolute;
+        top: 15px;
+        left: -21px;
+        width: 8px;
+        height: 8px;
+        border: 1px solid var(--accent);
+        border-radius: 50%;
+        background: var(--paper);
+        content: "";
+      }
+      .variant-story .field-name {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .variant-story .field-value {
+        text-align: left;
+        font: 500 17px/1.35 var(--serif);
+      }
+      .variant-story .pill-list {
+        justify-content: flex-start;
+      }
+      .variant-snapshot .hero {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 5px 12px;
+        padding-top: 17px;
+        padding-bottom: 17px;
+      }
+      .variant-snapshot .hero-meta,
+      .variant-snapshot .hero h2,
+      .variant-snapshot .hero .stamp {
+        grid-column: 1;
+      }
+      .variant-snapshot .hero h2 {
+        font-size: 22px;
+      }
+      .variant-snapshot .hero .stamp {
+        margin-top: 2px;
+      }
+      .variant-snapshot .body-content {
+        padding: 12px 14px 0;
+      }
+      .variant-snapshot .section-title {
+        margin-top: 10px;
+      }
+      .variant-snapshot .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        margin-top: 9px;
+        border: 1px solid var(--rule);
+        background: var(--rule);
+      }
+      .variant-snapshot .field {
+        display: block;
+        min-height: 73px;
+        padding: 10px;
+        border: 0;
+        background: var(--sheet);
+      }
+      .variant-snapshot .field-name {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 10px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .variant-snapshot .field-value {
+        text-align: left;
+        font-size: 13px;
+      }
+      .variant-snapshot .pill-list {
+        justify-content: flex-start;
+      }
+      .variant-snapshot .actions {
+        grid-template-columns: 1fr 1fr;
+        padding: 15px 14px;
+      }
+      .variant-snapshot .primary-action {
+        grid-column: span 2;
+      }
+      .variant-snapshot .secondary-action {
+        min-height: 36px;
+        font-size: 12px;
+      }
+      .switcher {
+        position: fixed;
+        z-index: 3;
+        bottom: 17px;
+        left: 50%;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-height: 54px;
+        padding: 6px 12px;
+        transform: translateX(-50%);
+        border: 1px solid #fff3;
+        border-radius: 99px;
+        background: #25231f;
+        box-shadow: 0 6px 22px #0004;
+        color: white;
+        white-space: nowrap;
+      }
+      .switcher button {
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 50%;
+        background: #ffffff19;
+        color: white;
+        cursor: pointer;
+        font-size: 19px;
+      }
+      .switch-label {
+        min-width: 155px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .switch-label strong {
+        color: #e8a582;
+      }
+      .footnote {
+        max-width: 430px;
+        margin: 14px auto 0;
+        color: var(--meta);
+        font-size: 11px;
+        text-align: center;
+      }
+      @media (max-width: 520px) {
+        body {
+          padding: 20px 10px 100px;
+        }
+        .phone {
+          min-height: 0;
+          border-width: 6px;
+          border-radius: 26px;
+        }
+        .screen {
+          min-height: 620px;
+        }
+        .prototype-note {
+          width: 100%;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="day">
+    <main class="stage">
+      <header class="intro">
+        <div class="eyebrow">Throwaway design study · Issue #93</div>
+        <h1>What belongs in an Entry?</h1>
+        <p>
+          Compare three read-only detail layouts against the same recorded
+          fields. Missing optional values stay visible as “Not recorded”; empty
+          multi-selects read “None recorded.” Choose an Entry and, for Medical,
+          a subtype.
+        </p>
+      </header>
+      <div class="toolbar">
+        <label class="control">
+          <span class="label">Entry kind</span>
+          <select id="entry-select" aria-label="Choose Entry kind"></select>
+        </label>
+        <label class="control" id="medical-control" hidden>
+          <span class="label">Medical type</span>
+          <select id="medical-select" aria-label="Choose Medical type">
+            <option value="medication">Medication</option>
+            <option value="vaccine">Vaccine</option>
+            <option value="symptom">Symptom</option>
+            <option value="temperature">Temperature</option>
+          </select>
+        </label>
+        <button class="theme-toggle" id="theme-toggle" type="button">
+          Switch to night
+        </button>
+        <span class="prototype-note">Sample data only · actions are illustrative</span>
+      </div>
+      <section class="phone" aria-label="Entry detail prototype">
+        <div class="screen" id="screen"></div>
+      </section>
+      <p class="footnote">
+        A · Ledger rows &nbsp; B · Narrative record &nbsp; C · Compact snapshot.
+        Every layout retains the recorded time, timezone, and the same actions.
+      </p>
+    </main>
+    <nav class="switcher" aria-label="View layout comparison">
+      <button id="previous" type="button" aria-label="Previous layout">‹</button>
+      <span class="switch-label" id="switch-label"></span>
+      <button id="next" type="button" aria-label="Next layout">›</button>
+    </nav>
+    <script>
+      const entries = {
+        feed: {
+          label: "Feed",
+          title: "Breastfeeding · 18 min",
+          when: "Nov 4 · 9:42 AM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Side", null],
+            ["Duration", "18 minutes"],
+          ],
+        },
+        diaper_change: {
+          label: "Diaper Change",
+          title: "Wet diaper",
+          when: "Nov 4 · 10:16 AM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Change", "Wet"],
+            ["Note", null],
+          ],
+        },
+        sleep_session: {
+          label: "Sleep Session",
+          title: "Night sleep · 7 hr 24 min",
+          when: "Nov 4 · 6:42 AM · Woke up",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Fell asleep", "Nov 3 · 11:18 PM"],
+            ["Woke up", "Nov 4 · 6:42 AM"],
+            ["Duration", "7 hr 24 min"],
+            ["Quality", "Great"],
+            ["Factors", []],
+          ],
+        },
+        meal: {
+          label: "Meal",
+          title: "Meal · 4 of 5",
+          when: "Nov 4 · 8:05 AM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Meal name", null],
+            ["Amount eaten", "4 of 5"],
+            ["Food categories", ["Grains", "Fruit"]],
+            ["Allergens", ["Wheat"]],
+            ["Texture", ["Mashed"]],
+            ["Feeding style", ["Spoon-fed"]],
+            ["Note", null],
+          ],
+        },
+        introduction: {
+          label: "Introduction",
+          title: "Tahini · first tried",
+          when: "Nov 3 · 1:15 PM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Food", "Tahini"],
+            ["Texture", null],
+            ["Note", null],
+          ],
+          context:
+            "Food status is derived from Introduction and Reaction history; it is context, not a field recorded on this Entry.",
+          alsoMeal: true,
+        },
+        medical: {
+          label: "Medical Entry",
+          title: "Vitamin D",
+          when: "Nov 4 · 8:30 AM",
+          timezone: "America/Los_Angeles",
+          fields: [],
+        },
+        reaction: {
+          label: "Reaction",
+          title: "Moderate reaction · sesame",
+          when: "Nov 3 · 2:05 PM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Suspected foods", ["Sesame", "Tahini"]],
+            ["Severity", "Moderate"],
+            ["Symptoms", ["Rash / hives", "Vomiting"]],
+            ["Note", null],
+          ],
+          context:
+            "Reaction history can affect Food status. Preserve the recorded symptoms and severity without implying a diagnosis.",
+        },
+        growth: {
+          label: "Growth Measurement",
+          title: "6.42 kg · 62.1 cm",
+          when: "Nov 2 · 11:30 AM",
+          timezone: "America/Los_Angeles",
+          fields: [
+            ["Weight", "6.42 kg"],
+            ["Height", "62.1 cm"],
+            ["Head circumference", null],
+          ],
+        },
+      };
+      const medicalEntries = {
+        medication: {
+          title: "Vitamin D",
+          fields: [
+            ["Type", "Medication"],
+            ["Name", "Vitamin D"],
+            ["Dose", "400 IU"],
+            ["Note", null],
+          ],
+        },
+        vaccine: {
+          title: "DTaP vaccine",
+          fields: [
+            ["Type", "Vaccine"],
+            ["Name", "DTaP"],
+            ["Note", "First dose"],
+          ],
+        },
+        symptom: {
+          title: "Congestion",
+          fields: [
+            ["Type", "Symptom"],
+            ["Description", "Congestion"],
+            ["Note", null],
+          ],
+        },
+        temperature: {
+          title: "38.1 °C",
+          fields: [
+            ["Type", "Temperature"],
+            ["Temperature", "38.1 °C"],
+            ["Note", null],
+          ],
+        },
+      };
+      const layouts = [
+        { key: "A", name: "Ledger rows" },
+        { key: "B", name: "Narrative record" },
+        { key: "C", name: "Compact snapshot" },
+      ];
+      const entrySelect = document.getElementById("entry-select");
+      const medicalSelect = document.getElementById("medical-select");
+      let variant = new URLSearchParams(location.search).get("variant") || "A";
+      if (!layouts.some((layout) => layout.key === variant)) variant = "A";
+
+      for (const [kind, entry] of Object.entries(entries)) {
+        const option = document.createElement("option");
+        option.value = kind;
+        option.textContent = entry.label;
+        entrySelect.append(option);
+      }
+      entrySelect.value =
+        new URLSearchParams(location.search).get("entry") in entries
+          ? new URLSearchParams(location.search).get("entry")
+          : "feed";
+
+      function currentEntry() {
+        const entry = entries[entrySelect.value];
+        if (entrySelect.value !== "medical") return entry;
+        const subtype = medicalEntries[medicalSelect.value];
+        return {
+          ...entry,
+          label: "Medical Entry",
+          title: subtype.title,
+          fields: subtype.fields,
+        };
+      }
+
+      function fieldMarkup([name, value]) {
+        const missing = value === null || (Array.isArray(value) && value.length === 0);
+        const shown = value === null
+          ? "Not recorded"
+          : Array.isArray(value) && value.length === 0
+            ? "None recorded"
+            : value;
+        const valueMarkup = Array.isArray(shown)
+          ? `<span class="pill-list">${shown
+              .map((item) => `<span class="pill">${item}</span>`)
+              .join("")}</span>`
+          : shown;
+        return `<div class="field"><span class="field-name">${name}</span><span class="field-value${missing ? " missing" : ""}">${valueMarkup}</span></div>`;
+      }
+
+      function render() {
+        const entry = currentEntry();
+        const layout = layouts.find((item) => item.key === variant);
+        document.body.classList.remove(
+          "variant-ledger",
+          "variant-story",
+          "variant-snapshot"
+        );
+        document.body.classList.add(
+          `variant-${variant === "A" ? "ledger" : variant === "B" ? "story" : "snapshot"}`
+        );
+        document.getElementById("medical-control").hidden =
+          entrySelect.value !== "medical";
+        document.getElementById("switch-label").innerHTML =
+          `<strong>${layout.key}</strong> · ${layout.name}`;
+        document.getElementById("screen").innerHTML = `
+          <div class="nav">
+            <button type="button" data-action="back">← Ledger</button>
+            <button class="delete-link" type="button" data-action="delete">Delete</button>
+          </div>
+          <header class="hero">
+            <div class="hero-meta">${entry.label}</div>
+            <h2>${entry.title}</h2>
+            <div class="stamp"><strong>${entry.when}</strong><br>${entry.timezone}</div>
+          </header>
+          <section class="body-content">
+            <h3 class="section-title">Recorded details</h3>
+            <div class="field-grid">${entry.fields.map(fieldMarkup).join("")}</div>
+            ${entry.context ? `<p class="context-note">${entry.context}</p>` : ""}
+          </section>
+          <section class="actions" aria-label="Available actions">
+            <button class="primary-action" type="button" data-action="edit">Edit this ${entry.label.toLowerCase()}</button>
+            ${entry.alsoMeal ? '<button class="secondary-action" type="button" data-action="meal">Also log a meal</button>' : ""}
+          </section>
+          <div class="message" id="action-message" role="status"></div>
+        `;
+        document.getElementById("screen").querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", () => handleAction(button.dataset.action, entry));
+        });
+        updateUrl();
+      }
+
+      function handleAction(action, entry) {
+        const message = document.getElementById("action-message");
+        if (action === "delete") {
+          message.innerHTML = `Delete this ${entry.label.toLowerCase()}? Content is permanently removed; there is no undo. <div><button type="button" data-cancel>Keep entry</button><button type="button" class="confirm" data-confirm>Delete forever</button></div>`;
+          message.classList.add("visible");
+          message.querySelector("[data-cancel]").onclick = () => message.classList.remove("visible");
+          message.querySelector("[data-confirm]").onclick = () => {
+            message.textContent = "Prototype only — no Entry was deleted.";
+          };
+          return;
+        }
+        const messages = {
+          back: "Prototype only — this would return to the Ledger.",
+          edit: "Prototype only — Edit reopens this Entry’s form with its recorded values and timestamp.",
+          meal: "Prototype only — this would start a Meal using this Introduction’s food and timestamp.",
+        };
+        message.textContent = messages[action];
+        message.classList.add("visible");
+      }
+
+      function updateUrl() {
+        const url = new URL(location.href);
+        url.searchParams.set("variant", variant);
+        url.searchParams.set("entry", entrySelect.value);
+        history.replaceState(null, "", url);
+      }
+
+      function changeVariant(direction) {
+        const index = layouts.findIndex((layout) => layout.key === variant);
+        variant = layouts[(index + direction + layouts.length) % layouts.length].key;
+        render();
+      }
+
+      entrySelect.addEventListener("change", render);
+      medicalSelect.addEventListener("change", render);
+      document.getElementById("previous").addEventListener("click", () => changeVariant(-1));
+      document.getElementById("next").addEventListener("click", () => changeVariant(1));
+      document.getElementById("theme-toggle").addEventListener("click", (event) => {
+        const night = document.body.dataset.theme !== "night";
+        document.body.dataset.theme = night ? "night" : "day";
+        event.currentTarget.textContent = night ? "Switch to day" : "Switch to night";
+      });
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.target instanceof HTMLElement &&
+          event.target.closest("input, textarea, select, [contenteditable]")
+        ) return;
+        if (event.key === "ArrowLeft") changeVariant(-1);
+        if (event.key === "ArrowRight") changeVariant(1);
+      });
+      render();
+    </script>
+  </body>
+</html>
