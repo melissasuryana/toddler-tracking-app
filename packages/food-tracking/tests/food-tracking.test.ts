@@ -314,6 +314,29 @@ test("changing an Introduction's Food invalidates old and new Food markers", () 
   database.close();
 });
 
+test("cycle-bound manual-safe retains manual safeReason even after watchPeriod endsAt", () => {
+  const { database, child, foods } = setup();
+  const custom = foods.createCustomFood({ name: "Manual safe item" });
+  addFoodEntry(database, child.id, "introduction", [custom.id], T0);
+
+  const manuallySafe = foods.markSafe(child.id, custom.id, T0 + 1);
+  assert.equal(manuallySafe?.status, "safe");
+  assert.equal(manuallySafe?.safeReason, "manual");
+
+  // Before 3 days
+  assert.equal(
+    foods.statusFor(child.id, custom.id, T0 + 2 * DAY).safeReason,
+    "manual"
+  );
+
+  // After 3 days (watch period expired)
+  const afterExpiration = foods.statusFor(child.id, custom.id, T0 + 5 * DAY);
+  assert.equal(afterExpiration.status, "safe");
+  assert.equal(afterExpiration.safeReason, "manual");
+
+  database.close();
+});
+
 test("deleting the only Introduction returns to untried, but a Reaction remains avoid", () => {
   const { database, child, foods } = setup();
   const custom = foods.createCustomFood({ name: "Delete evidence" });

@@ -453,10 +453,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           )
         );
         return {
+          foodId,
           status: "untried",
+          exposureCount: 0,
           safeReason: null,
           watchPeriod: null,
-          evidence: [],
         };
       },
       foods: () => foods,

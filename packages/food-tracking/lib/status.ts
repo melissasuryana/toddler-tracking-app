@@ -84,19 +84,19 @@ export function deriveFoodStatus(
   if (
     status === "trying" &&
     watchPeriod !== null &&
-    now >= watchPeriod.endsAt
-  ) {
-    status = "safe";
-    safeReason = "watch-expired";
-    watchPeriod = null;
-  } else if (
-    status === "trying" &&
-    watchPeriod !== null &&
     marker?.foodId === foodId &&
     marker.cycleEntryId === watchPeriod.openingIntroductionId
   ) {
     status = "safe";
     safeReason = "manual";
+    watchPeriod = null;
+  } else if (
+    status === "trying" &&
+    watchPeriod !== null &&
+    now >= watchPeriod.endsAt
+  ) {
+    status = "safe";
+    safeReason = "watch-expired";
     watchPeriod = null;
   } else if (
     status === "untried" &&
