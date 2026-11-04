@@ -18,6 +18,7 @@ import type {
   FoodStatusName,
   FoodWatchPeriod,
   IntroductionHeadsUp,
+  ResetStatusCounts,
 } from "./types.ts";
 
 export interface CustomFoodInput {
@@ -131,12 +132,127 @@ export class FoodTracking {
     assertInstant(now);
     return this.database.transaction((transaction) => {
       const current = statusFor(transaction, childId, foodId, now);
-      if (current.status !== "trying" || !current.watchPeriod) return null;
+      if (current.status !== "trying" && current.status !== "untried") return null;
+      const cycleEntryId =
+        current.status === "trying" && current.watchPeriod
+          ? current.watchPeriod.openingIntroductionId
+          : null;
       transaction.foods.setManualSafeMarker(
         childId,
         foodId,
-        current.watchPeriod.openingIntroductionId
+        cycleEntryId
       );
+      return statusFor(transaction, childId, foodId, now);
+    });
+  }
+
+  resetStatusCounts(childId: string, foodId: string): ResetStatusCounts {
+    this.assertFoodExists(foodId);
+    const childEntries = this.database.entries.listForChild(childId);
+    let introductionCount = 0;
+    let singleReactionCount = 0;
+    let sharedReactionCount = 0;
+
+    for (const entry of childEntries) {
+      if (entry.kind === "introduction") {
+        const associations = this.database.entries.associationsFor(entry.id);
+        if (
+          associations.some(
+            (a) => a.associationType === "food" && a.associatedId === foodId
+          )
+        ) {
+          introductionCount += 1;
+        }
+      } else if (entry.kind === "reaction") {
+        const foodAssociations = this.database.entries
+          .associationsFor(entry.id)
+          .filter((a) => a.associationType === "food");
+        const matches = foodAssociations.some((a) => a.associatedId === foodId);
+        if (matches) {
+          if (foodAssociations.length <= 1) {
+            singleReactionCount += 1;
+          } else {
+            sharedReactionCount += 1;
+          }
+        }
+      }
+    }
+
+    const marker = this.database.foods.manualSafeMarker(childId, foodId);
+    const hasManualSafeDecision = marker !== null;
+    const canReset =
+      introductionCount > 0 ||
+      singleReactionCount > 0 ||
+      sharedReactionCount > 0 ||
+      hasManualSafeDecision;
+
+    return {
+      introductionCount,
+      singleReactionCount,
+      sharedReactionCount,
+      hasManualSafeDecision,
+      canReset,
+    };
+  }
+
+  resetStatus(
+    childId: string,
+    foodId: string,
+    now: number = Date.now()
+  ): FoodStatus {
+    this.assertFoodExists(foodId);
+    assertInstant(now);
+    return this.database.transaction((transaction) => {
+      const counts = this.resetStatusCounts(childId, foodId);
+      if (!counts.canReset) {
+        throw new Error("Food is already untried with no tracking history.");
+      }
+      const childEntries = transaction.entries.listForChild(childId);
+      for (const entry of childEntries) {
+        if (entry.kind === "introduction") {
+          const associations = transaction.entries.associationsFor(entry.id);
+          if (
+            associations.some(
+              (a) => a.associationType === "food" && a.associatedId === foodId
+            )
+          ) {
+            transaction.entries.scrub(entry.id, now);
+          }
+        } else if (entry.kind === "reaction") {
+          const foodAssociations = transaction.entries
+            .associationsFor(entry.id)
+            .filter((a) => a.associationType === "food");
+          const matches = foodAssociations.some(
+            (a) => a.associatedId === foodId
+          );
+          if (matches) {
+            if (foodAssociations.length <= 1) {
+              transaction.entries.scrub(entry.id, now);
+            } else {
+              transaction.entries.removeAssociation(entry.id, "food", foodId);
+              const content = transaction.entries.contentFor(entry.id);
+              if (content && Array.isArray((content as { foodIds?: unknown }).foodIds)) {
+                const updatedFoodIds = (
+                  (content as { foodIds: string[] }).foodIds
+                ).filter((id) => id !== foodId);
+                transaction.entries.setContent(entry.id, {
+                  ...content,
+                  foodIds: updatedFoodIds,
+                });
+              }
+              const updatedAt = Math.max(now, entry.updatedAt + 1);
+              this.database.driver
+                .prepareSync(
+                  "UPDATE entries SET updated_at = ? WHERE id = ?"
+                )
+                .run(updatedAt, entry.id);
+            }
+          }
+        }
+      }
+
+      transaction.foods.clearManualSafeMarker(childId, foodId);
+
       return statusFor(transaction, childId, foodId, now);
     });
   }

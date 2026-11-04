@@ -230,6 +230,19 @@ export class EntryRepository {
       .run();
   }
 
+  removeAssociation(
+    entryId: string,
+    associationType: string,
+    associatedId: string
+  ): void {
+    this.driver
+      .prepareSync(
+        `DELETE FROM entry_associations
+         WHERE entry_id = ? AND association_type = ? AND associated_id = ?`
+      )
+      .run(entryId, associationType.trim(), associatedId.trim());
+  }
+
   associationsFor(entryId: string): EntryAssociation[] {
     return this.driver
       .prepareSync(
@@ -419,7 +432,7 @@ export interface StoredFood extends StoredFoodInput {
 export interface ManualSafeMarker {
   readonly childId: string;
   readonly foodId: string;
-  readonly cycleEntryId: string;
+  readonly cycleEntryId: string | null;
 }
 
 type CustomFoodRow = typeof customFoods.$inferSelect;
@@ -524,7 +537,7 @@ export class FoodRepository {
         `SELECT child_id, food_id, cycle_entry_id
          FROM manual_safe_markers WHERE child_id = ? AND food_id = ?`
       )
-      .get<{ child_id: string; food_id: string; cycle_entry_id: string }>(
+      .get<{ child_id: string; food_id: string; cycle_entry_id: string | null }>(
         childId,
         foodId
       );
@@ -532,31 +545,31 @@ export class FoodRepository {
       ? {
           childId: row.child_id,
           foodId: row.food_id,
-          cycleEntryId: row.cycle_entry_id,
+          cycleEntryId: row.cycle_entry_id ?? null,
         }
       : null;
   }
 
   listManualSafeMarkers(childId: string): ManualSafeMarker[] {
-    return this.driver
+    const rows = this.driver
       .prepareSync(
         `SELECT child_id, food_id, cycle_entry_id
          FROM manual_safe_markers WHERE child_id = ? ORDER BY food_id`
       )
-      .all<{ child_id: string; food_id: string; cycle_entry_id: string }>(
+      .all<{ child_id: string; food_id: string; cycle_entry_id: string | null }>(
         childId
-      )
-      .map((row) => ({
-        childId: row.child_id,
-        foodId: row.food_id,
-        cycleEntryId: row.cycle_entry_id,
-      }));
+      );
+    return rows.map((row) => ({
+      childId: row.child_id,
+      foodId: row.food_id,
+      cycleEntryId: row.cycle_entry_id ?? null,
+    }));
   }
 
   setManualSafeMarker(
     childId: string,
     foodId: string,
-    cycleEntryId: string
+    cycleEntryId: string | null = null
   ): void {
     this.atomic(() => {
       this.driver

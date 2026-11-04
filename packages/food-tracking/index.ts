@@ -62,4 +62,5 @@ export type {
   FoodWatchPeriod,
   IntroductionHeadsUp,
   IntroductionHeadsUpKind,
+  ResetStatusCounts,
 } from "./lib/types.ts";

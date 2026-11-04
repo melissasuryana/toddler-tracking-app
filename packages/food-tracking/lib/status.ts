@@ -98,6 +98,14 @@ export function deriveFoodStatus(
     status = "safe";
     safeReason = "manual";
     watchPeriod = null;
+  } else if (
+    status === "untried" &&
+    marker?.foodId === foodId &&
+    marker.cycleEntryId === null
+  ) {
+    status = "safe";
+    safeReason = "manual";
+    watchPeriod = null;
   }
 
   return { foodId, status, exposureCount, watchPeriod, safeReason };

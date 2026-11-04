@@ -319,7 +319,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       markFoodSafe: (childId, foodId) => {
         const status = statusFor(childId, foodId);
-        if (status.status !== "trying" || !status.watchPeriod) return null;
+        if (status.status !== "trying" && status.status !== "untried") return null;
         setSafeMarkers((current) => [
           ...current.filter(
             (marker) => marker.childId !== childId || marker.foodId !== foodId
@@ -327,7 +327,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           {
             childId,
             foodId,
-            cycleEntryId: status.watchPeriod!.openingIntroductionId,
+            cycleEntryId: status.watchPeriod?.openingIntroductionId ?? null,
           },
         ]);
         return {
@@ -335,6 +335,128 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           status: "safe",
           watchPeriod: null,
           safeReason: "manual",
+        };
+      },
+      resetStatusCounts: (childId, foodId) => {
+        if (!foods.some((food) => food.id === foodId))
+          throw new Error("Food does not exist.");
+        const current = statusFor(childId, foodId);
+        const childEntries = foodEntries.filter((e) => e.childId === childId);
+        let introductionCount = 0;
+        let singleReactionCount = 0;
+        let sharedReactionCount = 0;
+        for (const entry of childEntries) {
+          if (entry.kind === "introduction") {
+            if (entry.content.foodId === foodId) {
+              introductionCount += 1;
+            }
+          } else if (entry.kind === "reaction") {
+            const hasFood = entry.content.foodIds.includes(foodId);
+            if (hasFood) {
+              if (entry.content.foodIds.length === 1) {
+                singleReactionCount += 1;
+              } else {
+                sharedReactionCount += 1;
+              }
+            }
+          }
+        }
+        const hasMarker = safeMarkers.some(
+          (m) => m.childId === childId && m.foodId === foodId
+        );
+        const canReset =
+          current.status !== "untried" ||
+          introductionCount > 0 ||
+          singleReactionCount > 0 ||
+          sharedReactionCount > 0 ||
+          hasMarker;
+        return {
+          canReset,
+          introductionCount,
+          singleReactionCount,
+          sharedReactionCount,
+          hasManualSafeDecision: hasMarker,
+        };
+      },
+      resetFoodStatus: (childId, foodId) => {
+        if (!foods.some((food) => food.id === foodId))
+          throw new Error("Food does not exist.");
+        const current = statusFor(childId, foodId);
+        const childEntries = foodEntries.filter((e) => e.childId === childId);
+        let introductionCount = 0;
+        let singleReactionCount = 0;
+        let sharedReactionCount = 0;
+        for (const entry of childEntries) {
+          if (entry.kind === "introduction") {
+            if (entry.content.foodId === foodId) {
+              introductionCount += 1;
+            }
+          } else if (entry.kind === "reaction") {
+            const hasFood = entry.content.foodIds.includes(foodId);
+            if (hasFood) {
+              if (entry.content.foodIds.length === 1) {
+                singleReactionCount += 1;
+              } else {
+                sharedReactionCount += 1;
+              }
+            }
+          }
+        }
+        const hasMarker = safeMarkers.some(
+          (m) => m.childId === childId && m.foodId === foodId
+        );
+        const canReset =
+          current.status !== "untried" ||
+          introductionCount > 0 ||
+          singleReactionCount > 0 ||
+          sharedReactionCount > 0 ||
+          hasMarker;
+        if (!canReset) {
+          throw new Error("Food is already untried with no tracking history.");
+        }
+        const nextEntries: FoodEntry[] = [];
+        const now = Date.now();
+        for (const entry of foodEntries) {
+          if (entry.childId !== childId) {
+            nextEntries.push(entry);
+            continue;
+          }
+          if (entry.kind === "introduction") {
+            if (entry.content.foodId === foodId) {
+              continue;
+            }
+            nextEntries.push(entry);
+          } else if (entry.kind === "reaction") {
+            if (!entry.content.foodIds.includes(foodId)) {
+              nextEntries.push(entry);
+            } else if (entry.content.foodIds.length === 1) {
+              continue;
+            } else {
+              nextEntries.push({
+                ...entry,
+                updatedAt: Math.max(now, entry.updatedAt + 1),
+                content: {
+                  ...entry.content,
+                  foodIds: entry.content.foodIds.filter((id) => id !== foodId),
+                },
+              });
+            }
+          } else {
+            nextEntries.push(entry);
+          }
+        }
+        setFoodEntries(nextEntries);
+        latestFoodEntries.current = nextEntries;
+        setSafeMarkers((currentMarkers) =>
+          currentMarkers.filter(
+            (marker) => marker.childId !== childId || marker.foodId !== foodId
+          )
+        );
+        return {
+          status: "untried",
+          safeReason: null,
+          watchPeriod: null,
+          evidence: [],
         };
       },
       foods: () => foods,
