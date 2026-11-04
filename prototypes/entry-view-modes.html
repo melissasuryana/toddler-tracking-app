@@ -659,10 +659,10 @@
         option.textContent = entry.label;
         entrySelect.append(option);
       }
-      entrySelect.value =
-        new URLSearchParams(location.search).get("entry") in entries
-          ? new URLSearchParams(location.search).get("entry")
-          : "feed";
+      const requestedEntry = new URLSearchParams(location.search).get("entry");
+      entrySelect.value = Object.hasOwn(entries, requestedEntry)
+        ? requestedEntry
+        : "feed";
 
       function currentEntry() {
         const entry = entries[entrySelect.value];
