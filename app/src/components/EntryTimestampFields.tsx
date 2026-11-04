@@ -45,6 +45,7 @@ export function useEntryTimestamp(initial: EntryTimestamp) {
 
 export function EntryTimestampFields({
   label = "When",
+  inline = false,
   original,
   date,
   time,
@@ -54,6 +55,7 @@ export function EntryTimestampFields({
   setOffset,
 }: {
   readonly label?: string;
+  readonly inline?: boolean;
   readonly original: EntryTimestamp;
   readonly date: string;
   readonly time: string;
@@ -63,7 +65,7 @@ export function EntryTimestampFields({
   readonly setOffset: (value: number) => void;
 }) {
   const theme = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(inline);
   const isReaction = label === "Symptoms appeared";
   const isSleep = label === "Fell asleep" || label === "Woke up";
   const displayPrefix = isReaction
@@ -124,23 +126,25 @@ export function EntryTimestampFields({
         >
           {friendlyText}
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${actionText} ${displayPrefix}`}
-          onPress={() => setExpanded(!expanded)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text
-            style={{
-              fontFamily: nativeFonts.sans,
-              fontSize: 11.5,
-              fontWeight: "600",
-              color: theme.colors.accent,
-            }}
+        {!inline ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${actionText} ${displayPrefix}`}
+            onPress={() => setExpanded(!expanded)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            {actionText}
-          </Text>
-        </Pressable>
+            <Text
+              style={{
+                fontFamily: nativeFonts.sans,
+                fontSize: 11.5,
+                fontWeight: "600",
+                color: theme.colors.accent,
+              }}
+            >
+              {actionText}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
       {expanded ? (
         <View

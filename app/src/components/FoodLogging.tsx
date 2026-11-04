@@ -8,13 +8,14 @@ import {
 import { useRouter } from "expo-router";
 import { BackHandler, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { FoodEntry, MealEntry } from "@keepsake/food-tracking";
+import type { FoodEntry } from "@keepsake/food-tracking";
 import { useData } from "~/data/DataProvider";
 import { useTheme } from "~/theme/ThemeProvider";
 import { Body, MetaLabel } from "./Screen";
 import { PillChip } from "./PillChip";
 import { MealForm } from "./MealForm";
 import { FoodEntryForm } from "./FoodEntryForm";
+import { EntryDetail } from "./EntryDetail";
 import { EMPTY_FOOD_DRAFTS, foodDraftsReducer } from "./foodDrafts";
 
 export interface FoodLoggingHandle {
@@ -39,7 +40,7 @@ export const FoodLogging = forwardRef<
     foodDraftsReducer,
     EMPTY_FOOD_DRAFTS
   );
-  const [editing, setEditing] = useState<FoodEntry | MealEntry | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now);
   const statusTime = Math.max(now, Date.now());
   const [message, setMessage] = useState<string | null>(null);
@@ -47,6 +48,9 @@ export const FoodLogging = forwardRef<
   const foodEntries = hideDefaultContent
     ? []
     : data.foodEntriesForChild(childId);
+  const editing = [...meals, ...foodEntries].find(
+    (entry) => entry.id === selectedId
+  );
   const foods = hideDefaultContent ? [] : data.foods();
   const introducedFoodIds = new Set(
     foodEntries.flatMap((entry) =>
@@ -85,7 +89,7 @@ export const FoodLogging = forwardRef<
   }, [visible]);
 
   function open(kind: typeof tab, foodId?: string) {
-    setEditing(null);
+    setSelectedId(null);
     setTab(kind);
     dispatchDraft({ type: "open", kind, foodId });
     setVisible(true);
@@ -93,16 +97,9 @@ export const FoodLogging = forwardRef<
 
   function saved(kind: typeof tab) {
     setVisible(false);
-    setEditing(null);
+    setSelectedId(null);
     dispatchDraft({ type: "saved", kind });
     setMessage("Entry saved.");
-    router.navigate("/");
-  }
-
-  function updated(message: string) {
-    setEditing(null);
-    setVisible(false);
-    setMessage(message);
     router.navigate("/");
   }
 
@@ -113,7 +110,7 @@ export const FoodLogging = forwardRef<
     // The Introduction is already durable; abandoning this draft never removes it.
     const draft = data.mealDraftForIntroduction(entry.id);
     dispatchDraft({ type: "meal-shortcut", draft, preserveIntroductionDraft });
-    setEditing(null);
+    setSelectedId(null);
     setTab("meal");
     setVisible(true);
     setMessage("Introduction saved. The Meal is a separate, editable draft.");
@@ -211,10 +208,10 @@ export const FoodLogging = forwardRef<
               return (
                 <PillChip
                   key={entry.id}
-                  label={`Edit ${label}`}
+                  label={`View ${label}`}
                   selected={false}
                   onPress={() => {
-                    setEditing(entry);
+                    setSelectedId(entry.id);
                     setTab(entry.kind);
                     setVisible(true);
                   }}
@@ -309,33 +306,15 @@ export const FoodLogging = forwardRef<
               />
             ) : null}
           </View>
-          {editing?.kind === "meal" ? (
-            <MealForm
+          {editing ? (
+            <EntryDetail
               key={editing.id}
-              childId={childId}
-              initialMeal={editing}
-              defaults={data.mealDefaultsForChild(childId)}
-              suggestionsFor={(query) =>
-                data.mealNameSuggestions(childId, query)
-              }
-              onCancel={() => setVisible(false)}
-              onSave={(input) => {
-                if (!data.updateMeal(editing.id, input))
-                  throw new Error("This Meal is no longer available.");
-                updated("Entry updated.");
-              }}
-            />
-          ) : editing ? (
-            <FoodEntryForm
-              key={editing.id}
-              childId={childId}
               entry={editing}
-              kind={editing.kind}
-              onSaved={() => {
-                updated("Entry updated.");
+              onClose={() => {
+                setSelectedId(null);
+                setVisible(false);
               }}
               onAlsoMeal={alsoMeal}
-              onCancel={() => setVisible(false)}
             />
           ) : null}
         </View>
