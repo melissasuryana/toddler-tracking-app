@@ -49,7 +49,7 @@ A fixed enum grouping Foods: fruit, vegetables, grains & cereals, proteins, dair
 _Avoid_: food group, food type
 
 **Introduction**:
-An Entry recording one exposure of a named Food: timestamp, exactly one Food, an optional note, and an optional single-select Texture (purée / mashed / soft finger food / firm finger food). The Introduction is the only exposure record: logging one flips an untried Food to trying and starts its Watch Period, and logging one for an avoided Food re-challenges it (back to trying, Watch Period restarts). Texture is informational only — Food Status is tracked per Food, not per texture. An optional first-tried date supports backfilling foods introduced before the app was in use; every Food Status change traces to an Introduction (or Reaction) Entry. Backfill also comes in bulk: a CSV import (Settings → "Import tried foods") creates backdated Introductions from a 4-column file (name, date, food category, allergens), auto-creating unrecognized names as custom Foods.
+An Entry recording one exposure of a named Food: timestamp, exactly one Food, an optional note, and an optional single-select Texture (purée / mashed / soft finger food / firm finger food). The Introduction is the only exposure record: logging one flips an untried Food to trying and starts its Watch Period, and logging one for an avoided Food re-challenges it (back to trying, Watch Period restarts). Texture is informational only — Food Status is tracked per Food, not per texture. An optional first-tried date supports backfilling foods introduced before the app was in use. Backfill also comes in bulk: a CSV import (Settings → "Import tried foods") creates backdated Introductions from a 4-column file (name, date, food category, allergens), auto-creating unrecognized names as custom Foods.
 _Avoid_: first taste event, trial, exposure log
 
 **Food**:
@@ -61,8 +61,16 @@ A marker on a Food naming one of the big-9 allergens (milk, egg, peanut, tree nu
 _Avoid_: Allergy category, allergen group
 
 **Food Status**:
-A Food's per-child state: untried / trying / safe / avoid. Always derived from the current set of non-Deleted Entries — deleting a Food's only Introduction returns it to untried, and editing an Introduction's date moves the Watch Period window. An Introduction flips untried to trying; trying derives lazily to safe when the Watch Period ends with no Reaction, or can be marked safe manually from the Food detail view (ending the Watch Period early); any Reaction sets avoid. Re-challenging an avoided Food happens only by logging a new Introduction, which restarts the Watch Period.
+A Food's per-child state — untried / trying / safe / avoid — derived from current non-Deleted Introductions and Reactions plus any Manual Safe Decision. An Introduction moves untried or avoid to trying and starts a Watch Period; trying becomes safe when that period ends without a Reaction or through a Manual Safe Decision, while any Reaction sets avoid.
 _Avoid_: Food state, tolerance
+
+**Manual Safe Decision**:
+A caregiver's explicit per-child choice that makes an untried or trying Food safe without adding an Introduction or exposure; for a trying Food it ends the Watch Period early. Adding or deleting a related Introduction or Reaction, or changing its timestamp, Child, or Foods, clears the decision permanently; content-only edits preserve it.
+_Avoid_: Introduction, exposure, medical clearance
+
+**Food Status Reset**:
+An irreversible per-child return of a Food to untried that clears its Manual Safe Decision and deletes all its Introductions and Reactions naming only that Food. Shared Reactions lose only the reset Food and retain their other Foods, preserving those Foods' history.
+_Avoid_: Undo, restore, fresh-start cutoff
 
 **Watch Period**:
 The 3 days after a Food's first Introduction, during which the child is watched for Reactions. Guidance is gentle everywhere: overlapping introductions and first tries of allergen-flagged Foods surface dismissible heads-ups, never blocks.
