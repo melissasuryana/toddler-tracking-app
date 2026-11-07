@@ -26,8 +26,17 @@ npm workspaces: `app/` is the Expo app (expo-router, Keepsake theme), and
   `packages` and `app/src`.
 - `npm start` — start the Expo dev server (iOS target; `npm run ios`,
   `npm run android`, `npm run web` inside `app/`).
-- In GitHub Codespaces, run `expo-web` to start the private browser preview on port
-  5000.
+- In GitHub Codespaces, run `expo-web` to start the private browser preview on port 5000.
+
+## Entry details
+
+Opening any Entry from Home, the Ledger, or recent food Entries shows the compact
+snapshot from `prototypes/entry-view-modes.html` (Variant C). Tap a recorded field
+or timestamp to edit it in place, then save or cancel that field's changes.
+Missing optional values remain visible as "Not recorded"; empty selections show
+"None recorded". There is no separate Edit button or editing screen.
+Sleep duration is calculated from its timestamps. Introductions retain the
+"Also log a meal" shortcut, and deletion still requires confirmation.
 
 ## Dependency health
 
