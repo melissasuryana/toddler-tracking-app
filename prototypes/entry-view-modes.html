@@ -14,6 +14,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Prototype: Entry view modes</title>
+    <link rel="stylesheet" href="./entry-form-unification.prototype.css" />
     <style>
       :root {
         color-scheme: light;
@@ -478,6 +479,11 @@
           multi-selects read “None recorded.” Choose an Entry and, for Medical,
           a subtype.
         </p>
+        <p style="margin-top: 10px">
+          <a href="?study=unified&amp;variant=A"
+            >Explore matching logging, inline editing, and Food views →</a
+          >
+        </p>
       </header>
       <div class="toolbar">
         <label class="control">
@@ -496,7 +502,9 @@
         <button class="theme-toggle" id="theme-toggle" type="button">
           Switch to night
         </button>
-        <span class="prototype-note">Sample data only · actions are illustrative</span>
+        <span class="prototype-note"
+          >Sample data only · actions are illustrative</span
+        >
       </div>
       <section class="phone" aria-label="Entry detail prototype">
         <div class="screen" id="screen"></div>
@@ -507,7 +515,9 @@
       </p>
     </main>
     <nav class="switcher" aria-label="View layout comparison">
-      <button id="previous" type="button" aria-label="Previous layout">‹</button>
+      <button id="previous" type="button" aria-label="Previous layout">
+        ‹
+      </button>
       <span class="switch-label" id="switch-label"></span>
       <button id="next" type="button" aria-label="Next layout">›</button>
     </nav>
@@ -677,12 +687,14 @@
       }
 
       function fieldMarkup([name, value]) {
-        const missing = value === null || (Array.isArray(value) && value.length === 0);
-        const shown = value === null
-          ? "Not recorded"
-          : Array.isArray(value) && value.length === 0
-            ? "None recorded"
-            : value;
+        const missing =
+          value === null || (Array.isArray(value) && value.length === 0);
+        const shown =
+          value === null
+            ? "Not recorded"
+            : Array.isArray(value) && value.length === 0
+              ? "None recorded"
+              : value;
         const valueMarkup = Array.isArray(shown)
           ? `<span class="pill-list">${shown
               .map((item) => `<span class="pill">${item}</span>`)
@@ -727,9 +739,14 @@
           </section>
           <div class="message" id="action-message" role="status"></div>
         `;
-        document.getElementById("screen").querySelectorAll("[data-action]").forEach((button) => {
-          button.addEventListener("click", () => handleAction(button.dataset.action, entry));
-        });
+        document
+          .getElementById("screen")
+          .querySelectorAll("[data-action]")
+          .forEach((button) => {
+            button.addEventListener("click", () =>
+              handleAction(button.dataset.action, entry)
+            );
+          });
         updateUrl();
       }
 
@@ -738,7 +755,8 @@
         if (action === "delete") {
           message.innerHTML = `Delete this ${entry.label.toLowerCase()}? Content is permanently removed; there is no undo. <div><button type="button" data-cancel>Keep entry</button><button type="button" class="confirm" data-confirm>Delete forever</button></div>`;
           message.classList.add("visible");
-          message.querySelector("[data-cancel]").onclick = () => message.classList.remove("visible");
+          message.querySelector("[data-cancel]").onclick = () =>
+            message.classList.remove("visible");
           message.querySelector("[data-confirm]").onclick = () => {
             message.textContent = "Prototype only — no Entry was deleted.";
           };
@@ -762,28 +780,42 @@
 
       function changeVariant(direction) {
         const index = layouts.findIndex((layout) => layout.key === variant);
-        variant = layouts[(index + direction + layouts.length) % layouts.length].key;
+        variant =
+          layouts[(index + direction + layouts.length) % layouts.length].key;
         render();
       }
 
       entrySelect.addEventListener("change", render);
       medicalSelect.addEventListener("change", render);
-      document.getElementById("previous").addEventListener("click", () => changeVariant(-1));
-      document.getElementById("next").addEventListener("click", () => changeVariant(1));
-      document.getElementById("theme-toggle").addEventListener("click", (event) => {
-        const night = document.body.dataset.theme !== "night";
-        document.body.dataset.theme = night ? "night" : "day";
-        event.currentTarget.textContent = night ? "Switch to day" : "Switch to night";
-      });
+      document
+        .getElementById("previous")
+        .addEventListener("click", () => changeVariant(-1));
+      document
+        .getElementById("next")
+        .addEventListener("click", () => changeVariant(1));
+      document
+        .getElementById("theme-toggle")
+        .addEventListener("click", (event) => {
+          const night = document.body.dataset.theme !== "night";
+          document.body.dataset.theme = night ? "night" : "day";
+          event.currentTarget.textContent = night
+            ? "Switch to day"
+            : "Switch to night";
+        });
       document.addEventListener("keydown", (event) => {
+        if (new URLSearchParams(location.search).get("study") === "unified")
+          return;
         if (
           event.target instanceof HTMLElement &&
           event.target.closest("input, textarea, select, [contenteditable]")
-        ) return;
+        )
+          return;
         if (event.key === "ArrowLeft") changeVariant(-1);
         if (event.key === "ArrowRight") changeVariant(1);
       });
-      render();
+      if (new URLSearchParams(location.search).get("study") !== "unified")
+        render();
     </script>
+    <script src="./entry-form-unification.prototype.js"></script>
   </body>
 </html>

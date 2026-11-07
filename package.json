@@ -20,7 +20,8 @@
     "lint:boundaries": "depcruise packages app/src",
     "test": "node --test packages/*/tests/*.test.ts tests/*.test.ts tests/*.test.mjs",
     "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
-    "start": "npm run start --workspace app"
+    "start": "npm run start --workspace app",
+    "prototype:entries": "python -m http.server 5001 --bind 127.0.0.1 --directory prototypes"
   },
   "dependencies": {
     "expo": "~54.0.16",

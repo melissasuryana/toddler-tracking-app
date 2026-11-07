@@ -38,6 +38,21 @@ Missing optional values remain visible as "Not recorded"; empty selections show
 Sleep duration is calculated from its timestamps. Introductions retain the
 "Also log a meal" shortcut, and deletion still requires confirmation.
 
+### Unified-surface design study
+
+Run `npm run prototype:entries`, then open
+`http://localhost:5001/entry-view-modes.html?study=unified&variant=A`.
+The throwaway study compares logging forms, footer-free inline edits, and Food
+views side by side: **A** Snapshot grid, **B** Ruled ledger, **C** Focused record.
+Use the floating arrows to switch layouts, the Entry selector for all eight
+kinds, and the Food Status/day-night controls for alternate states.
+
+Choices commit immediately; text and grouped timestamps commit on leaving their
+inline editor. Logging retains its create action and timestamp section directly
+above it. All changes are synthetic and in memory; production editing behavior
+is unchanged. Reload or Reset demo discards edits. The original Entry view study
+remains available without `study=unified`.
+
 ## Dependency health
 
 The existing Husky pre-commit hook runs `npm run check:dependencies` before
