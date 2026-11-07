@@ -8,7 +8,7 @@
     "./expo": "./expo.ts"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.4"
   },
   "peerDependencies": {
     "expo-sqlite": "*"
