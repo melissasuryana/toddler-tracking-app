@@ -53,6 +53,12 @@ above it. All changes are synthetic and in memory; production editing behavior
 is unchanged. Reload or Reset demo discards edits. The original Entry view study
 remains available without `study=unified`.
 
+For HTMLPreview, prefix the GitHub HTML file URL with
+`https://htmlpreview.github.io/?` and append `?study=unified&variant=A` to
+the file URL. Use a commit SHA in place of the branch name for a permanent
+link: branches may be deleted after merge. The prototype preserves this
+wrapped source URL when changing controls so refresh continues to work.
+
 ## Dependency health
 
 The existing Husky pre-commit hook runs `npm run check:dependencies` before

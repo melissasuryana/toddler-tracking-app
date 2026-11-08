@@ -521,6 +521,30 @@
       <span class="switch-label" id="switch-label"></span>
       <button id="next" type="button" aria-label="Next layout">›</button>
     </nav>
+    <script id="prototype-location">
+      const prototypeLocation = {
+        read() {
+          const source = location.search.slice(1);
+          return new URLSearchParams(
+            /^https?:\/\//.test(source)
+              ? new URL(source).search
+              : location.search
+          );
+        },
+        update(values) {
+          const url = new URL(location.href);
+          const source = url.search.slice(1);
+          const wrapped = /^https?:\/\//.test(source);
+          const target = wrapped ? new URL(source) : url;
+          for (const [key, value] of Object.entries(values)) {
+            target.searchParams.set(key, value);
+          }
+          // HTMLPreview fetches the entire query as its source URL on reload.
+          if (wrapped) url.search = `?${target.href}`;
+          history.replaceState(null, "", url);
+        },
+      };
+    </script>
     <script>
       const entries = {
         feed: {
@@ -660,7 +684,7 @@
       ];
       const entrySelect = document.getElementById("entry-select");
       const medicalSelect = document.getElementById("medical-select");
-      let variant = new URLSearchParams(location.search).get("variant") || "A";
+      let variant = prototypeLocation.read().get("variant") || "A";
       if (!layouts.some((layout) => layout.key === variant)) variant = "A";
 
       for (const [kind, entry] of Object.entries(entries)) {
@@ -669,7 +693,7 @@
         option.textContent = entry.label;
         entrySelect.append(option);
       }
-      const requestedEntry = new URLSearchParams(location.search).get("entry");
+      const requestedEntry = prototypeLocation.read().get("entry");
       entrySelect.value = Object.hasOwn(entries, requestedEntry)
         ? requestedEntry
         : "feed";
@@ -772,10 +796,7 @@
       }
 
       function updateUrl() {
-        const url = new URL(location.href);
-        url.searchParams.set("variant", variant);
-        url.searchParams.set("entry", entrySelect.value);
-        history.replaceState(null, "", url);
+        prototypeLocation.update({ variant, entry: entrySelect.value });
       }
 
       function changeVariant(direction) {
@@ -803,8 +824,7 @@
             : "Switch to night";
         });
       document.addEventListener("keydown", (event) => {
-        if (new URLSearchParams(location.search).get("study") === "unified")
-          return;
+        if (prototypeLocation.read().get("study") === "unified") return;
         if (
           event.target instanceof HTMLElement &&
           event.target.closest("input, textarea, select, [contenteditable]")
@@ -813,8 +833,7 @@
         if (event.key === "ArrowLeft") changeVariant(-1);
         if (event.key === "ArrowRight") changeVariant(1);
       });
-      if (new URLSearchParams(location.search).get("study") !== "unified")
-        render();
+      if (prototypeLocation.read().get("study") !== "unified") render();
     </script>
     <script src="./entry-form-unification.prototype.js"></script>
   </body>

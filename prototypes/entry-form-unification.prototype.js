@@ -4,7 +4,7 @@
  * Synthetic fixtures only. "Saved" means committed in memory, never a real data mutation.
  */
 (() => {
-  const params = new URLSearchParams(location.search);
+  const params = prototypeLocation.read();
   if (params.get("study") !== "unified") return;
 
   const layouts = [
@@ -581,17 +581,14 @@
   <dialog id="confirmation" aria-labelledby="confirmation-title"><h2 id="confirmation-title"></h2><p id="confirmation-copy"></p><div class="action-pair"><button class="secondary-action" id="confirmation-keep" type="button"></button><button class="primary-action" id="confirmation-accept" type="button"></button></div></dialog>`;
 
   function updateUrl() {
-    const url = new URL(location.href);
-    for (const [key, value] of Object.entries({
+    prototypeLocation.update({
       study: "unified",
       variant: state.variant,
       entry: state.kind,
       medical: state.medical,
       theme: state.theme,
       status: state.foodStatus,
-    }))
-      url.searchParams.set(key, value);
-    history.replaceState(null, "", url);
+    });
   }
   function inspect(action) {
     if (action) state.lastAction = action;
